@@ -3,29 +3,30 @@
  */
 
 const GITHUB_USER = "torresbig";
-const GITHUB_REPO = "comunioFanApp";
+const GITHUB_REPO_Data = "comunioFanApp";
+const GITHUB_REPO_WEB = "comunioWebsite";
 
 const DATA_URLS = {
-  clubs: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/VereinsdatenbankJson.txt`,
-  players: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/SpielerdatenbankNeutralJson.txt`,
-  users: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/UserdatenbankJson_884691.txt`,
-  playerToUser: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/PlayerToUserMap_884691.txt`,
-  marktwerte: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/MarktwerteJson.txt`,
-  transfermarkt: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/TransfermarktListe.json`,
-  news: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/data/News.json`,
-  logos: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/logos/`
+  clubs: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/VereinsdatenbankJson.txt`,
+  players: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/SpielerdatenbankNeutralJson.txt`,
+  users: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/UserdatenbankJson_884691.txt`,
+  playerToUser: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/PlayerToUserMap_884691.txt`,
+  marktwerte: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/MarktwerteJson.txt`,
+  transfermarkt: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/TransfermarktListe.json`,
+  news: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/News.json`,
+  logos: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/logos/`
   
 };
 
 // Für den Produktivbetrieb auf GitHub Pages die URLs so definieren:
 const WEBSITE_URLS = {
-  playerUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO}/player.html?id=`,
-  playerDbUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO}/playerDb.html`,
-  kontostaendeUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO}/kontostaende.html`,
-  useruebersichtUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO}/useruebersicht.html`,
-  transfersUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO}/transfers.html`,
-  transferMarktUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO}/tranfermarktComunio.html`,
-  indexUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO}/index.html`
+  playerUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/player.html?id=`,
+  playerDbUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/playerDb.html`,
+  kontostaendeUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/kontostaende.html`,
+  useruebersichtUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/useruebersicht.html`,
+  transfersUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/transfers.html`,
+  transferMarktUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/tranfermarktComunio.html`,
+  indexUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/index.html`
 };
 
 // Optional: Du kannst eine Umgebungs-Variable oder eine einfache Prüfung ergänzen,
@@ -36,12 +37,12 @@ const isHtmlPreview = window.location.href.includes('htmlpreview.github.io');
 
 const ACTIVE_WEBSITE_URLS = isHtmlPreview
   ? {
-      playerUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO}/main/player.html?id=`,
-      playerDbUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO}/main/playerDb.html`,
-      kontostaendeUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO}/main/kontostaende.html`,
-      transfermarktUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO}/main/tranfermarktComunio.html`,
-      useruebersichtUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO}/main/useruebersicht.html`,
-      transfersUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO}/main/transfers.html`,
-      indexUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO}/main/index.html`
+      playerUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/player.html?id=`,
+      playerDbUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/playerDb.html`,
+      kontostaendeUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/kontostaende.html`,
+      transfermarktUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/tranfermarktComunio.html`,
+      useruebersichtUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/useruebersicht.html`,
+      transfersUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/transfers.html`,
+      indexUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/index.html`
     }
   : WEBSITE_URLS;
