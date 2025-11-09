@@ -14,7 +14,7 @@ const DATA_URLS = {
   marktwerte: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/MarktwerteJson.txt`,
   transfermarkt: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/TransfermarktListe.json`,
   news: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/News.json`,
-  logos: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/logos/`
+  logos: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/logos/`
   
 };
 
