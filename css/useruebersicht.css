@@ -208,32 +208,45 @@ table tr.selected {
   vertical-align: middle;
 }
 
-.navbar {
-  background: linear-gradient(135deg, #34495e, #2c3e50);
-  color: white;
-  padding: 10px 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+/* ===== NAVBAR HEADER ===== */
+.navbar-userueber {
+    background: linear-gradient(135deg, #34495e, #2c3e50);
+    color: white;
+    padding: 20px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.navbar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  max-width: 1200px;
-  max-height: 25px;
-  margin: 0 auto;
-  padding: 10px 0;
+.navbar-userueber-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    max-height: 25px;
+    margin: 0 auto;
+    padding: 10px 0;
 }
 
-.navbar-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
+.navbar-userueber-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+h1 {
+    font-size: 1.5em;
+    color: white;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+h1:before {
+    content: "👥";
 }
 
 /* Spezifische Logo-Styles nur für die Userübersicht */

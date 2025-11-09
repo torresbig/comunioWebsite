@@ -1,293 +1,318 @@
-        body {
-            background: #f5f5f5;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 10px;
-        }
+         * {
+             margin: 0;
+             padding: 0;
+             box-sizing: border-box;
+         }
+
+         html,
+         body {
+             height: 100%;
+             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+         }
 
 
-        .toggle-label {
-            background: #3498db;
-            color: white;
-            padding: 12px 16px;
-            border-radius: 6px 6px 0 0;
-            cursor: pointer;
-            user-select: none;
-            font-weight: bold;
-            margin: 24px 0 0 0;
-            display: block;
-            font-size: 13px;
-            position: relative;
-        }
 
-        .toggle-label::before {
-            content: '▶ ';
-            transition: transform 0.3s ease;
-            display: inline-block;
-            width: 20px;
-        }
+         .toggle-label {
+             background: #3498db;
+             color: white;
+             padding: 12px 16px;
+             border-radius: 6px 6px 0 0;
+             cursor: pointer;
+             user-select: none;
+             font-weight: bold;
+             margin: 24px 0 0 0;
+             display: block;
+             font-size: 13px;
+             position: relative;
+         }
 
-        .toggle-toggle:checked+.toggle-label::before {
-            transform: rotate(90deg);
-        }
+         .toggle-label::before {
+             content: '▶ ';
+             transition: transform 0.3s ease;
+             display: inline-block;
+             width: 20px;
+         }
 
-        .toggle-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-in-out;
-            background: #f0f8ff;
-            border: 1px solid #cce;
-            border-top: none;
-            border-radius: 0 0 6px 6px;
-            margin-top: 0;
-        }
+         .toggle-toggle:checked+.toggle-label::before {
+             transform: rotate(90deg);
+         }
 
-        .toggle-toggle:checked+.toggle-label+.toggle-content {
-            max-height: 300px;
-            overflow-y: auto;
-        }
+         .toggle-content {
+             max-height: 0;
+             overflow: hidden;
+             transition: max-height 0.3s ease-in-out;
+             background: #f0f8ff;
+             border: 1px solid #cce;
+             border-top: none;
+             border-radius: 0 0 6px 6px;
+             margin-top: 0;
+         }
 
-        .toggle-inner {
-            padding: 15px;
-            font-family: monospace;
-            font-size: 11px;
-            line-height: 1.5;
-        }
+         .toggle-toggle:checked+.toggle-label+.toggle-content {
+             max-height: 300px;
+             overflow-y: auto;
+         }
 
-        .error {
-            background: #fee;
-            border: 1px solid #fcc;
-            color: #c00;
-        }
+         .toggle-inner {
+             padding: 15px;
+             font-family: monospace;
+             font-size: 11px;
+             line-height: 1.5;
+         }
 
-        .stats {
-            background: #e8f5e8;
-            border: 1px solid #c5e6c5;
-            color: #2e7d2e;
-            text-align: center;
-        }
+         .error {
+             background: #fee;
+             border: 1px solid #fcc;
+             color: #c00;
+         }
 
-        .update-info {
-            background: #e3f2fd;
-            border: 1px solid #90caf9;
-            color: #1565c0;
-            font-size: 12px;
-            text-align: center;
-        }
+         .stats {
+             background: #e8f5e8;
+             border: 1px solid #c5e6c5;
+             color: #2e7d2e;
+             text-align: center;
+         }
 
-        .filters {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            margin-bottom: 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-        }
+         .update-info {
+             background: #e3f2fd;
+             border: 1px solid #90caf9;
+             color: #1565c0;
+             font-size: 12px;
+             text-align: center;
+         }
 
-        .filter-table-gap {
-            height: 20px;
-        }
+         .filters {
+             background: white;
+             padding: 20px;
+             border-radius: 10px;
+             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+             margin-bottom: 0;
+             display: grid;
+             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+             gap: 15px;
+         }
 
-        .filter-group {
-            margin-bottom: 12px;
-        }
+         .filter-table-gap {
+             height: 20px;
+         }
 
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: bold;
-            color: #2c3e50;
-            font-size: 13px;
-        }
+         .filter-group {
+             margin-bottom: 12px;
+         }
 
-        input,
-        select,
-        button {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            background: white;
-        }
+         /* ===== NAVBAR HEADER ===== */
+         .navbar-spdb {
+             background: linear-gradient(135deg, #34495e, #2c3e50);
+             color: white;
+             padding: 20px 15px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+         }
 
-        .reset-button {
-            background-color: #5c6bc0;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            padding: 12px;
-            transition: background 0.3s;
-        }
+         .navbar-spdb-header {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             width: 100%;
+             max-width: 1200px;
+             max-height: 25px;
+             margin: 0 auto;
+             padding: 10px 0;
+         }
 
-        .reset-button:hover {
-            background-color: #3f51b5;
-        }
+         .navbar-spdb-center {
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+             flex: 1;
+         }
 
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin-top: 15px;
-        }
+         h1 {
+             font-size: 1.5em;
+             color: white;
+             font-weight: 600;
+             margin: 0;
+             letter-spacing: 0.5px;
+         }
 
-        .checkbox-group input {
-            width: auto;
-            margin-right: 10px;
-        }
+         h1:before {
+             content: "👤 ";
+         }
 
 
-        .status-aktiv {
-            color: #27ae60;
-            font-weight: bold;
-        }
+         label {
+             display: block;
+             margin-bottom: 6px;
+             font-weight: bold;
+             color: #2c3e50;
+             font-size: 13px;
+         }
 
-        .status-verletzt {
-            color: #e74c3c;
-            font-weight: bold;
-        }
+         input,
+         select,
+         button {
+             width: 100%;
+             padding: 10px;
+             border: 1px solid #ddd;
+             border-radius: 6px;
+             font-size: 14px;
+             background: white;
+         }
 
-        .status-gesperrt {
-            color: #e74c3c;
-            font-weight: bold;
-        }
+         .reset-button {
+             background-color: #5c6bc0;
+             color: white;
+             border: none;
+             cursor: pointer;
+             font-weight: bold;
+             padding: 12px;
+             transition: background 0.3s;
+         }
 
-        .status-reha {
-            color: #f39c12;
-            font-weight: bold;
-        }
+         .reset-button:hover {
+             background-color: #3f51b5;
+         }
 
-        .status-nichtliga {
-            color: #7f8c8d;
-            font-style: italic;
-        }
+         .checkbox-group {
+             display: flex;
+             align-items: center;
+             margin-top: 15px;
+         }
 
-        .club-logo {
-            width: 25px;
-            height: 25px;
-            object-fit: contain;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-
-        .pos-logo {
-            width: 35px;
-            height: 35px;
-            object-fit: contain;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-
-
-        #news-section {
-            margin-bottom: 24px;
-        }
-
-        #news-section .header {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            background: #f5f5f5;
-            border-radius: 6px 6px 0 0;
-            padding: 12px 16px;
-            user-select: none;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        #news-section .header span:first-child {
-            font-size: 1.18em;
-            font-weight: bold;
-            letter-spacing: 1px;
-            flex: 1;
-            color: #222;
-        }
-
-        #news-toggle-icon {
-            font-size: 1.2em;
-            transition: transform 0.2s;
-        }
-
-        #news-list {
-            border: 1px solid #e0e0e0;
-            border-top: none;
-            border-radius: 0 0 6px 6px;
-            background: #fff;
-            max-height: 420px;
-            overflow-y: auto;
-            transition: max-height 0.3s;
-        }
-
-        .news-day {
-            margin-bottom: 18px;
-        }
-
-        .news-date {
-            font-weight: bold;
-            font-size: 1.08em;
-            color: #1976d2;
-            margin-bottom: 4px;
-        }
-
-        .news-art {
-            font-weight: 500;
-            color: #555;
-            margin: 6px 0 2px 0;
-        }
-
-        .news-list-ul {
-            list-style: none;
-            margin: 0 0 8px 0;
-            padding: 0;
-        }
-
-        .news-list-li {
-            padding: 4px 0 4px 12px;
-            border-left: 2px solid #e0e0e0;
-        }
-
-        @media (max-width: 600px) {
-            .filters {
-                grid-template-columns: 1fr !important;
-                gap: 10px;
-                padding: 12px;
-            }
-
-            .filter-group,
-            .checkbox-group {
-                margin-bottom: 0;
-            }
-
-            #filterContentWrapper {
-                max-height: 80vh;
-                /* 80% der Bildschirmhöhe für mehr Platz */
-                overflow-y: auto !important;
-                /* Scrollbar ermöglichen */
-                /* Optional zur Verbesserung des Scrollverhaltens auf iOS-Geräten: */
-                -webkit-overflow-scrolling: touch;
-            }
-        }
+         .checkbox-group input {
+             width: auto;
+             margin-right: 10px;
+         }
 
 
-        header {
-            text-align: center;
-            background: linear-gradient(90deg, #2c3e50, #34495e);
-            color: white;
-            padding: 20px 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
+         .status-aktiv {
+             color: #27ae60;
+             font-weight: bold;
+         }
 
-        header h1 {
-            margin: 0;
-            font-size: 1.8em;
-            font-weight: bold;
-        }
+         .status-verletzt {
+             color: #e74c3c;
+             font-weight: bold;
+         }
 
-        header .subtitle {
-            margin: 5px 0 0 0;
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
+         .status-gesperrt {
+             color: #e74c3c;
+             font-weight: bold;
+         }
+
+         .status-reha {
+             color: #f39c12;
+             font-weight: bold;
+         }
+
+         .status-nichtliga {
+             color: #7f8c8d;
+             font-style: italic;
+         }
+
+         .club-logo {
+             width: 25px;
+             height: 25px;
+             object-fit: contain;
+             margin-right: 10px;
+             vertical-align: middle;
+         }
+
+         .pos-logo {
+             width: 35px;
+             height: 35px;
+             object-fit: contain;
+             margin-right: 10px;
+             vertical-align: middle;
+         }
+
+
+         #news-section {
+             margin-bottom: 24px;
+         }
+
+         #news-section .header {
+             display: flex;
+             align-items: center;
+             cursor: pointer;
+             background: #f5f5f5;
+             border-radius: 6px 6px 0 0;
+             padding: 12px 16px;
+             user-select: none;
+             border-bottom: 1px solid #e0e0e0;
+         }
+
+         #news-section .header span:first-child {
+             font-size: 1.18em;
+             font-weight: bold;
+             letter-spacing: 1px;
+             flex: 1;
+             color: #222;
+         }
+
+         #news-toggle-icon {
+             font-size: 1.2em;
+             transition: transform 0.2s;
+         }
+
+         #news-list {
+             border: 1px solid #e0e0e0;
+             border-top: none;
+             border-radius: 0 0 6px 6px;
+             background: #fff;
+             max-height: 420px;
+             overflow-y: auto;
+             transition: max-height 0.3s;
+         }
+
+         .news-day {
+             margin-bottom: 18px;
+         }
+
+         .news-date {
+             font-weight: bold;
+             font-size: 1.08em;
+             color: #1976d2;
+             margin-bottom: 4px;
+         }
+
+         .news-art {
+             font-weight: 500;
+             color: #555;
+             margin: 6px 0 2px 0;
+         }
+
+         .news-list-ul {
+             list-style: none;
+             margin: 0 0 8px 0;
+             padding: 0;
+         }
+
+         .news-list-li {
+             padding: 4px 0 4px 12px;
+             border-left: 2px solid #e0e0e0;
+         }
+
+         @media (max-width: 600px) {
+             .filters {
+                 grid-template-columns: 1fr !important;
+                 gap: 10px;
+                 padding: 12px;
+             }
+
+             .filter-group,
+             .checkbox-group {
+                 margin-bottom: 0;
+             }
+
+             #filterContentWrapper {
+                 max-height: 80vh;
+                 /* 80% der Bildschirmhöhe für mehr Platz */
+                 overflow-y: auto !important;
+                 /* Scrollbar ermöglichen */
+                 /* Optional zur Verbesserung des Scrollverhaltens auf iOS-Geräten: */
+                 -webkit-overflow-scrolling: touch;
+             }
+         }
