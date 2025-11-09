@@ -51,6 +51,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             throw new Error('Ungültige News-Struktur');
         }
 
+        // Aktualisierungs-Info anzeigen
+    if (newsData.lastUpdate) {
+      const lastUpdateDiv = document.getElementById('last-update-info');
+      if (lastUpdateDiv) {
+        lastUpdateDiv.textContent = `Letzte Aktualisierung: ${newsData.lastUpdate}`;
+      }
+    }
+
         addDebug('[Load] Lade User...');
         const userData = await fetchJSON(DATA_URLS.users);
         addDebug('[Load] User geladen: ' + userData.length);
