@@ -90,7 +90,7 @@
      align-items: center;
      justify-content: space-between;
      padding: 10px 15px;
-     background: #3498db;
+     background: #2c3e50;
      color: white;
      cursor: pointer;
      user-select: none;
@@ -100,7 +100,7 @@
  }
 
  .filter-header:hover {
-     background: #2980b9;
+     background: #34495e;
  }
 
  .filter-header-text {
@@ -166,13 +166,13 @@
 
  .filter-group select:hover,
  .filter-group input:hover {
-     border-color: #3498db;
+     border-color: #34495e;
  }
 
  .filter-group select:focus,
  .filter-group input:focus {
      outline: none;
-     border-color: #3498db;
+     border-color: #2c3e50;
      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
  }
 
@@ -185,7 +185,7 @@
  }
 
  #resetFilters {
-     background-color: #5c6bc0;
+     background-color: #2c3e50;
      color: white;
      border: none;
      cursor: pointer;
@@ -198,7 +198,7 @@
  }
 
  #resetFilters:hover {
-     background-color: #3f51b5;
+     background-color: #34495e;
  }
 
  /* ===== NEWS CONTAINER ===== */
@@ -221,7 +221,7 @@
      border-radius: 8px;
      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
      overflow: hidden;
-     border-left: 4px solid #3498db;
+     border-left: 4px solid #2c3e50;
      transition: all 0.2s ease;
      margin-bottom: 15px;
      display: block;
@@ -233,7 +233,7 @@
  }
 
  .news-date {
-     background: #3498db;
+     background: #2c3e50;
      color: white;
      padding: 8px 12px;
      font-weight: 500;
@@ -282,7 +282,7 @@
      padding: 8px 12px;
      margin-bottom: 6px;
      background: #f8f9fa;
-     border-left: 3px solid #3498db;
+     border-left: 3px solid #2c3e50;
      border-radius: 3px;
      font-size: 0.9em;
      line-height: 1.5;
@@ -297,7 +297,7 @@
 
  .news-list-li:hover {
      background: #eef7ff;
-     border-left-color: #2980b9;
+     border-left-color: #34495e;
  }
 
  .player-entry {
