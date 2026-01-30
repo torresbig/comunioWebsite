@@ -157,7 +157,6 @@ async function fetchJSON(url) {
   }
 }
 
-
 // Cache für Benutzerdaten
 let userMapCache = null;
 let userDataPromise = null;
@@ -190,5 +189,62 @@ async function getUserString(userId) {
     return `Unbekannt (${userId})`;
   } finally {
     userDataPromise = null;
+  }
+}
+
+// Cache / Promise für Points-DB
+let pointsDbCache = null;
+let pointsDbPromise = null;
+
+/**
+ * Liefert die Spieltagspunkte für einen Spieler aus der externen Points-DB (DATA_URLS.points).
+ * Die Points-DB wird einmal geladen und dann gecached.
+ * Erwartetes Format: JSON-Object mit playerId als Key und dem Wert (z.B. Array) wie früher.
+ * @param {string|number} playerId
+ * @returns {Promise<any[]>} Spieltagspunkte oder leeres Array bei Fehler/fehlen.
+ */
+async function getPlayerSpieltagspunkte(playerId) {
+  if (!playerId && playerId !== 0) return [];
+  // Hilfsfunktion: Lookup robust (number / string)
+  function lookup(db, id) {
+    if (!db) return undefined;
+    return db[id] ?? db[String(id)] ?? db[Number(id)];
+  }
+
+  try {
+    // Wenn bereits geladen oder im Ladevorgang, nutze das
+    if (pointsDbPromise) {
+      await pointsDbPromise;
+    }
+    if (pointsDbCache) {
+      return lookup(pointsDbCache, playerId) || [];
+    }
+
+    // Versuche PRIMARY URL aus config
+    pointsDbPromise = fetchJSON(DATA_URLS.points);
+    let data = null;
+    try {
+      data = await pointsDbPromise;
+    } catch (errPrimary) {
+      addDebug('Primärer Points-URL-Load fehlgeschlagen: ' + (errPrimary.message || errPrimary), 'warn');
+      // Fallback: konstruiere Raw-URL ins Data-Repo (falls config falsch war)
+      try {
+        const fallbackUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/PointsDB.json`;
+        addDebug('Versuche Fallback-URL für Points-DB: ' + fallbackUrl, 'info');
+        data = await fetchJSON(fallbackUrl);
+      } catch (errFallback) {
+        addDebug('Fallback-Load Points-DB ebenfalls fehlgeschlagen: ' + (errFallback.message || errFallback), 'error');
+        throw errFallback;
+      }
+    }
+
+    pointsDbCache = data || {};
+    const found = lookup(pointsDbCache, playerId);
+    return found || [];
+  } catch (err) {
+    addDebug('Fehler beim Laden der Points-DB: ' + (err.message || err), 'error');
+    return [];
+  } finally {
+    pointsDbPromise = null;
   }
 }

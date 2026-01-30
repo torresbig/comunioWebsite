@@ -14,7 +14,9 @@ const DATA_URLS = {
   marktwerte: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/MarktwerteJson.txt`,
   transfermarkt: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/TransfermarktListe.json`,
   news: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/News.json`,
-  logos: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/logos/`
+  logos: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/logos/`,
+  // Points-DB liegt im Data-Repository (comunioFanApp) — vermeidet 404 auf comunioWebsite
+  points: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/PointsDB.json`
   
 };
 

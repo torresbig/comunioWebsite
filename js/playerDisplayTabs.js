@@ -187,10 +187,11 @@ function makeTableSortable(tableSelector, defaultSortCol = 0, defaultSortDir = '
 window.addEventListener('DOMContentLoaded', initTabs);
 
 // --- Responsive Punkte/Spielzeiten-Tabelle + Historische Saisons ---
-function renderPointsTableResponsive(player, lastPorcessedMatchday) {
+async function renderPointsTableResponsive(player, lastPorcessedMatchday) {
     const container = document.getElementById("pointsHistory");
     const isMobile = window.matchMedia("(max-width: 600px)").matches;
-    const spieltagspunkte = player.data?.spieltagspunkte || [];
+    // Spieltagspunkte jetzt aus externer Points-DB holen
+    const spieltagspunkte = await getPlayerSpieltagspunkte(player && player.id);
     const pointsHistory = player.data?.historicalPoints || [];
     const currentSeason = new Date().getFullYear();
     let html = `<h3>Punkte & Spielzeiten - Aktuelle Saison (${currentSeason})</h3>`;
