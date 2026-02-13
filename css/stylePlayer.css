@@ -223,6 +223,7 @@
 
       .tabs {
           display: flex;
+              flex-wrap: nowrap;
           justify-content: center;
           margin: 20px 0 0 0;
           border-bottom: 1px solid #ddd;
@@ -230,13 +231,13 @@
 
       .tab-button {
           position: relative;
-          padding: 10px 20px;
+          padding: 5px 12px;
           background: #2c3e50;
           color: white;
           border: none;
           cursor: pointer;
           font-size: 20px;
-          margin: 0 4px;
+          margin: 0 2px;
           border-radius: 16px 16px 0 0;
           transition: background 0.3s;
           display: flex;
@@ -258,6 +259,9 @@
           padding: 15px;
           background: rgba(255, 255, 255, 0.95);
           border-radius: 0 0 10px 10px;
+          box-sizing: border-box;
+          width: 100%;
+          overflow-x: auto;
       }
 
       .tab-content.active {
@@ -414,15 +418,21 @@
           margin-top: 10px;
           background: #f9f9ff;
           border-radius: 10px;
-          overflow: hidden;
+          overflow: visible;
           font-size: 15px;
+          box-sizing: border-box;
+          min-width: 100%;
       }
 
       .points-table th,
       .points-table td {
-          padding: 10px;
+          padding: 8px 4px;
           text-align: center;
           border-bottom: 1px solid #e3e7fa;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          font-size: 12px;
+          min-width: 50px;
       }
 
       .points-table th {
@@ -481,6 +491,12 @@
 
           .tab-button {
               font-size: 16px;
+          }
+
+          .points-table th,
+          .points-table td {
+              padding: 6px 2px;
+              font-size: 11px;
           }
 
           .debug-panel {
@@ -645,4 +661,91 @@
           background: none !important;
           /* Keine Transparenz */
           opacity: 1 !important;
+      }
+
+      /* Mobile Punkte-Info Popup */
+      .points-info-popup {
+          position: fixed;
+          left: 0;
+          bottom: 0;
+          right: 0;
+          top: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 2001;
+          display: none;
+          align-items: flex-end;
+          justify-content: center;
+      }
+
+      .points-info-popup.open {
+          display: flex;
+      }
+
+      .points-info-content {
+          background: white;
+          border-radius: 16px 16px 0 0;
+          padding: 24px;
+          max-height: 80vh;
+          width: 100%;
+          box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+          overflow-y: auto;
+          animation: slideUp 0.3s ease;
+      }
+
+      @keyframes slideUp {
+          from {
+              transform: translateY(100%);
+              opacity: 0;
+          }
+          to {
+              transform: translateY(0);
+              opacity: 1;
+          }
+      }
+
+      .points-info-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+          border-bottom: 2px solid #e3e7fa;
+          padding-bottom: 12px;
+      }
+
+      .points-info-header h3 {
+          margin: 0;
+          color: #2c3e50;
+          font-size: 18px;
+      }
+
+      .points-info-close {
+          background: none;
+          border: none;
+          font-size: 24px;
+          color: #888;
+          cursor: pointer;
+          padding: 0;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .points-info-lines {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+      }
+
+      .points-info-line {
+          font-size: 14px;
+          color: #2c3e50;
+          line-height: 1.4;
+      }
+
+      .points-info-line.section-header {
+          font-weight: 600;
+          color: #34495e;
+          margin-top: 8px;
       }

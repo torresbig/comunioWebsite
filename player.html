@@ -77,8 +77,25 @@
         <div id="playerContent" style="display:none;">
             <!-- Info-Karten und Tabs jetzt innerhalb von playerContent -->
             <div class="info-card">
-                <h3 id="playerInfoHeader">📋 Spieler-Informationen</h3>
+                <h3>⚽ Comunio</h3>
                 <div class="info-card-content">
+                    <div class="info-row"><span class="info-label">Position:</span><span class="info-value"
+                            id="comunioPosition">-</span></div>
+                    <div class="info-row"><span class="info-label">Marktwert:</span><span class="info-value"
+                            id="marketValue">-</span></div>
+                    <div class="info-row"><span class="info-label">realer Marktwert (Transfermarkt.de):</span><span
+                            class="info-value" id="realmarketValue">-</span></div>
+                    <div class="info-row"><span class="info-label">Punkte (letztes Jahr):</span><span class="info-value"
+                            id="pointsWithLastYear">-</span></div>
+                    <div class="info-row"><span class="info-label">Besitzer:</span><span class="info-value"
+                            id="owner">-</span></div>
+                            <div class="info-row"><span class="info-label">gewählt für 11 des Tages:</span><span class="info-value"
+                            id="11desTages">-</span></div>
+                </div>
+            </div>
+            <div class="info-card">
+                <h3 id="playerInfoHeader">📋 Spieler-Informationen</h3>
+                <div class="info-card-content collapsed">
                     <div class="info-row"><span class="info-label">Geburtstag:</span><span class="info-value"
                             id="birthday">-</span></div>
                     <div class="info-row"><span class="info-label">Alter:</span><span class="info-value"
@@ -98,23 +115,6 @@
             <div class="info-card" id="ligainsiderPanel" style="display:none;">
                 <h3>🏆 Ligainsider-Ranking</h3>
                 <div class="info-card-content" id="ligainsiderPanelContent"></div>
-            </div>
-            <div class="info-card">
-                <h3>⚽ Comunio</h3>
-                <div class="info-card-content">
-                    <div class="info-row"><span class="info-label">Position:</span><span class="info-value"
-                            id="comunioPosition">-</span></div>
-                    <div class="info-row"><span class="info-label">Marktwert:</span><span class="info-value"
-                            id="marketValue">-</span></div>
-                    <div class="info-row"><span class="info-label">realer Marktwert (Transfermarkt.de):</span><span
-                            class="info-value" id="realmarketValue">-</span></div>
-                    <div class="info-row"><span class="info-label">Punkte (letztes Jahr):</span><span class="info-value"
-                            id="pointsWithLastYear">-</span></div>
-                    <div class="info-row"><span class="info-label">Besitzer:</span><span class="info-value"
-                            id="owner">-</span></div>
-                            <div class="info-row"><span class="info-label">gewählt für 11 des Tages:</span><span class="info-value"
-                            id="11desTages">-</span></div>
-                </div>
             </div>
             <div class="info-card">
                 <h3>
@@ -152,7 +152,7 @@
             <!-- Tabs: Rivalen, Marktwerte, Punkte, Transfers -->
             <div class="tabs" id="tabBar">
                 <button class="tab-button" data-tab="rivals">Rivalen</button>
-                <button class="tab-button" data-tab="market">Marktwerte <span id="marketTabTrend"
+                <button class="tab-button" data-tab="market">Marktwerte<span id="marketTabTrend"
                         class="trend-arrow"></span></button>
                 <button class="tab-button" data-tab="points">Spieltaginfos</button>
                 <button class="tab-button" data-tab="transfers">Transfers</button>

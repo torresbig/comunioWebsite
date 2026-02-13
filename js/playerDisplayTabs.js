@@ -186,6 +186,132 @@ function makeTableSortable(tableSelector, defaultSortCol = 0, defaultSortDir = '
 
 window.addEventListener('DOMContentLoaded', initTabs);
 
+// --- Hilfsfunktion: Erzeugt schönen Tooltip aus Spieltagsdaten ---
+function createPointsTooltip(entry) {
+    if (!entry) return '';
+    
+    const infoLines = [];
+    
+    // Status mit Symbol
+    if (entry.status) {
+        const statusSymbol = entry.status === 'SUBIN' ? '🔄 Eingewechselt' : '🔄 Ausgewechselt';
+        infoLines.push(statusSymbol);
+    }
+    
+    // Bewertung
+    if (entry.rating && entry.rating !== 0) {
+        infoLines.push(`⭐ Bewertung: ${entry.rating}`);
+    }
+    
+    // Karten
+    if (entry.yellow && entry.yellow > 0) {
+        infoLines.push(`🟨 Gelbe: ${entry.yellow}`);
+    }
+    if (entry.red && entry.red > 0) {
+        infoLines.push(`🟥 Rote: ${entry.red}`);
+    }
+    if (entry.yellowRed && entry.yellowRed > 0) {
+        infoLines.push(`🟥 Gelb-Rot: ${entry.yellowRed}`);
+    }
+    
+    // Tore und Assists
+    if (entry.assists && entry.assists > 0) {
+        infoLines.push(`🎯 Assists: ${entry.assists}`);
+    }
+    
+    // xGoals
+    if (entry.xgoals && entry.xgoals !== 0) {
+        infoLines.push(`📊 xGoals: ${entry.xgoals.toFixed(2)}`);
+    }
+    
+    // Detaillierte Stats (falls vorhanden)
+    if (entry.stats) {
+        try {
+            const stats = typeof entry.stats === 'string' ? JSON.parse(entry.stats) : entry.stats;
+            const statsLines = [];
+            
+            if (stats.shots && stats.shots > 0) statsLines.push(`Schüsse: ${stats.shots}`);
+            if (stats.shotsOnGoal && stats.shotsOnGoal > 0) statsLines.push(`Auf Tor: ${stats.shotsOnGoal}`);
+            if (stats.foulsDrawn && stats.foulsDrawn > 0) statsLines.push(`Fouls für: ${stats.foulsDrawn}`);
+            if (stats.foulsCommitted && stats.foulsCommitted > 0) statsLines.push(`Fouls gegen: ${stats.foulsCommitted}`);
+            if (stats.passingRate && stats.passingRate > 0) statsLines.push(`Passquote: ${stats.passingRate}%`);
+            if (stats.duelRate && stats.duelRate > 0) statsLines.push(`Duelquote: ${stats.duelRate}%`);
+            
+            if (statsLines.length > 0) {
+                infoLines.push('');
+                infoLines.push('📈 Details:');
+                infoLines.push(...statsLines);
+            }
+        } catch (e) {
+            // Stats parsing fehlgeschlagen, ignorieren
+        }
+    }
+    
+    // Info-Text (z.B. Interpoliert)
+    if (entry.info) {
+        infoLines.push('');
+        infoLines.push(`ℹ️ ${entry.info}`);
+    }
+    
+    return infoLines;
+}
+
+// --- Mobile Popup für Spieltag-Infos ---
+function showPointsInfoPopup(spieltag, entry) {
+    if (!entry) return;
+    
+    let popup = document.getElementById('points-info-popup');
+    if (!popup) {
+        popup = document.createElement('div');
+        popup.id = 'points-info-popup';
+        popup.className = 'points-info-popup';
+        popup.innerHTML = `
+            <div class="points-info-content">
+                <div class="points-info-header">
+                    <h3>Spieltag ${spieltag}</h3>
+                    <button class="points-info-close" id="points-info-close">×</button>
+                </div>
+                <div class="points-info-lines" id="points-info-lines"></div>
+            </div>
+        `;
+        document.body.appendChild(popup);
+        
+        document.getElementById('points-info-close').addEventListener('click', () => {
+            popup.classList.remove('open');
+        });
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) {
+                popup.classList.remove('open');
+            }
+        });
+    }
+    
+    const infoLines = createPointsTooltip(entry);
+    const linesContainer = document.getElementById('points-info-lines');
+    linesContainer.innerHTML = '';
+    
+    infoLines.forEach(line => {
+        const div = document.createElement('div');
+        div.className = 'points-info-line';
+        if (line === '' || line.includes('Details:')) {
+            div.className += ' section-header';
+        }
+        div.textContent = line;
+        linesContainer.appendChild(div);
+    });
+    
+    popup.classList.add('open');
+}
+
+// --- Hilfsfunktion: Erstellt Zellen mit Mobile-Click-Handler ---
+function createPointsCell(value, spieltag, entry, isMobile) {
+    if (isMobile && entry && Object.keys(entry).length > 2) {
+        // Hat extra Daten -> mit Click-Handler
+        return `<span style="cursor: pointer; border-bottom: 1px dotted #3498db;" data-spieltag="${spieltag}" data-entry='${JSON.stringify(entry).replace(/'/g, "&apos;")}'>${value}</span>`;
+    }
+    return value;
+}
+
 // --- Responsive Punkte/Spielzeiten-Tabelle + Historische Saisons ---
 async function renderPointsTableResponsive(player, lastPorcessedMatchday) {
     const container = document.getElementById("pointsHistory");
@@ -206,7 +332,9 @@ async function renderPointsTableResponsive(player, lastPorcessedMatchday) {
                 const punkte = punktEntry ? punktEntry.value : '-';
                 const einsatzzeit = punktEntry && punktEntry.einsatzzeit !== undefined ? punktEntry.einsatzzeit + " min" : '-';
                 const tore = punktEntry && punktEntry.tore !== undefined ? punktEntry.tore : '-';
-                html += `<tr>
+                const tooltip = createPointsTooltip(punktEntry);
+                const titleAttr = tooltip.length > 0 ? ` title="${tooltip.join('\n').replace(/"/g, '&quot;').replace(/\n/g, '&#10;')}"` : '';
+                html += `<tr${titleAttr}>
                       <td class="matchday-cell">${i}</td>
                       <td class="points-cell">${punkte}</td>
                       <td class="points-cell">${einsatzzeit}</td>
@@ -227,10 +355,12 @@ async function renderPointsTableResponsive(player, lastPorcessedMatchday) {
                         const punkte = punktEntry ? punktEntry.value : '-';
                         const einsatzzeit = punktEntry && punktEntry.einsatzzeit !== undefined ? punktEntry.einsatzzeit + " min" : '-';
                         const tore = punktEntry && punktEntry.tore !== undefined ? punktEntry.tore : '-';
-                        html += `<td class="matchday-cell">${spieltag}</td>
-                             <td class="points-cell">${punkte}</td>
-                             <td class="points-cell">${einsatzzeit}</td>
-                             <td class="points-cell">${tore}</td>`;
+                        const tooltip = createPointsTooltip(punktEntry);
+                        const titleAttr = tooltip.length > 0 ? ` title="${tooltip.join('\n').replace(/"/g, '&quot;').replace(/\n/g, '&#10;')}"` : '';
+                        html += `<td class="matchday-cell"${titleAttr}>${spieltag}</td>
+                             <td class="points-cell"${titleAttr}>${punkte}</td>
+                             <td class="points-cell"${titleAttr}>${einsatzzeit}</td>
+                             <td class="points-cell"${titleAttr}>${tore}</td>`;
                     }
                 }
             }
@@ -251,6 +381,28 @@ async function renderPointsTableResponsive(player, lastPorcessedMatchday) {
         html += `</tbody></table>`;
     }
     container.innerHTML = html;
+    
+    // Mobile Click-Handler für Punkte-Info
+    if (isMobile) {
+        const pointsCells = container.querySelectorAll('.points-cell, .matchday-cell');
+        pointsCells.forEach(cell => {
+            const row = cell.closest('tr');
+            if (row) {
+                row.addEventListener('click', () => {
+                    // Spieltag aus erster Zelle der Reihe auslesen
+                    const spieltagCell = row.querySelector('.matchday-cell');
+                    if (spieltagCell) {
+                        const spieltag = parseInt(spieltagCell.textContent);
+                        const entry = spieltagspunkte.find(p => p.key === spieltag);
+                        if (entry && Object.keys(entry).length > 2) {
+                            showPointsInfoPopup(spieltag, entry);
+                        }
+                    }
+                });
+                row.style.cursor = 'pointer';
+            }
+        });
+    }
 }
 
 // Optional, für dynamische Umschaltung ohne Seitenreload:
