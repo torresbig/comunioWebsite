@@ -275,20 +275,25 @@ function showPointsInfoPopup(spieltag, entry) {
             </div>
         `;
         document.body.appendChild(popup);
-        
-        document.getElementById('points-info-close').addEventListener('click', () => {
-            popup.classList.remove('open');
-        });
+        const closeBtn = popup.querySelector('#points-info-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                popup.classList.remove('open');
+            });
+        }
         popup.addEventListener('click', (e) => {
             if (e.target === popup) {
                 popup.classList.remove('open');
             }
         });
     }
-    
+    // Aktualisiere die Header-Überschrift bei jedem Aufruf (fix für falsche Spieltag-Anzeige)
+    const headerTitle = popup.querySelector('.points-info-header h3');
+    if (headerTitle) headerTitle.textContent = `Spieltag ${spieltag}`;
+
     const infoLines = createPointsTooltip(entry);
-    const linesContainer = document.getElementById('points-info-lines');
-    linesContainer.innerHTML = '';
+    const linesContainer = popup.querySelector('#points-info-lines');
+    if (linesContainer) linesContainer.innerHTML = '';
     
     infoLines.forEach(line => {
         const div = document.createElement('div');
@@ -297,7 +302,7 @@ function showPointsInfoPopup(spieltag, entry) {
             div.className += ' section-header';
         }
         div.textContent = line;
-        linesContainer.appendChild(div);
+        if (linesContainer) linesContainer.appendChild(div);
     });
     
     popup.classList.add('open');
