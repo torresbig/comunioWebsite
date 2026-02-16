@@ -152,6 +152,12 @@ function renderTable(data) {
         ownerCell.style.textAlign = 'center';
         ownerCell.textContent = ownersMap.get(item.playerID) || "Computer";
 
+        // Punkte (zentriert)
+        const pointsCell = document.createElement('td');
+        pointsCell.className = 'points';
+        pointsCell.style.textAlign = 'center';
+        pointsCell.textContent = item.punkte || 0;
+
         // Restzeit (rechtsbündig, Färbung, Striche bei Ablauf)
         const timeCell = document.createElement('td');
         timeCell.className = 'time';
@@ -178,6 +184,7 @@ function renderTable(data) {
         row.appendChild(playerCell);
         row.appendChild(statusCell);
         row.appendChild(positionCell);
+        row.appendChild(pointsCell);
         row.appendChild(valueCell);
         row.appendChild(priceCell);
         row.appendChild(ownerCell);
@@ -196,10 +203,11 @@ function sortedData() {
             case 1: return cmpStr(a.playerName, b.playerName);
             case 2: return cmpStr(a.status, b.status);
             case 3: return cmpStr(a.position, b.position);
-            case 4: return cmpNum(a.wert, b.wert);
-            case 5: return cmpNum(a.preis, b.preis);
-            case 6: return cmpStr(ownersMap.get(a.playerID), ownersMap.get(b.playerID));
-            case 7: // Restzeit-Sortierung:
+            case 4: return cmpNum(a.punkte, b.punkte);
+            case 5: return cmpNum(a.wert, b.wert);
+            case 6: return cmpNum(a.preis, b.preis);
+            case 7: return cmpStr(ownersMap.get(a.playerID), ownersMap.get(b.playerID));
+            case 8: // Restzeit-Sortierung:
                 return sortDirection * (getTimeLeftForSort(a.setOnMarket) - getTimeLeftForSort(b.setOnMarket));
             default: return 0;
         }
