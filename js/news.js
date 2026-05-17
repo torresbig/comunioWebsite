@@ -9,8 +9,41 @@ function toggleNewsList() {
         icon.style.transform = 'rotate(-90deg)';
     }
 }
-function renderNews(newsList) {
+
+// Globale clubsMap für andere Skripte
+let clubsMap = new Map();
+
+// Lädt Vereinsdaten asynchron
+async function loadClubsData() {
     try {
+        addDebug('[loadClubsData] Starte Laden der Vereinsdaten...');
+        const response = await fetch(DATA_URLS.clubs);
+        if (!response.ok) throw new Error(`HTTP-Fehler: ${response.status}`);
+        const clubsData = await response.json();
+        clubsMap = new Map(clubsData.map(club => [club.id.toString(), club.name]));
+        window.clubsMap = clubsMap; // Für andere Skripte verfügbar machen
+        addDebug(`[loadClubsData] Vereinsdaten geladen: ${clubsMap.size} Einträge`);
+    } catch (error) {
+        addDebug('[loadClubsData] Fehler: ' + error.message);
+        throw error;
+    }
+}
+
+// Hilfsfunktion für Vereinsnamen
+function getClubName(clubId) {
+    if (!clubId) return 'N/A';
+    return clubsMap.get(clubId.toString()) || `Verein (ID: ${clubId})`;
+}
+
+
+async function renderNews(newsList) {
+    try {
+        // Lade Vereinsdaten, falls noch nicht geschehen
+        if (clubsMap.size === 0) {
+            await loadClubsData();
+        }
+
+        
         addDebug('[renderNews] Start mit ' + newsList.length + ' Tagen');
         
         // Nach Datum absteigend sortieren
@@ -103,7 +136,7 @@ function renderNews(newsList) {
                                 try {
                                     const obj = JSON.parse(news.text);
                                     const pid = obj.playerId || news.playerId || null;
-                                    text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${obj.oldClub || 'N/A'}</b> zu <b>${obj.newClub || 'N/A'}</b>`;
+                                    text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${getClubName(obj.oldClub)}</b> zu <b>${getClubName(obj.newClub)}</b>`;
                                 } catch (jsonErr) {
                                     const regex = /^Vereinswechsel:\s(.+?)\s\(/;
                                     const match = regex.exec(news.text);
