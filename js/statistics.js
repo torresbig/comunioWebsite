@@ -200,12 +200,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         addDebug(`[DEBUG] Käufe vom Computer: ${buyCount}, Verkäufe an Computer: ${sellCount}`);
         addDebug(`[DEBUG] Potenzielle getradete Spieler: ${Object.keys(tradedPlayers).length}`);
 
-        // Berechne Profit/Loss für getradete Spieler
+        // Berechne Profit/Loss für getradete Spieler (NUR gleicher User)
         const transferResults = [];
         let completeCount = 0;
         
         Object.values(tradedPlayers).forEach(t => {
-            if (t.buy && t.sell) {
+            if (t.buy && t.sell && t.buy.buyerId === t.sell.sellerId) {
                 const profit = Number(t.sell.price) - Number(t.buy.price);
                 transferResults.push({
                     player: t.playerName,
@@ -217,7 +217,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sellDate: t.sell.date
                 });
                 completeCount++;
-                addDebug(`[DEBUG] Kompletter Trade: ${t.playerName} (${t.buy.buyerId}) - Gewinn: ${profit}€`);
+                addDebug(`[DEBUG] Kompletter Trade: ${t.playerName} (User ${t.buy.buyerId}) - Gewinn: ${profit}€`);
+            } else if (t.buy && t.sell && t.buy.buyerId !== t.sell.sellerId) {
+                addDebug(`[DEBUG] Trade ignoriert (unterschiedliche User): ${t.playerName} - Kauf durch ${t.buy.buyerId} / Verkauf durch ${t.sell.sellerId}`);
             }
         });
 
