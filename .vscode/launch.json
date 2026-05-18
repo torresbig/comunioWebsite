@@ -16,6 +16,18 @@
       "sourceMapPathOverrides": {
         "webpack:///src/*": "${webRoot}/*"
       }
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug statistik",
+      "url": "file://${workspaceFolder}/statistik.html",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "trace": true,
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*"
+      }
     }
   ]
 }
