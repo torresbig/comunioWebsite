@@ -75,6 +75,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Globale Toggle-Funktion für Stats-Karten
+    window.toggleStatsCard = function (button) {
+        const card = button.closest('.stat-card');
+        const isExpanded = !button.classList.contains('expanded');
+
+        // Alle Karten zurücksetzen
+        document.querySelectorAll('.toggle-button').forEach(btn => {
+            btn.classList.remove('expanded');
+            btn.textContent = 'Top 10 anzeigen';
+            btn.closest('.stat-card').classList.remove('expanded');
+        });
+
+        if (isExpanded) {
+            button.classList.add('expanded');
+            button.textContent = 'Weniger anzeigen';
+            card.classList.add('expanded');
+        }
+    };
+
     async function init() {
         const [users, transfers, pointsHistory] = await Promise.all([
             loadUserData(),
@@ -85,9 +104,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         addDebug('[DEBUG] Users geladen: ' + users.length);
         addDebug('[DEBUG] PointsHistory geladen: ' + pointsHistory.length);
 
+        const START_GUTHABEN = 20000000;
+
+        // Stats-Objekt initialisieren
+        const stats = {};
+
         // 1. User-Statistiken (ohne Computer in der Tabelle)
         const userStats = {};
-        
+
         users.forEach(user => {
             if (user.user && user.user.id && user.user.id !== "1") {
                 userStats[user.user.id] = {
@@ -96,12 +120,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     loginName: user.user.loginName,
                     kontostand: user.guthaben || 0,
                     teamwert: user.teamValue || 0,
+                    transfers: 0,
                     punkte: user.punkte || 0,
                     punkteEinnahmen: (user.punkte || 0) * 10000,
-                    transfers: 0,
                     ausgegeben: 0,
                     eingenommen: 0,
-                    letztePunkte: user.lastPoints || '0'
+                    letztePunkte: user.lastPoints || '0',
+                    expectedKontostand: 0
                 };
             }
         });
@@ -112,7 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 userStats[t.buyerId].transfers++;
                 userStats[t.buyerId].ausgegeben += Number(t.price) || 0;
             }
-            
+
             if (t.sellerId && t.sellerId !== "1" && userStats[t.sellerId]) {
                 userStats[t.sellerId].transfers++;
                 userStats[t.sellerId].eingenommen += Number(t.price) || 0;
@@ -121,54 +146,52 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         Object.values(userStats).forEach(user => {
             user.gesamtbewegung = user.eingenommen - user.ausgegeben + user.punkteEinnahmen;
+            user.expectedKontostand = START_GUTHABEN + user.eingenommen - user.ausgegeben + user.punkteEinnahmen;
         });
 
         // 2. Tabelle befüllen
         const tableBody = document.getElementById('userTableBody');
         if (tableBody) {
             tableBody.innerHTML = '';
-            
+
             Object.values(userStats).forEach(user => {
+                const tooltip = user.expectedKontostand !== user.kontostand
+                    ? `Erwarteter Kontostand: ${formatCurrency(user.expectedKontostand)}`
+                    : '';
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${user.name} <small>(${user.loginName || user.id})</small></td>
-                    <td class="currency">${formatCurrency(user.kontostand)}</td>
-                    <td class="currency">${formatCurrency(user.teamwert)}</td>
-                    <td>${user.punkte}</td>
-                    <td class="currency positive">+${formatCurrency(user.punkteEinnahmen)}</td>
-                    <td>${user.transfers}</td>
-                    <td class="currency negative">-${formatCurrency(user.ausgegeben)}</td>
-                    <td class="currency positive">+${formatCurrency(user.eingenommen)}</td>
-                    <td class="currency ${user.gesamtbewegung >= 0 ? 'positive' : 'negative'} total">
-                        ${user.gesamtbewegung >= 0 ? '+' : ''}${formatCurrency(user.gesamtbewegung)}
-                    </td>
-                `;
+                                    <td>${user.name} <small>(${user.loginName || user.id})</small></td>
+                                    <td class="currency"${tooltip ? ` title="${tooltip}"` : ''}>${formatCurrency(user.kontostand)}</td>
+                                    <td class="currency">${formatCurrency(user.teamwert)}</td>
+                                    <td>${user.transfers}</td>
+                                    <td>${user.punkte}</td>
+                                    <td class="currency positive">+${formatCurrency(user.punkteEinnahmen)}</td>
+                                    <td class="currency negative">-${formatCurrency(user.ausgegeben)}</td>
+                                    <td class="currency positive">+${formatCurrency(user.eingenommen)}</td>
+                                    <td class="currency ${user.gesamtbewegung >= 0 ? 'positive' : 'negative'} total">
+                                        ${user.gesamtbewegung >= 0 ? '+' : ''}${formatCurrency(user.gesamtbewegung)}
+                                    </td>
+                                `;
                 tableBody.appendChild(row);
             });
         }
 
         // 3. Besondere Statistiken
-        const stats = {
-            bestTransfer: [],
-            worstTransfer: [],
-            expensiveBuy: [],
-            expensiveSell: [],
-            highestPoints: []
-        };
 
         // === KORRIGIERT: Getradete Spieler finden ===
+
         const tradedPlayers = {};
-        addDebug('[DEBUG] Suche getradete Spieler...');
-        let buyCount = 0, sellCount = 0;
+        let buyCount = 0;
+        let sellCount = 0;
 
         transfers.forEach(t => {
             const playerId = t.playerId;
-            const playerName = t.playerName;
             const buyerId = t.buyerId;
             const sellerId = t.sellerId;
-            const price = Number(t.price) || 0;
+            const playerName = t.playerName;
+            const price = t.price;
 
-            // Fall 1: User kauft vom Computer (sellerId === "1", buyerId !== "1")
+            // Fall 1: Computer verkauft an User (sellerId === "1", buyerId !== "1")
             if (buyerId && buyerId !== "1" && sellerId === "1") {
                 if (!tradedPlayers[playerId]) {
                     tradedPlayers[playerId] = {
@@ -179,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 tradedPlayers[playerId].buy = t;
                 buyCount++;
-                addDebug(`[DEBUG] Kauf gefunden: ${playerName} (${playerId}) von Computer an ${buyerId} für ${price}€`);
+                //addDebug(`[DEBUG] Kauf gefunden: ${playerName} (${playerId}) von Computer an ${buyerId} für ${price}€`);
             }
 
             // Fall 2: User verkauft an Computer (buyerId === "1", sellerId !== "1")
@@ -193,7 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 tradedPlayers[playerId].sell = t;
                 sellCount++;
-                addDebug(`[DEBUG] Verkauf gefunden: ${playerName} (${playerId}) von ${sellerId} an Computer für ${price}€`);
+                // addDebug(`[DEBUG] Verkauf gefunden: ${playerName} (${playerId}) von ${sellerId} an Computer für ${price}€`);
             }
         });
 
@@ -203,7 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Berechne Profit/Loss für getradete Spieler (NUR gleicher User)
         const transferResults = [];
         let completeCount = 0;
-        
+
         Object.values(tradedPlayers).forEach(t => {
             if (t.buy && t.sell && t.buy.buyerId === t.sell.sellerId) {
                 const profit = Number(t.sell.price) - Number(t.buy.price);
@@ -228,8 +251,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Sortiere nach Profit
         const sortedByProfit = [...transferResults].sort((a, b) => b.profit - a.profit);
-        stats.bestTransfer = sortedByProfit.slice(0, 3);
-        stats.worstTransfer = [...sortedByProfit].sort((a, b) => a.profit - b.profit).slice(0, 3);
+        stats.bestTransfer = sortedByProfit.slice(0, 10);
+        stats.worstTransfer = [...sortedByProfit].sort((a, b) => a.profit - b.profit).slice(0, 10);
 
         addDebug(`[DEBUG] Beste Transfers: ${stats.bestTransfer.length}`);
         if (stats.bestTransfer.length > 0) {
@@ -244,7 +267,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const sortedBuys = [...transfers]
             .filter(t => t.buyerId && t.buyerId !== "1")
             .sort((a, b) => (b.price || 0) - (a.price || 0))
-            .slice(0, 3)
+            .slice(0, 10)
             .map(t => ({
                 player: t.playerName,
                 user: userStats[t.buyerId]?.name || t.buyer,
@@ -257,7 +280,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const sortedSells = [...transfers]
             .filter(t => t.sellerId && t.sellerId !== "1")
             .sort((a, b) => (b.price || 0) - (a.price || 0))
-            .slice(0, 3)
+            .slice(0, 10)
             .map(t => ({
                 player: t.playerName,
                 user: userStats[t.sellerId]?.name || t.seller,
@@ -270,70 +293,91 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Höchste Punktzahl an einem Spieltag
         const sortedPoints = [...pointsHistory]
             .sort((a, b) => (b.punkte || 0) - (a.punkte || 0))
-            .slice(0, 3);
+            .slice(0, 10);
         stats.highestPoints = sortedPoints;
 
         // 4. Statistik-Karten befüllen
         const statsGrid = document.querySelector('.stats-grid');
         if (statsGrid) {
+            // Änderung der renderStatsCard Funktion
             function renderStatsCard(title, icon, entries, valueFormatter, detailFormatter) {
                 if (entries.length === 0) {
                     return `
-                        <div class="stat-card">
-                            <h3><span class="stat-icon">${icon}</span>${title}</h3>
-                            <div style="color:#999; font-style:italic; padding:8px;">Keine Daten verfügbar</div>
-                        </div>
-                    `;
+            <div class="stat-card">
+                <h3><span class="stat-icon">${icon}</span>${title}</h3>
+                <div style="color:#999; font-style:italic; padding:8px;">Keine Daten verfügbar</div>
+            </div>
+        `;
                 }
+                // Nur die ersten 3 Einträge standardmäßig zeigen
+                const shownEntries = entries.slice(0, 3);
+                const hiddenEntries = entries.slice(3, 10);
+
                 return `
-                    <div class="stat-card">
-                        <h3><span class="stat-icon">${icon}</span>${title}</h3>
-                        ${entries.map((entry, i) => `
-                            <div class="stat-entry">
-                                <div class="stat-entry-main">
-                                    <span class="stat-entry-rank">${i+1}.</span>
-                                    <span>${valueFormatter(entry, i)}</span>
-                                </div>
-                                <div class="stat-entry-secondary">
-                                    ${detailFormatter(entry, i)}
-                                </div>
-                            </div>
-                        `).join('')}
+        <div class="stat-card">
+            <h3><span class="stat-icon">${icon}</span>${title}</h3>
+            ${shownEntries.map((entry, i) => `
+                <div class="stat-entry displayed-entry">
+                    <div class="stat-entry-main">
+                        <span class="stat-entry-rank">${i + 1}.</span>
+                        <span>${valueFormatter(entry, i)}</span>
                     </div>
-                `;
+                    <div class="stat-entry-secondary">
+                        ${detailFormatter(entry, i)}
+                    </div>
+                </div>
+            `).join('')}
+            ${hiddenEntries.map((entry, i) => `
+                <div class="stat-entry hidden-entry">
+                    <div class="stat-entry-main">
+                        <span class="stat-entry-rank">${i + 4}.</span>
+                        <span>${valueFormatter(entry, i + 3)}</span>
+                    </div>
+                    <div class="stat-entry-secondary">
+                        ${detailFormatter(entry, i + 3)}
+                    </div>
+                </div>
+            `).join('')}
+            ${entries.length > 3 ? `
+                <div class="stat-card-footer">
+                    <button onclick="toggleStatsCard(this)" class="toggle-button">Top 10 anzeigen</button>
+                </div>
+            ` : ''}
+        </div>
+    `;
             }
 
             statsGrid.innerHTML = `
                 ${renderStatsCard(
-                    'Beste Transfers', '📈',
-                    stats.bestTransfer,
-                    (t) => `<span class="profit">+${formatCurrency(t.profit)}</span>`,
-                    (t) => `${t.player} (${t.user})<br>Kauf: ${formatCurrency(t.buyPrice)} am ${t.buyDate}<br>Verkauf: ${formatCurrency(t.sellPrice)} am ${t.sellDate}`
-                )}
+                'Beste Transfers', '📈',
+                stats.bestTransfer,
+                (t) => `<span class="profit">+${formatCurrency(t.profit)}</span>`,
+                (t) => `${t.player} (${t.user})<br>Kauf: ${formatCurrency(t.buyPrice)} am ${t.buyDate}<br>Verkauf: ${formatCurrency(t.sellPrice)} am ${t.sellDate}`
+            )}
                 ${renderStatsCard(
-                    'Schlechteste Transfers', '📉',
-                    stats.worstTransfer,
-                    (t) => `<span class="loss">${formatCurrency(t.profit)}</span>`,
-                    (t) => `${t.player} (${t.user})<br>Kauf: ${formatCurrency(t.buyPrice)} am ${t.buyDate}<br>Verkauf: ${formatCurrency(t.sellPrice)} am ${t.sellDate}`
-                )}
+                'Schlechteste Transfers', '📉',
+                stats.worstTransfer,
+                (t) => `<span class="loss">${formatCurrency(t.profit)}</span>`,
+                (t) => `${t.player} (${t.user})<br>Kauf: ${formatCurrency(t.buyPrice)} am ${t.buyDate}<br>Verkauf: ${formatCurrency(t.sellPrice)} am ${t.sellDate}`
+            )}
                 ${renderStatsCard(
-                    'Teuerste Käufe', '💸',
-                    stats.expensiveBuy,
-                    (t) => `${formatCurrency(t.price)}`,
-                    (t) => `${t.player} (${t.user})<br>Marktwert: ${formatCurrency(t.value)}<br>Datum: ${t.date}`
-                )}
+                'Teuerste Käufe', '💸',
+                stats.expensiveBuy,
+                (t) => `${formatCurrency(t.price)}`,
+                (t) => `${t.player} (${t.user})<br>Marktwert: ${formatCurrency(t.value)}<br>Datum: ${t.date}`
+            )}
                 ${renderStatsCard(
-                    'Teuerste Verkäufe', '💰',
-                    stats.expensiveSell,
-                    (t) => `${formatCurrency(t.price)}`,
-                    (t) => `${t.player} (${t.user})<br>Marktwert: ${formatCurrency(t.value)}<br>Datum: ${t.date}`
-                )}
+                'Teuerste Verkäufe', '💰',
+                stats.expensiveSell,
+                (t) => `${formatCurrency(t.price)}`,
+                (t) => `${t.player} (${t.user})<br>Marktwert: ${formatCurrency(t.value)}<br>Datum: ${t.date}`
+            )}
                 ${renderStatsCard(
-                    'Höchste Punkte (Spieltag)', '🏆',
-                    stats.highestPoints,
-                    (p) => `${p.punkte || '0'} Pkt.`,
-                    (p) => `${p.userName || 'Unbekannt'} (Spieltag ${p.spieltag || '?'})`
-                )}
+                'Höchste Punkte (Spieltag)', '🏆',
+                stats.highestPoints,
+                (p) => `${p.punkte || '0'} Pkt.`,
+                (p) => `${p.userName || 'Unbekannt'} (Spieltag ${p.spieltag || '?'})`
+            )}
             `;
         }
 
@@ -345,7 +389,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 header.addEventListener('click', () => {
                     const rows = Array.from(table.querySelectorAll('tbody tr'));
                     const isAsc = header.getAttribute('data-sort') === 'asc';
-                    
+
                     if (index === 0) {
                         // Name sortieren
                         rows.sort((a, b) => {
@@ -353,38 +397,41 @@ document.addEventListener('DOMContentLoaded', async () => {
                             const nameB = b.cells[0].textContent.toLowerCase();
                             return isAsc ? nameB.localeCompare(nameA) : nameA.localeCompare(nameB);
                         });
-                    } else if ([1, 2, 4, 6, 7, 8].includes(index)) {
-                        // Währungen (€) sortieren: Kontostand(1), Teamwert(2), PunkteEinnahmen(4), Ausgaben(6), Einnahmen(7), Gesamt(8)
+
+
+                    } else if ([1, 2, 5, 6, 7, 8].includes(index)) {
+                        // Währungen (€) sortieren: Kontostand(1), Teamwert(2), PunkteEinnahmen(5), Ausgaben(6), Einnahmen(7), Gesamt(8)
+
                         rows.sort((a, b) => {
                             const valA = parseFloat(a.cells[index].textContent.replace(/[^\d-]/g, '') || 0);
                             const valB = parseFloat(b.cells[index].textContent.replace(/[^\d-]/g, '') || 0);
                             return isAsc ? valB - valA : valA - valB;
                         });
                     } else {
-                        // Zahlen sortieren (Punkte(3), Transfers(5))
+                         // Zahlen sortieren (Transfers(3), Punkte(4))
                         rows.sort((a, b) => {
                             const valA = parseFloat(a.cells[index].textContent || 0);
-                                    const valB = parseFloat(b.cells[index].textContent || 0);
-                                    return isAsc ? valB - valA : valA - valB;
-                                });
-                            }
-                            
-                            // Daten rendern
-                            table.querySelector('tbody').innerHTML = '';
-                            rows.forEach(row => table.querySelector('tbody').appendChild(row));
-                            
-                            // Sortierstatus umkehren
-                            header.setAttribute('data-sort', isAsc ? 'desc' : 'asc');
-                            
-                            // Alle anderen Header zurücksetzen
-                            headers.forEach(h => {
-                                if (h !== header) h.removeAttribute('data-sort');
-                            });
+                            const valB = parseFloat(b.cells[index].textContent || 0);
+                            return isAsc ? valB - valA : valA - valB;
                         });
-                    });
-                }
-            }
+                    }
 
-            // Initialisierung starten
-            init();
-        });
+                    // Daten rendern
+                    table.querySelector('tbody').innerHTML = '';
+                    rows.forEach(row => table.querySelector('tbody').appendChild(row));
+
+                    // Sortierstatus umkehren
+                    header.setAttribute('data-sort', isAsc ? 'desc' : 'asc');
+
+                    // Alle anderen Header zurücksetzen
+                    headers.forEach(h => {
+                        if (h !== header) h.removeAttribute('data-sort');
+                    });
+                });
+            });
+        }
+    }
+
+    // Initialisierung starten
+    init();
+});
