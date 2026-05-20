@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 (u) => `${u.name}<br>${u.transfers} Transfers`
             )}
             ${renderStatsCard(
-                'Höchster Kontostand', '💎',
+                'Höchster Kontostand (aktuell)', '💎',
                 stats.highestBalance,
                 (u) => `${formatCurrency(u.kontostand)}`,
                 (u) => `${u.name}`
