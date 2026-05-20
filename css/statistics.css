@@ -33,6 +33,12 @@
       margin-bottom: 30px;
   }
 
+
+
+  .hidden-entry {
+      /* Markerklasse für ausgeblendete Einträge; Sichtbarkeit wird per Card-Status gesteuert */
+  }
+
   .stat-card {
       background: white;
       padding: 15px;
@@ -40,30 +46,41 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       position: relative;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 200px;
+      /* Mindesthöhe für leere Karten */
+      margin-bottom: 20px;
+      /* Abstand zwischen Karten */
   }
-.hidden-entry {
-    /* Markerklasse für ausgeblendete Einträge; Sichtbarkeit wird per Card-Status gesteuert */
-}
+
+  .stat-card-content {
+      flex: 1;
+      margin-bottom: 10px;
+      /* Abstand zum Footer */
+  }
+
   .stat-card-footer {
       text-align: center;
       padding: 10px 0;
       border-top: 1px solid #eee;
-      margin-top: 10px;
+      margin-top: auto;
+      /* Footer bleibt unten */
   }
 
   .stat-card-footer button {
-    width: 100%;
-    margin-top: 10px;
-    transition: all 0.3s ease;
-}
+      width: 100%;
+      margin-top: 10px;
+      transition: all 0.3s ease;
+  }
 
-.toggle-button.expanded {
-    background-color: #e74c3c;
-}
+  .toggle-button.expanded {
+      background-color: #e74c3c;
+  }
 
-.toggle-button.expanded:hover {
-    background-color: #c0392b;
-}
+  .toggle-button.expanded:hover {
+      background-color: #c0392b;
+  }
 
 
   .stat-card-footer button:hover {
@@ -186,7 +203,8 @@
       font-weight: bold;
       background-color: #f0f7ff;
   }
-/* Neu: Zentrierung für Transfer- und Punktespalten */
-.text-center {
-    text-align: center;
-}
+
+  /* Neu: Zentrierung für Transfer- und Punktespalten */
+  .text-center {
+      text-align: center;
+  }

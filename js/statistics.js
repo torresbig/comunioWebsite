@@ -323,41 +323,43 @@ document.addEventListener('DOMContentLoaded', async () => {
             function renderStatsCard(title, icon, entries, valueFormatter, detailFormatter) {
                 if (entries.length === 0) {
                     return `
-            <div class="stat-card">
+<div class="stat-card">
                 <h3><span class="stat-icon">${icon}</span>${title}</h3>
                 <div style="color:#999; font-style:italic; padding:8px;">Keine Daten verfügbar</div>
             </div>
         `;
                 }
-                // Nur die ersten 3 Einträge standardmäßig zeigen
+
                 const shownEntries = entries.slice(0, 3);
                 const hiddenEntries = entries.slice(3, 10);
 
                 return `
         <div class="stat-card">
-            <h3><span class="stat-icon">${icon}</span>${title}</h3>
-            ${shownEntries.map((entry, i) => `
-                <div class="stat-entry displayed-entry">
-                    <div class="stat-entry-main">
-                        <span class="stat-entry-rank">${i + 1}.</span>
-                        <span>${valueFormatter(entry, i)}</span>
+            <div class="stat-card-content">
+                <h3><span class="stat-icon">${icon}</span>${title}</h3>
+                ${shownEntries.map((entry, i) => `
+                    <div class="stat-entry displayed-entry">
+                        <div class="stat-entry-main">
+                            <span class="stat-entry-rank">${i + 1}.</span>
+                            <span>${valueFormatter(entry, i)}</span>
+                        </div>
+                        <div class="stat-entry-secondary">
+                            ${detailFormatter(entry, i)}
+                        </div>
                     </div>
-                    <div class="stat-entry-secondary">
-                        ${detailFormatter(entry, i)}
+                `).join('')}
+                ${hiddenEntries.map((entry, i) => `
+                    <div class="stat-entry hidden-entry">
+                        <div class="stat-entry-main">
+                            <span class="stat-entry-rank">${i + 4}.</span>
+                            <span>${valueFormatter(entry, i + 3)}</span>
+                        </div>
+                        <div class="stat-entry-secondary">
+                            ${detailFormatter(entry, i + 3)}
+                        </div>
                     </div>
-                </div>
-            `).join('')}
-            ${hiddenEntries.map((entry, i) => `
-                <div class="stat-entry hidden-entry">
-                    <div class="stat-entry-main">
-                        <span class="stat-entry-rank">${i + 4}.</span>
-                        <span>${valueFormatter(entry, i + 3)}</span>
-                    </div>
-                    <div class="stat-entry-secondary">
-                        ${detailFormatter(entry, i + 3)}
-                    </div>
-                </div>
-            `).join('')}
+                `).join('')}
+            </div>
             ${entries.length > 3 ? `
                 <div class="stat-card-footer">
                     <button onclick="toggleStatsCard(this)" class="toggle-button">Top 10 anzeigen</button>
