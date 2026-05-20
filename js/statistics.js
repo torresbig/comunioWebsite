@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 (u) => `${u.name}<br>${formatCurrency(u.punkteEinnahmen)} aus Punkten`
             )}
             ${renderStatsCard(
-                'Höchster Teamwert', '🏅',
+                'Höchster Teamwert (aktuell)', '🏅',
                 stats.highestTeamValue,
                 (u) => `${formatCurrency(u.teamwert)}`,
                 (u) => `${u.name}<br>${u.transfers} Transfers`
