@@ -163,8 +163,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     <td>${user.name} <small>(${user.loginName || user.id})</small></td>
                                     <td class="currency"${tooltip ? ` title="${tooltip}"` : ''}>${formatCurrency(user.kontostand)}</td>
                                     <td class="currency">${formatCurrency(user.teamwert)}</td>
-                                    <td>${user.transfers}</td>
-                                    <td>${user.punkte}</td>
+                                    <td class="text-center">${user.transfers}</td>
+                                    <td class="text-center">${user.punkte}</td>
                                     <td class="currency positive">+${formatCurrency(user.punkteEinnahmen)}</td>
                                     <td class="currency negative">-${formatCurrency(user.ausgegeben)}</td>
                                     <td class="currency positive">+${formatCurrency(user.eingenommen)}</td>
@@ -296,6 +296,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             .slice(0, 10);
         stats.highestPoints = sortedPoints;
 
+        // Meisten Transfers
+        stats.mostTransfers = Object.values(userStats)
+            .sort((a, b) => b.transfers - a.transfers)
+            .slice(0, 10);
+
+        // Meisten Punkte (Gesamt)
+        stats.mostPoints = Object.values(userStats)
+            .sort((a, b) => b.punkte - a.punkte)
+            .slice(0, 10);
+
+        // Höchster Teamwert
+        stats.highestTeamValue = Object.values(userStats)
+            .sort((a, b) => b.teamwert - a.teamwert)
+            .slice(0, 10);
+
+        // Höchster Kontostand
+        stats.highestBalance = Object.values(userStats)
+            .sort((a, b) => b.kontostand - a.kontostand)
+            .slice(0, 10);
+
         // 4. Statistik-Karten befüllen
         const statsGrid = document.querySelector('.stats-grid');
         if (statsGrid) {
@@ -378,6 +398,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                 (p) => `${p.punkte || '0'} Pkt.`,
                 (p) => `${p.userName || 'Unbekannt'} (Spieltag ${p.spieltag || '?'})`
             )}
+            ${renderStatsCard(
+                'Meisten Transfers', '🔄',
+                stats.mostTransfers,
+                (u) => `${u.transfers} Transfers`,
+                (u) => `${u.name}<br>${formatCurrency(u.ausgegeben)} ausgegeben<br>${formatCurrency(u.eingenommen)} eingenommen`
+            )}
+            ${renderStatsCard(
+                'Meisten Punkte', '⭐',
+                stats.mostPoints,
+                (u) => `${u.punkte} Pkt.`,
+                (u) => `${u.name}<br>${formatCurrency(u.punkteEinnahmen)} aus Punkten`
+            )}
+            ${renderStatsCard(
+                'Höchster Teamwert', '🏅',
+                stats.highestTeamValue,
+                (u) => `${formatCurrency(u.teamwert)}`,
+                (u) => `${u.name}<br>${u.transfers} Transfers`
+            )}
+            ${renderStatsCard(
+                'Höchster Kontostand', '💎',
+                stats.highestBalance,
+                (u) => `${formatCurrency(u.kontostand)}`,
+                (u) => `${u.name}`
+            )}
             `;
         }
 
@@ -408,7 +452,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             return isAsc ? valB - valA : valA - valB;
                         });
                     } else {
-                         // Zahlen sortieren (Transfers(3), Punkte(4))
+                        // Zahlen sortieren (Transfers(3), Punkte(4))
                         rows.sort((a, b) => {
                             const valA = parseFloat(a.cells[index].textContent || 0);
                             const valB = parseFloat(b.cells[index].textContent || 0);
