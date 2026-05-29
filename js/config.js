@@ -41,7 +41,8 @@ const ACTIVE_WEBSITE_URLS = isHtmlPreview
   ? {
       playerUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/player.html?id=`,
       playerDbUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/playerDb.html`,
-      kontostaendeUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/kontostaende.html`,
+      kontostaendeUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/statistik.html?showStats=1`,
+      statistikUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/statistik.html`,
       transfermarktUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/tranfermarktComunio.html`,
       useruebersichtUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/useruebersicht.html`,
       transfersUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/transfers.html`,

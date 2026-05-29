@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    // URL-Parameter auslesen
+    const urlParams = new URLSearchParams(window.location.search);
+    const showStatsParam = urlParams.get('showStats');
+    const showStats = showStatsParam === '1' || showStatsParam === 'true';
+
+    // Conditional-Elemente ein-/ausblenden
+    document.querySelectorAll('.conditional-content').forEach(el => {
+        el.classList.toggle('show', showStats);
+    });
+
     // Hilfsfunktionen
     function formatCurrency(value) {
         if (value === null || value === undefined || isNaN(Number(value))) return '-';
@@ -378,21 +388,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         const statsGrid = document.querySelector('.stats-grid');
         if (statsGrid) {
             // Änderung der renderStatsCard Funktion
-            function renderStatsCard(title, icon, entries, valueFormatter, detailFormatter) {
-                if (entries.length === 0) {
-                    return `
-<div class="stat-card">
+           function renderStatsCard(title, icon, entries, valueFormatter, detailFormatter, isConditional) {
+        if (isConditional && !showStats) {
+            return ''; // Kein HTML, wenn der Parameter nicht gesetzt ist
+        }
+
+        if (entries.length === 0) {
+            return `<div class="stat-card">
                 <h3><span class="stat-icon">${icon}</span>${title}</h3>
                 <div style="color:#999; font-style:italic; padding:8px;">Keine Daten verfügbar</div>
-            </div>
-        `;
-                }
+            </div>`;
+        }
 
-                const shownEntries = entries.slice(0, 3);
-                const hiddenEntries = entries.slice(3, 10);
+        const shownEntries = entries.slice(0, 3);
+        const hiddenEntries = entries.slice(3, 10);
 
-                return `
-        <div class="stat-card">
+        return `<div class="stat-card">
             <div class="stat-card-content">
                 <h3><span class="stat-icon">${icon}</span>${title}</h3>
                 ${shownEntries.map((entry, i) => `
@@ -423,9 +434,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <button onclick="toggleStatsCard(this)" class="toggle-button">Top 10 anzeigen</button>
                 </div>
             ` : ''}
-        </div>
-    `;
-            }
+        </div>`;
+    }
 
             statsGrid.innerHTML = `
                 ${renderStatsCard(
@@ -480,7 +490,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 'Höchster Kontostand (aktuell)', '💎',
                 stats.highestBalance,
                 (u) => `${formatCurrency(u.kontostand)}`,
-                (u) => `${u.name}`
+                (u) => `${u.name}`,
+                true // conditional
+               
             )}
             `;
         }

@@ -35,6 +35,10 @@ document.addEventListener('DOMContentLoaded', function () {
     linkPlayerDb.href = getLokalOderGitURL(WEBSITE_URLS.playerDbUrl, "playerDb.html");
   }
 
+  if (statistikLink) {
+    statistikLink.href = getLokalOderGitURL(WEBSITE_URLS.statistikUrl, "statistik.html");
+  }
+
 
   // Geheimer Link-Mechanismus für 5 Klicks
   let tarnClick = 0, tarnTimeout = null;
@@ -46,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (tarnTimeout) clearTimeout(tarnTimeout);
       tarnTimeout = setTimeout(() => { tarnClick = 0; }, 3000);
       if (tarnClick === 5) {
-        window.location.href = getLokalOderGitURL(WEBSITE_URLS.kontostaendeUrl, "kontostaende.html");
+        window.location.href = getLokalOderGitURL(WEBSITE_URLS.kontostaendeUrl, "statistik.html?showStats=true");
       }
     });
   }

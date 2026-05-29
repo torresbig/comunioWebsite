@@ -204,7 +204,15 @@
       background-color: #f0f7ff;
   }
 
-  /* Neu: Zentrierung für Transfer- und Punktespalten */
+    /* Neu: Zentrierung für Transfer- und Punktespalten */
   .text-center {
       text-align: center;
+  }
+
+  /* Klasse für conditional anzuzeigende Inhalte (URL-Parameter showStats) */
+  .conditional-content {
+      display: none;
+  }
+  .conditional-content.show {
+      display: block;
   }
