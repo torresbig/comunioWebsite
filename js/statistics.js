@@ -131,16 +131,46 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
+        const userNameToId = {};
+        Object.values(userStats).forEach(user => {
+            if (user.name) userNameToId[user.name.toLowerCase()] = user.id;
+            if (user.loginName) userNameToId[user.loginName.toLowerCase()] = user.id;
+        });
+
+        const transferNameToId = {};
+        transfers.forEach(t => {
+            if (t.buyerId && typeof t.buyerId === 'string' && /^\d+$/.test(t.buyerId) && t.buyer) {
+                transferNameToId[t.buyer.toLowerCase()] = t.buyerId;
+            }
+            if (t.sellerId && typeof t.sellerId === 'string' && /^\d+$/.test(t.sellerId) && t.seller) {
+                transferNameToId[t.seller.toLowerCase()] = t.sellerId;
+            }
+        });
+
+        function resolveUserId(rawId, displayName) {
+            if (rawId && userStats[rawId]) return rawId;
+            if (typeof rawId === 'string' && /^\d+$/.test(rawId) && userStats[rawId]) return rawId;
+            if (displayName) {
+                const normalizedName = displayName.toLowerCase();
+                if (userNameToId[normalizedName]) return userNameToId[normalizedName];
+                if (transferNameToId[normalizedName]) return transferNameToId[normalizedName];
+            }
+            return rawId;
+        }
+
         // Transfers verarbeiten (Computer-Transfers zählen mit!)
         transfers.forEach(t => {
-            if (t.buyerId && t.buyerId !== "1" && userStats[t.buyerId]) {
-                userStats[t.buyerId].transfers++;
-                userStats[t.buyerId].ausgegeben += Number(t.price) || 0;
+            const normalizedBuyerId = resolveUserId(t.buyerId, t.buyer);
+            const normalizedSellerId = resolveUserId(t.sellerId, t.seller);
+
+            if (normalizedBuyerId && normalizedBuyerId !== "1" && userStats[normalizedBuyerId]) {
+                userStats[normalizedBuyerId].transfers++;
+                userStats[normalizedBuyerId].ausgegeben += Number(t.price) || 0;
             }
 
-            if (t.sellerId && t.sellerId !== "1" && userStats[t.sellerId]) {
-                userStats[t.sellerId].transfers++;
-                userStats[t.sellerId].eingenommen += Number(t.price) || 0;
+            if (normalizedSellerId && normalizedSellerId !== "1" && userStats[normalizedSellerId]) {
+                userStats[normalizedSellerId].transfers++;
+                userStats[normalizedSellerId].eingenommen += Number(t.price) || 0;
             }
         });
 
@@ -180,69 +210,97 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // === KORRIGIERT: Getradete Spieler finden ===
 
+        function parseGermanDate(dateString) {
+            if (!dateString) return 0;
+            const parts = dateString.split('.').map(part => Number(part));
+            if (parts.length !== 3 || parts.some(isNaN)) return 0;
+            return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+        }
+
         const tradedPlayers = {};
         let buyCount = 0;
         let sellCount = 0;
 
         transfers.forEach(t => {
             const playerId = t.playerId;
-            const buyerId = t.buyerId;
-            const sellerId = t.sellerId;
+            const rawBuyerId = t.buyerId;
+            const rawSellerId = t.sellerId;
+            const buyerId = resolveUserId(rawBuyerId, t.buyer);
+            const sellerId = resolveUserId(rawSellerId, t.seller);
             const playerName = t.playerName;
-            const price = t.price;
+            const price = Number(t.price) || 0;
+            const transferDate = t.date;
 
-            // Fall 1: Computer verkauft an User (sellerId === "1", buyerId !== "1")
             if (buyerId && buyerId !== "1" && sellerId === "1") {
-                if (!tradedPlayers[playerId]) {
-                    tradedPlayers[playerId] = {
-                        buy: null,
-                        sell: null,
-                        playerName: playerName
+                const key = `${playerId}_${buyerId}`;
+                if (!tradedPlayers[key]) {
+                    tradedPlayers[key] = {
+                        buys: [],
+                        sells: [],
+                        playerName,
+                        userId: buyerId
                     };
                 }
-                tradedPlayers[playerId].buy = t;
+                tradedPlayers[key].buys.push({ ...t, price, date: transferDate });
                 buyCount++;
-                //addDebug(`[DEBUG] Kauf gefunden: ${playerName} (${playerId}) von Computer an ${buyerId} für ${price}€`);
             }
 
-            // Fall 2: User verkauft an Computer (buyerId === "1", sellerId !== "1")
             if (sellerId && sellerId !== "1" && buyerId === "1") {
-                if (!tradedPlayers[playerId]) {
-                    tradedPlayers[playerId] = {
-                        buy: null,
-                        sell: null,
-                        playerName: playerName
+                const key = `${playerId}_${sellerId}`;
+                if (!tradedPlayers[key]) {
+                    tradedPlayers[key] = {
+                        buys: [],
+                        sells: [],
+                        playerName,
+                        userId: sellerId
                     };
                 }
-                tradedPlayers[playerId].sell = t;
+                tradedPlayers[key].sells.push({ ...t, price, date: transferDate });
                 sellCount++;
-                // addDebug(`[DEBUG] Verkauf gefunden: ${playerName} (${playerId}) von ${sellerId} an Computer für ${price}€`);
             }
         });
 
         addDebug(`[DEBUG] Käufe vom Computer: ${buyCount}, Verkäufe an Computer: ${sellCount}`);
         addDebug(`[DEBUG] Potenzielle getradete Spieler: ${Object.keys(tradedPlayers).length}`);
 
-        // Berechne Profit/Loss für getradete Spieler (NUR gleicher User)
         const transferResults = [];
         let completeCount = 0;
 
-        Object.values(tradedPlayers).forEach(t => {
-            if (t.buy && t.sell && t.buy.buyerId === t.sell.sellerId) {
-                const profit = Number(t.sell.price) - Number(t.buy.price);
-                transferResults.push({
-                    player: t.playerName,
-                    user: userStats[t.buy.buyerId]?.name || t.buy.buyer,
-                    buyPrice: Number(t.buy.price),
-                    sellPrice: Number(t.sell.price),
-                    profit: profit,
-                    buyDate: t.buy.date,
-                    sellDate: t.sell.date
-                });
-                completeCount++;
-                addDebug(`[DEBUG] Kompletter Trade: ${t.playerName} (User ${t.buy.buyerId}) - Gewinn: ${profit}€`);
-            } else if (t.buy && t.sell && t.buy.buyerId !== t.sell.sellerId) {
-                addDebug(`[DEBUG] Trade ignoriert (unterschiedliche User): ${t.playerName} - Kauf durch ${t.buy.buyerId} / Verkauf durch ${t.sell.sellerId}`);
+        Object.values(tradedPlayers).forEach(group => {
+            const buys = [...group.buys].sort((a, b) => parseGermanDate(a.date) - parseGermanDate(b.date));
+            const sells = [...group.sells].sort((a, b) => parseGermanDate(a.date) - parseGermanDate(b.date));
+            let buyIndex = 0;
+            let sellIndex = 0;
+
+            while (buyIndex < buys.length && sellIndex < sells.length) {
+                const buy = buys[buyIndex];
+                const sell = sells[sellIndex];
+                const buyTime = parseGermanDate(buy.date);
+                const sellTime = parseGermanDate(sell.date);
+
+                if (sellTime >= buyTime) {
+                    const profit = sell.price - buy.price;
+                    transferResults.push({
+                        player: group.playerName,
+                        user: userStats[group.userId]?.name || buy.buyer,
+                        buyPrice: buy.price,
+                        sellPrice: sell.price,
+                        profit,
+                        buyDate: buy.date,
+                        sellDate: sell.date
+                    });
+                    completeCount++;
+                    addDebug(`[DEBUG] Kompletter Trade: ${group.playerName} (User ${group.userId}) - Gewinn: ${profit}€`);
+                    buyIndex++;
+                    sellIndex++;
+                } else {
+                    addDebug(`[DEBUG] Verkauf vor Kauf ignoriert: ${group.playerName} (User ${group.userId}) - Verkauf ${sell.date} vor Kauf ${buy.date}`);
+                    sellIndex++;
+                }
+            }
+
+            if (buyIndex < buys.length || sellIndex < sells.length) {
+                addDebug(`[DEBUG] Unmatched transfers für ${group.playerName} (User ${group.userId}) - buys: ${buys.length}, sells: ${sells.length}`);
             }
         });
 
