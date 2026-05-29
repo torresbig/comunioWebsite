@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const linkUseruebersicht = document.getElementById('linkUseruebersicht');
   const linkPlayerDb = document.getElementById('linkPlayerDb');
   const linkTransferuebersicht = document.getElementById('linkTransferuebersicht')
+  const linkStatistik = document.getElementById('linkStatistik');
   if (linkIndex) {
     linkIndex.href = getLokalOderGitURL(WEBSITE_URLS.indexUrl, "index.html");
   }
@@ -35,8 +36,8 @@ document.addEventListener('DOMContentLoaded', function () {
     linkPlayerDb.href = getLokalOderGitURL(WEBSITE_URLS.playerDbUrl, "playerDb.html");
   }
 
-  if (statistikLink) {
-    statistikLink.href = getLokalOderGitURL(WEBSITE_URLS.statistikUrl, "statistik.html");
+  if (linkStatistik) {
+    linkStatistik.href = getLokalOderGitURL(WEBSITE_URLS.statistikUrl, "statistik.html");
   }
 
 
