@@ -132,41 +132,67 @@ async function renderNews(newsList) {
                             }
                         }
                         else if (art === 'VEREINSWECHSEL') {
-                            try {
-                                try {
-                                    const obj = JSON.parse(news.text);
-                                    const pid = obj.playerId || news.playerId || null;
-                                    text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${getClubName(obj.oldClub)}</b> zu <b>${getClubName(obj.newClub)}</b>`;
-                                } catch (jsonErr) {
-                                    const regex = /^Vereinswechsel:\s(.+?)\s\(/;
-                                    const match = regex.exec(news.text);
-                                    if (match) {
-                                        text = `Vereinswechsel: ${linkPlayer(news.playerId, match[1])}`;
-                                    } else {
-                                        text = news.text;
-                                    }
-                                }
-                            } catch (e) {
-                                addDebug('[renderNews] VEREINSWECHSEL Fehler: ' + e.message);
-                                text = news.text;
-                                errorCount++;
-                            }
-                        }
-                        else if (art === 'POSITIONSWECHSEL') {
-                            try {
-                                try {
-                                    const obj = JSON.parse(news.text);
-                                    const pid = obj.playerId || news.playerId || null;
-                                    text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${obj.oldPos}</b> zu <b>${obj.newPos}</b>`;
-                                } catch (e) {
-                                    text = news.text;
-                                }
-                            } catch (e) {
-                                addDebug('[renderNews] POSITIONSWECHSEL Fehler: ' + e.message);
-                                text = news.text;
-                                errorCount++;
-                            }
-                        }
+                                                    try {
+                                                        try {
+                                                            const obj = JSON.parse(news.text);
+                                                            // Skip if oldClub or newClub is UNBEKANNT/UNKNOWN
+                                                            const oldClub = (obj.oldClub || '').toString().toUpperCase();
+                                                            const newClub = (obj.newClub || '').toString().toUpperCase();
+                                                            if (oldClub === 'UNBEKANNT' || oldClub === 'UNKNOWN' || 
+                                                                newClub === 'UNBEKANNT' || newClub === 'UNKNOWN') {
+                                                                addDebug('[renderNews] VEREINSWECHSEL übersprungen (UNBEKANNT): ' + news.text);
+                                                                continue;
+                                                            }
+                                                            const pid = obj.playerId || news.playerId || null;
+                                                            text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${getClubName(obj.oldClub)}</b> zu <b>${getClubName(obj.newClub)}</b>`;
+                                                        } catch (jsonErr) {
+                                                            // Fallback: skip if text contains UNBEKANNT/UNKNOWN
+                                                            if (/UNBEKANNT|UNKNOWN/i.test(news.text)) {
+                                                                addDebug('[renderNews] VEREINSWECHSEL übersprungen (UNBEKANNT im Text): ' + news.text);
+                                                                continue;
+                                                            }
+                                                            const regex = /^Vereinswechsel:\s(.+?)\s\(/;
+                                                            const match = regex.exec(news.text);
+                                                            if (match) {
+                                                                text = `Vereinswechsel: ${linkPlayer(news.playerId, match[1])}`;
+                                                            } else {
+                                                                text = news.text;
+                                                            }
+                                                        }
+                                                    } catch (e) {
+                                                        addDebug('[renderNews] VEREINSWECHSEL Fehler: ' + e.message);
+                                                        text = news.text;
+                                                        errorCount++;
+                                                    }
+                                                }
+                                                else if (art === 'POSITIONSWECHSEL') {
+                                                    try {
+                                                        try {
+                                                            const obj = JSON.parse(news.text);
+                                                            // Skip if oldPos or newPos is UNBEKANNT/UNKNOWN
+                                                            const oldPos = (obj.oldPos || '').toString().toUpperCase();
+                                                            const newPos = (obj.newPos || '').toString().toUpperCase();
+                                                            if (oldPos === 'UNBEKANNT' || oldPos === 'UNKNOWN' || 
+                                                                newPos === 'UNBEKANNT' || newPos === 'UNKNOWN') {
+                                                                addDebug('[renderNews] POSITIONSWECHSEL übersprungen (UNBEKANNT): ' + news.text);
+                                                                continue;
+                                                            }
+                                                            const pid = obj.playerId || news.playerId || null;
+                                                            text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${obj.oldPos}</b> zu <b>${obj.newPos}</b>`;
+                                                        } catch (e) {
+                                                            // Fallback: skip if text contains UNBEKANNT/UNKNOWN
+                                                            if (/UNBEKANNT|UNKNOWN/i.test(news.text)) {
+                                                                addDebug('[renderNews] POSITIONSWECHSEL übersprungen (UNBEKANNT im Text): ' + news.text);
+                                                                continue;
+                                                            }
+                                                            text = news.text;
+                                                        }
+                                                    } catch (e) {
+                                                        addDebug('[renderNews] POSITIONSWECHSEL Fehler: ' + e.message);
+                                                        text = news.text;
+                                                        errorCount++;
+                                                    }
+                                                }
                         else if (art === 'NEW_PLAYER') {
                             try {
                                 const regex = /^Neuer Spieler:\s(.+?)\s\(ID: (\d+)\)$/;
