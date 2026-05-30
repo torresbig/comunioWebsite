@@ -10,6 +10,16 @@ function toggleNewsList() {
     }
 }
 
+// Toggle-Funktion für Rubriken (z.B. Vereinswechsel, Transfers, etc.)
+function toggleArtSection(headerEl) {
+    const collapsible = headerEl.closest('.news-art-collapsible');
+    if (!collapsible) return;
+    const content = collapsible.querySelector('.news-art-content');
+    if (!content) return;
+    collapsible.classList.toggle('collapsed');
+    content.classList.toggle('collapsed');
+}
+
 // Globale clubsMap für andere Skripte
 let clubsMap = new Map();
 
@@ -76,8 +86,16 @@ async function renderNews(newsList) {
 
             html += `<div class="news-day"><div class="news-date">${day.date}</div>`;
 
-            for (const art of Object.keys(grouped).sort()) {
-                html += `<div class="news-art">${art}</div><ul class="news-list-ul">`;
+                        for (const art of Object.keys(grouped).sort()) {
+                const defaultCollapsed = !(art === 'TRANSFER' || art === 'POSITIONSWECHSEL' || art === 'SPIELERSTATUS' || art === 'VEREINSWECHSEL');
+                const collapsedClass = defaultCollapsed ? ' collapsed' : '';
+                html += `<div class="news-art-collapsible${collapsedClass}">
+                    <div class="news-art-header" onclick="toggleArtSection(this)">
+                                                <span class="toggle-icon">▼</span>
+                        <span class="news-art-title">${art}</span>
+                    </div>
+                    <div class="news-art-content${collapsedClass}">
+                        <ul class="news-list-ul">`;
                 
                 for (const news of grouped[art]) {
                     let text = '';
@@ -86,7 +104,9 @@ async function renderNews(newsList) {
                             try {
                                 const obj = JSON.parse(news.text);
                                 const pid = obj.playerId || news.playerId || null;
-                                text = `${linkPlayer(pid, obj.playerName)} von <b style="color:#00f;">${obj.seller}</b> zu <b style="color:#00f;">${obj.buyer}</b> für <b>${obj.price.toLocaleString('de-DE')} €</b> (Marktwert: ${obj.playerValue.toLocaleString('de-DE')} €)`;
+                                const sellerLink = obj.seller === 'Computer' ? obj.seller : `<a href="${getUseruebersichtUrl(obj.seller)}" style="color:#00f; text-decoration:underline;">${obj.seller}</a>`;
+                                const buyerLink = obj.buyer === 'Computer' ? obj.buyer : `<a href="${getUseruebersichtUrl(obj.buyer)}" style="color:#00f; text-decoration:underline;">${obj.buyer}</a>`;
+                                text = `${linkPlayer(pid, obj.playerName)} von <b style="color:#00f;">${sellerLink}</b> zu <b style="color:#00f;">${buyerLink}</b> für <b>${obj.price.toLocaleString('de-DE')} €</b> (Marktwert: ${obj.playerValue.toLocaleString('de-DE')} €)`;
                             } catch (e) {
                                 addDebug('[renderNews] TRANSFER Parse-Fehler: ' + e.message);
                                 text = news.text;
@@ -96,7 +116,8 @@ async function renderNews(newsList) {
                         else if (art === 'USERPOINTS') {
                             try {
                                 const obj = JSON.parse(news.text);
-                                text = `<div class="player-entry"><b style="color:#00f;">${obj.userName}</b> - <span class="points">${obj.gamedayPoints} Pkt.</span> (Gesamt: ${obj.totalPoints} Pkt.)</div>`;
+                                const userLink = obj.userName === 'Computer' ? obj.userName : `<a href="${getUseruebersichtUrl(obj.userName)}" style="color:#00f; text-decoration:underline;">${obj.userName}</a>`;
+                                text = `<div class="player-entry"><b style="color:#00f;">${userLink}</b> - <span class="points">${obj.gamedayPoints} Pkt.</span> (Gesamt: ${obj.totalPoints} Pkt.)</div>`;
                             } catch (e) {
                                 addDebug('[renderNews] USERPOINTS Parse-Fehler: ' + e.message);
                                 text = news.text;
@@ -277,9 +298,9 @@ async function renderNews(newsList) {
                         errorCount++;
                     }
                     
-                    html += `<li class="news-list-li">${text}</li>`;
+                                        html += `<li class="news-list-li">${text}</li>`;
                 }
-                html += `</ul>`;
+                html += `</ul></div></div>`;
             }
             html += `</div>`;
         }
@@ -290,7 +311,7 @@ async function renderNews(newsList) {
             newsListDiv.style.display = '';
             addDebug('[renderNews] Erfolgreich gerendert mit ' + errorCount + ' Fehlern');
             
-            requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
                 elfContainersToUpdate.forEach(async (item) => {
                     const container = document.getElementById(item.containerId);
                     if (container) {
@@ -298,9 +319,10 @@ async function renderNews(newsList) {
                         for (let i = 0; i < item.players.length; i++) {
                             const ownerId = item.players[i].owner;
                             try {
-                                const ownerName = await getUserString(ownerId);
+                                // Besitzer-Name als Link zur Userübersicht rendern
+                                const linkHtml = await getUserLink(ownerId);
                                 if (ownerSpans[i]) {
-                                    ownerSpans[i].textContent = ownerName.trim();  // ← .trim() entfernt Leerzeichen!
+                                    ownerSpans[i].outerHTML = linkHtml;
                                 }
                             } catch (e) {
                                 addDebug('[renderNews] Fehler beim Laden von Owner ' + ownerId + ': ' + e);
@@ -321,6 +343,6 @@ async function renderNews(newsList) {
         const newsListDiv = document.getElementById('news-list');
         if (newsListDiv) {
             newsListDiv.innerHTML = '<div style="padding:16px; color:#e53935;">Fehler: ' + error.message + '</div>';
-        }
+    }
     }
 }

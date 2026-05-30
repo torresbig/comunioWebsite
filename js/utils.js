@@ -192,6 +192,45 @@ async function getUserString(userId) {
   }
 }
 
+/**
+ * Generiert die URL zur Userübersichtsseite mit dem Usernamen als Parameter.
+ * @param {string} username - Vorname des Users
+ * @returns {string} URL zur Userübersicht mit ?username=...&withMenue=true/false
+ */
+function getUseruebersichtUrl(username) {
+  if (!username) return '';
+  // Falls der Name Leerzeichen enthält, nimm nur den ersten Teil (Vorname)
+  const firstName = username.split(' ')[0];
+  let baseUrl;
+  if (typeof ACTIVE_WEBSITE_URLS !== 'undefined' && ACTIVE_WEBSITE_URLS.useruebersichtUrl) {
+    baseUrl = ACTIVE_WEBSITE_URLS.useruebersichtUrl;
+  } else if (typeof WEBSITE_URLS !== 'undefined' && WEBSITE_URLS.useruebersichtUrl) {
+    baseUrl = WEBSITE_URLS.useruebersichtUrl;
+  } else {
+    baseUrl = 'useruebersicht.html';
+  }
+  const currentParams = new URLSearchParams(window.location.search);
+  const withMenue = currentParams.get('withMenue') !== 'false';
+  return `${baseUrl}?username=${encodeURIComponent(firstName)}&withMenue=${withMenue}`;
+}
+
+/**
+ * Erzeugt einen anklickbaren Link zur Userübersicht für eine userId.
+ * @param {string|number} userId
+ * @returns {Promise<string>} HTML-Link oder nur Name bei Computer
+ */
+async function getUserLink(userId) {
+  if (!userId || userId == 1) {
+    const name = await getUserString(userId);
+    return name || 'Computer';
+  }
+  const name = await getUserString(userId);
+  if (!name) return `Unbekannt (${userId})`;
+  const firstName = name.split(' ')[0];
+  const url = getUseruebersichtUrl(firstName);
+  return `<a href="${url}" style="color:#00c; text-decoration:underline;">${name.trim()}</a>`;
+}
+
 // Cache / Promise für Points-DB
 let pointsDbCache = null;
 let pointsDbPromise = null;

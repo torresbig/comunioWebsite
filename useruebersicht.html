@@ -581,16 +581,16 @@
                         <td>${playerCell}</td>
                         <td data-sort="${e.type}">${e.type}</td>
                         <td data-sort="${e.price}">€${e.price.toLocaleString('de-DE')}</td>
-                        <td data-sort="${e.partner?.toLowerCase() || ''}">${e.partner}</td>
-                    `;
-          } else {
-            tr.innerHTML = `
-                        <td data-sort="${formatDateForSort(e.date)}">${e.date}</td>
-                        <td>${playerCell}</td>
-                        <td data-sort="${e.price}">€${e.price.toLocaleString('de-DE')}</td>
-                        <td data-sort="${e.partner?.toLowerCase() || ''}">${e.partner}</td>
-                    `;
-          }
+                        <td data-sort="${e.partner?.toLowerCase() || ''}">${e.partner === 'Computer' ? e.partner : `<a href="${getUseruebersichtUrl(e.partner)}" style="color:#00c; text-decoration:underline;">${e.partner}</a>`}</td>
+                                            `;
+                                  } else {
+                                    tr.innerHTML = `
+                                                <td data-sort="${formatDateForSort(e.date)}">${e.date}</td>
+                                                <td>${playerCell}</td>
+                                                <td data-sort="${e.price}">€${e.price.toLocaleString('de-DE')}</td>
+                                                <td data-sort="${e.partner?.toLowerCase() || ''}">${e.partner === 'Computer' ? e.partner : `<a href="${getUseruebersichtUrl(e.partner)}" style="color:#00c; text-decoration:underline;">${e.partner}</a>`}</td>
+                                            `;
+                                  }
           tbody.appendChild(tr);
         });
 
