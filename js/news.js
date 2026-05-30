@@ -10,7 +10,6 @@ function toggleNewsList() {
     }
 }
 
-
 // Globale clubsMap für andere Skripte
 let clubsMap = new Map();
 
