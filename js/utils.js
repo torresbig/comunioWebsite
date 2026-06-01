@@ -85,6 +85,9 @@ function getLogoFileName(clubId) {
     "110": "heidenheim",
     "25": "stpauli",
     "4": "hamburg",
+    "81": "paderborn",
+    "10": "schalke",
+    "118": "elversberg",
   };
   return (mapping[clubId] || "unbestimmt") + ".png";
 }
