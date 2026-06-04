@@ -74,8 +74,13 @@ function displayRivals(player, allPlayers) {
             <tbody>
         `;
         rivals.forEach(rival => {
-            const statusData = rival.data.status || {};
-            const statusTooltip = `${getStatusDisplayName(statusData.status)}${statusData.grund ? ' - ' + statusData.grund : ''}${statusData.seit ? ' seit ' + statusData.seit : ''}`;
+            const injuryStatusObj = (window.injuriesMap && window.injuriesMap.get(String(rival.id))) || {};
+            const statusData = injuryStatusObj;
+            const statusParts = [getStatusDisplayName(statusData.status)];
+            if (statusData.grund) statusParts.push(statusData.grund);
+            if (statusData.seit) statusParts.push('seit ' + statusData.seit);
+            if (statusData.bis && statusData.bis !== 'unbekannt' && statusData.bis !== '' && statusData.bis !== null) statusParts.push('bis ' + statusData.bis);
+            const statusTooltip = statusParts.join(' | ');
             const ownerName = globalOwnersMap.get(rival.id) || "Computer";
             const playerUrl = getPlayerUrlWithParams(rival.id);
             const rankingObj = getLigainsiderRankingObj(rival);

@@ -30,7 +30,9 @@ function renderTable(players) {
         // const positionHtml = `<span title="${nebenpositionenTooltip}">${player.position || "Unbekannt"}</span>`;
 
 
-        const status = player.data?.status?.status || 'AKTIV';
+        // Status aus injuriesMap statt aus player.data
+        const injuryStatus = window.injuriesMap?.get(String(player.id));
+        const status = injuryStatus?.status || 'AKTIV';
         let statusClass = "";
         if (status.includes("AKTIV")) statusClass = "status-aktiv";
         else if (status.includes("VERLETZT")) statusClass = "status-verletzt";

@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     addDebug('DOM geladen - starte Initialisierung', 'info');
 
     await loadOwnersData();
+    await loadInjuriesMap();
     initTabs();
 
 
@@ -160,26 +161,45 @@ document.addEventListener('DOMContentLoaded', async () => {
             addDebug('Element fehlt: clubLogo', 'error');
         }
 
-        const statusData = player.data?.status || {};
-        const statusIndicator = document.getElementById('statusIndicator');
-        const statusInfoRow = document.querySelector('.info-row:has(#detailStatusInfo)');
-        let statusTooltip = "";
-
-        if (statusIndicator) {
-            statusIndicator.textContent = getStatusIndicator(statusData.status);
-            statusTooltip = `${getStatusDisplayName(statusData.status)}${statusData.grund ? ' - ' + statusData.grund : ''}${statusData.seit ? ' seit ' + statusData.seit : ''}`;
-            statusIndicator.title = statusTooltip;
-
-            // Zeige/Verstecke die Status-Info Zeile
-            if (statusInfoRow) {
-                statusInfoRow.style.display = statusData.status === 'AKTIV' ? 'none' : '';
-                if (statusData.status !== 'AKTIV') {
-                    document.getElementById('detailStatusInfo').textContent = statusTooltip;
+                const injuryStatusObj = (window.injuriesMap && window.injuriesMap.get(String(player.id))) || {};
+                const statusData = injuryStatusObj;
+                // Fallback auf AKTIV, falls kein Status vorhanden/leer/unbekannt
+                if (!statusData.status || statusData.status === 'unbekannt' || statusData.status === '' || statusData.status === null || statusData.status === undefined) {
+                    statusData.status = 'AKTIV';
                 }
-            }
-        } else {
-            addDebug('Element fehlt: statusIndicator', 'error');
-        }
+                const statusIndicator = document.getElementById('statusIndicator');
+                let statusTooltip = "";
+
+                if (statusIndicator) {
+                    const emoji = getStatusIndicator(statusData.status);
+                    statusIndicator.textContent = emoji;
+
+                    if (statusData.status === 'AKTIV') {
+                        statusIndicator.title = 'Aktiv';
+                    } else {
+                        // Nur befüllte Felder in den Tooltip
+                        const parts = [getStatusDisplayName(statusData.status)];
+                        if (statusData.grund) parts.push(statusData.grund);
+                        if (statusData.seit) parts.push('seit ' + statusData.seit);
+                        if (statusData.bis && statusData.bis !== 'unbekannt' && statusData.bis !== '' && statusData.bis !== null) parts.push('bis ' + statusData.bis);
+                        statusTooltip = parts.join(' | ');
+                        statusIndicator.title = statusTooltip;
+                    }
+                } else {
+                    addDebug('Element fehlt: statusIndicator', 'error');
+                }
+
+                // Einzelne Status-Zeilen setzen (grund, seit, bis) – jede Zeile separat ein-/ausblenden
+                function setStatusRow(rowId, valueId, value) {
+                    const row = document.getElementById(rowId);
+                    const valEl = document.getElementById(valueId);
+                    const isNotEmpty = value && value !== 'unbekannt' && value !== '' && value !== null && value !== undefined;
+                    if (row) row.style.display = isNotEmpty ? '' : 'none';
+                    if (valEl) valEl.textContent = isNotEmpty ? value : '-';
+                }
+                setStatusRow('rowDetailStatusGrund', 'detailStatusGrund', statusData.grund);
+                setStatusRow('rowDetailStatusSeit', 'detailStatusSeit', statusData.seit);
+                setStatusRow('rowDetailStatusBis', 'detailStatusBis', statusData.bis);
 
         const spielerDaten = player.data?.spielerDaten || {};
         const hatNebenpositionen = spielerDaten.nebenpositionen && spielerDaten.nebenpositionen.length > 0;
@@ -208,16 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         safeSet('playerOwnerName', 'textContent', globalOwnersMap.get(player.id) || 'Computer');
 
 
-        safeSet('detailStatus', 'textContent', getStatusDisplayName(statusData.status));
-        if (statusData.status === 'AKTIV' || statusData.status === "aktiv") {
-            statusTooltip = 'Aktiv';
-        } else {
-            if (statusData.grund !== undefined && statusData.grund !== '') {
-                statusTooltip += ' - ' + statusData.grund;
-            }
-
-        }
-        safeSet('detailStatusInfo', 'textContent', statusTooltip);
+                safeSet('detailStatus', 'textContent', getStatusDisplayName(statusData.status));
         const stats = player.data?.stats || {};
         safeSet('gamesPlayed', 'textContent', stats.playedGames || '-');
         safeSet('goals', 'textContent', stats.totalGoals || '-');

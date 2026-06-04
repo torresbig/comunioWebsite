@@ -287,6 +287,49 @@ async function getPlayerSpieltagspunkte(playerId) {
     addDebug('Fehler beim Laden der Points-DB: ' + (err.message || err), 'error');
     return [];
   } finally {
-    pointsDbPromise = null;
+      pointsDbPromise = null;
+    }
   }
-}
+
+  // Cache / Promise für Injuries-DB
+  let injuriesDbCache = null;
+  let injuriesDbPromise = null;
+
+  /**
+   * Lädt die InjuriesDB und cached sie als Map (playerId -> status-Objekt).
+   * Speichert das Ergebnis in window.injuriesMap für globalen Zugriff.
+   * Gibt die Map zurück.
+   */
+  async function loadInjuriesMap() {
+    try {
+      if (injuriesDbPromise) await injuriesDbPromise;
+    
+      if (injuriesDbCache) {
+        window.injuriesMap = injuriesDbCache;
+        return injuriesDbCache;
+      }
+    
+      injuriesDbPromise = fetchJSON(DATA_URLS.injuries);
+      const data = await injuriesDbPromise;
+    
+      injuriesDbCache = new Map();
+      // InjuriesDB ist ein Objekt {playerId: {status, grund, ...}}
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        Object.entries(data).forEach(([playerId, statusData]) => {
+          if (statusData && statusData.status) {
+            injuriesDbCache.set(String(playerId), statusData);
+          }
+        });
+        addDebug(`InjuriesDB geladen: ${injuriesDbCache.size} Einträge`);
+      }
+    
+      window.injuriesMap = injuriesDbCache;
+      return injuriesDbCache;
+    } catch (err) {
+      addDebug('Fehler beim Laden der Injuries-DB: ' + (err.message || err), 'error');
+      window.injuriesMap = new Map();
+      return window.injuriesMap;
+    } finally {
+      injuriesDbPromise = null;
+    }
+  }

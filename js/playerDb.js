@@ -3,7 +3,8 @@ let clubsMap = new Map();
 let ownersMap = new Map();
 let filteredPlayers = [];
 let lastUpdateTime = null;
-
+// Globale Map für Spieler-Status aus injuriesDB
+window.injuriesMap = new Map();
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -55,12 +56,14 @@ async function loadData() {
                     Clubs: ${DATA_URLS.clubs}
                     Players: ${DATA_URLS.players}
                     Users: ${DATA_URLS.users}
-                    PlayerToUser: ${DATA_URLS.playerToUser}`);
-        const [clubsData, playersData, usersData, playerToUserMap] = await Promise.all([
+                    PlayerToUser: ${DATA_URLS.playerToUser}
+                    Injuries: ${DATA_URLS.injuries}`);
+        const [clubsData, playersData, usersData, playerToUserMap, injuriesData] = await Promise.all([
             fetchJSON(DATA_URLS.clubs),
             fetchJSON(DATA_URLS.players),
             fetchJSON(DATA_URLS.users),
-            fetchJSON(DATA_URLS.playerToUser)
+            fetchJSON(DATA_URLS.playerToUser),
+            fetchJSON(DATA_URLS.injuries)
             
         ]);
 
@@ -69,8 +72,9 @@ async function loadData() {
                     Clubs: ${clubsData.length}
                     Players: ${playersData.length}
                     Users: ${usersData.length}
-                    PlayerToUser: ${playerToUserMap.length}`);
-        processData(clubsData, playersData, usersData, playerToUserMap);
+                                        PlayerToUser: ${playerToUserMap.length}
+                    Injuries: ${typeof injuriesData === 'object' && !Array.isArray(injuriesData) ? Object.keys(injuriesData).length : 0}`);
+        processData(clubsData, playersData, usersData, playerToUserMap, injuriesData);
         // newsList.lastUpdate beispiel: "31.10.2025 16:34"
         hideLoading();
         showContent();
@@ -86,7 +90,7 @@ async function loadData() {
 
 
 
-function processData(clubsData, playersData) {
+function processData(clubsData, playersData, usersData, playerToUserMap, injuriesData) {
     addDebug("Starte Datenverarbeitung...");
     clubsMap = new Map();
     clubsData.forEach(club => {
@@ -104,7 +108,21 @@ function processData(clubsData, playersData) {
 
     addDebug(`Besitzerzuordnungen: ${ownersMap.size}`);
 
-    initClubFilter();
+        // InjuriesDB in Map umwandeln (playerId -> status-Objekt)
+                window.injuriesMap = new Map();
+        // InjuriesDB ist ein Objekt {playerId: {status, grund, ...}}
+        if (injuriesData && typeof injuriesData === 'object' && !Array.isArray(injuriesData)) {
+            Object.entries(injuriesData).forEach(([playerId, statusData]) => {
+                if (statusData && statusData.status) {
+                    window.injuriesMap.set(String(playerId), statusData);
+                }
+            });
+            addDebug(`InjuriesDB verarbeitet: ${window.injuriesMap.size} Einträge`);
+        } else {
+            addDebug("InjuriesData ist kein Objekt oder leer!", "warn");
+        }
+
+        initClubFilter();
     initOwnerFilter();
     addDebug("Datenverarbeitung abgeschlossen.");
 }
@@ -177,7 +195,9 @@ function applyFilters() {
             if (clubName !== clubFilter) return false;
         }
         if (positionFilter && player.position !== positionFilter) return false;
-        const statusValue = player.data?.status?.status || '';
+        // Status aus injuriesMap statt aus player.data
+        const injuryStatus = window.injuriesMap.get(String(player.id));
+        const statusValue = injuryStatus?.status || '';
         if (statusFilter && !statusValue.includes(statusFilter)) return false;
         const owner = ownersMap.get(player.id) || 'Kein Besitzer';
         if (ownerFilter === "Kein Besitzer" && owner !== 'Kein Besitzer') return false;
