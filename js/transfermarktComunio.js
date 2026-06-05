@@ -8,6 +8,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         addDebug("Seite geladen, lade Besitzerdaten...");
         await loadOwnersData();  // Besitzer laden, füllt globalOwnersMap
 
+        addDebug("Besitzerdaten geladen, lade InjuriesMap...");
+        await loadInjuriesMap();
+        addDebug(`InjuriesMap geladen: ${window.injuriesMap?.size || 0} Einträge`);
+
         addDebug("Besitzerdaten geladen, lade Transfermarkt-Daten...");
         await loadTransferMarktData();
     } catch (error) {
@@ -24,14 +28,14 @@ async function loadTransferMarktData() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
-        addDebug(`${data.length} Einträge geladen`);
+                addDebug(`${data.length} Einträge geladen`);
 
-        ownersMap = window.globalOwnersMap || new Map();
-        originalData = data; // Rohdaten merken
-        renderTable(sortedData());
+                ownersMap = window.globalOwnersMap || new Map();
+                originalData = data; // Rohdaten merken
+                renderTable(sortedData());
 
-        hideLoading();
-        showContent();
+                hideLoading();
+                showContent();
 
         // Sortier-Events nur einmal nach dem Laden setzen!
         initSortEvents();
@@ -97,17 +101,40 @@ function renderTable(data) {
         playerInfo.appendChild(playerId);
         playerCell.appendChild(playerInfo);
 
-        // Status
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Status - aus injuriesMap (falls vorhanden), sonst aus item.status
         const statusCell = document.createElement('td');
         statusCell.className = 'status-logo';
         const statusWrapper = document.createElement('div');
         statusWrapper.style.display = 'flex';
         statusWrapper.style.flexDirection = 'column';
         statusWrapper.style.alignItems = 'center';
+
+                // Status aus injuriesMap ermitteln
+        const injuryStatusData = window.injuriesMap?.get(String(item.playerID)) || {};
+        let statusValue = injuryStatusData?.status || item.status || null;
+        // Fallback auf AKTIV, falls kein Status vorhanden/leer/unbekannt (wie in playerDisplayInfos.js)
+        if (!statusValue || statusValue.toLowerCase() === 'unbekannt' || statusValue === '' || statusValue === null || statusValue === undefined) {
+            statusValue = 'AKTIV';
+        }
+
         const statusIcon = document.createElement('div');
-        statusIcon.textContent = getStatusIndicator(item.status);
+        statusIcon.textContent = getStatusIndicator(statusValue) || '❓';
         const statusText = document.createElement('small');
-        statusText.textContent = item.status;
+        statusText.textContent = getStatusDisplayName(statusValue) || 'Aktiv';
         statusWrapper.appendChild(statusIcon);
         statusWrapper.appendChild(statusText);
         statusCell.appendChild(statusWrapper);
@@ -201,7 +228,13 @@ function sortedData() {
         switch (sortColumnIndex) {
             case 0: return cmpStr(a.verein, b.verein);
             case 1: return cmpStr(a.playerName, b.playerName);
-            case 2: return cmpStr(a.status, b.status);
+
+            case 2: {
+                // Status aus injuriesMap (bevorzugt) oder item.status
+                const statusA = window.injuriesMap?.get(String(a.playerID))?.status || a.status || '';
+                const statusB = window.injuriesMap?.get(String(b.playerID))?.status || b.status || '';
+                return cmpStr(statusA, statusB);
+            }
             case 3: return cmpStr(a.position, b.position);
             case 4: return cmpNum(a.punkte, b.punkte);
             case 5: return cmpNum(a.wert, b.wert);
