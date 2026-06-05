@@ -53,20 +53,20 @@ async function renderNews(newsList) {
             await loadClubsData();
         }
 
-        
+
         addDebug('[renderNews] Start mit ' + newsList.length + ' Tagen');
-        
+
         // Nach Datum absteigend sortieren
         newsList.sort((a, b) => {
             const da = a.date.split('.').reverse().join('-');
             const db = b.date.split('.').reverse().join('-');
             return new Date(db) - new Date(da);
         });
-        
+
         let html = '';
         let errorCount = 0;
         let elfContainersToUpdate = [];
-        
+
         for (const day of newsList) {
             const newsForDisplay = day.news.filter(n => n.art !== 'OWNERCHANGE' && n.art !== 'UNBESTIMMT');
 
@@ -86,7 +86,7 @@ async function renderNews(newsList) {
 
             html += `<div class="news-day"><div class="news-date">${day.date}</div>`;
 
-                        for (const art of Object.keys(grouped).sort()) {
+            for (const art of Object.keys(grouped).sort()) {
                 const defaultCollapsed = !(art === 'TRANSFER' || art === 'POSITIONSWECHSEL' || art === 'SPIELERSTATUS' || art === 'VEREINSWECHSEL');
                 const collapsedClass = defaultCollapsed ? ' collapsed' : '';
                 html += `<div class="news-art-collapsible${collapsedClass}">
@@ -96,7 +96,7 @@ async function renderNews(newsList) {
                     </div>
                     <div class="news-art-content${collapsedClass}">
                         <ul class="news-list-ul">`;
-                
+
                 for (const news of grouped[art]) {
                     let text = '';
                     try {
@@ -153,67 +153,79 @@ async function renderNews(newsList) {
                             }
                         }
                         else if (art === 'VEREINSWECHSEL') {
-                                                    try {
-                                                        try {
-                                                            const obj = JSON.parse(news.text);
-                                                            // Skip if oldClub or newClub is UNBEKANNT/UNKNOWN
-                                                            const oldClub = (obj.oldClub || '').toString().toUpperCase();
-                                                            const newClub = (obj.newClub || '').toString().toUpperCase();
-                                                            if (oldClub === 'UNBEKANNT' || oldClub === 'UNKNOWN' || 
-                                                                newClub === 'UNBEKANNT' || newClub === 'UNKNOWN') {
-                                                                addDebug('[renderNews] VEREINSWECHSEL übersprungen (UNBEKANNT): ' + news.text);
-                                                                continue;
-                                                            }
-                                                            const pid = obj.playerId || news.playerId || null;
-                                                            text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${getClubName(obj.oldClub)}</b> zu <b>${getClubName(obj.newClub)}</b>`;
-                                                        } catch (jsonErr) {
-                                                            // Fallback: skip if text contains UNBEKANNT/UNKNOWN
-                                                            if (/UNBEKANNT|UNKNOWN/i.test(news.text)) {
-                                                                addDebug('[renderNews] VEREINSWECHSEL übersprungen (UNBEKANNT im Text): ' + news.text);
-                                                                continue;
-                                                            }
-                                                            const regex = /^Vereinswechsel:\s(.+?)\s\(/;
-                                                            const match = regex.exec(news.text);
-                                                            if (match) {
-                                                                text = `Vereinswechsel: ${linkPlayer(news.playerId, match[1])}`;
-                                                            } else {
-                                                                text = news.text;
-                                                            }
-                                                        }
-                                                    } catch (e) {
-                                                        addDebug('[renderNews] VEREINSWECHSEL Fehler: ' + e.message);
-                                                        text = news.text;
-                                                        errorCount++;
-                                                    }
-                                                }
-                                                else if (art === 'POSITIONSWECHSEL') {
-                                                    try {
-                                                        try {
-                                                            const obj = JSON.parse(news.text);
-                                                            // Skip if oldPos or newPos is UNBEKANNT/UNKNOWN
-                                                            const oldPos = (obj.oldPos || '').toString().toUpperCase();
-                                                            const newPos = (obj.newPos || '').toString().toUpperCase();
-                                                            if (oldPos === 'UNBEKANNT' || oldPos === 'UNKNOWN' || 
-                                                                newPos === 'UNBEKANNT' || newPos === 'UNKNOWN') {
-                                                                addDebug('[renderNews] POSITIONSWECHSEL übersprungen (UNBEKANNT): ' + news.text);
-                                                                continue;
-                                                            }
-                                                            const pid = obj.playerId || news.playerId || null;
-                                                            text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${obj.oldPos}</b> zu <b>${obj.newPos}</b>`;
-                                                        } catch (e) {
-                                                            // Fallback: skip if text contains UNBEKANNT/UNKNOWN
-                                                            if (/UNBEKANNT|UNKNOWN/i.test(news.text)) {
-                                                                addDebug('[renderNews] POSITIONSWECHSEL übersprungen (UNBEKANNT im Text): ' + news.text);
-                                                                continue;
-                                                            }
-                                                            text = news.text;
-                                                        }
-                                                    } catch (e) {
-                                                        addDebug('[renderNews] POSITIONSWECHSEL Fehler: ' + e.message);
-                                                        text = news.text;
-                                                        errorCount++;
-                                                    }
-                                                }
+                            try {
+                                try {
+                                    const obj = JSON.parse(news.text);
+                                    // Skip if oldClub or newClub is UNBEKANNT/UNKNOWN
+                                    const oldClub = (obj.oldClub || '').toString().toUpperCase();
+                                    const newClub = (obj.newClub || '').toString().toUpperCase();
+                                    if (oldClub === 'UNBEKANNT' || oldClub === 'UNKNOWN' ||
+                                        newClub === 'UNBEKANNT' || newClub === 'UNKNOWN') {
+                                        addDebug('[renderNews] VEREINSWECHSEL übersprungen (UNBEKANNT): ' + news.text);
+                                        continue;
+                                    }
+                                    const pid = obj.playerId || news.playerId || null;
+                                    if (oldClub === "0" && newClub === "0") {
+                                        text = `${linkPlayer(pid, obj.playerName)} wechselt außerhalb der Bundesliga`;
+                                    } else if (oldClub === "0") {
+                                        text = `${linkPlayer(pid, obj.playerName)} wechselt zu <b>${getClubName(obj.newClub)}</b>`;
+                                    } else if (newClub === "0") {
+                                        text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${getClubName(obj.oldClub)}</b> zu einem Nicht-Bundesligisten`;
+                                    } else {
+                                        text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${getClubName(obj.oldClub)}</b> zu <b>${getClubName(obj.newClub)}</b>`;
+                                    }
+
+                                    
+                                } catch (jsonErr) {
+                                    // Fallback: skip if text contains UNBEKANNT/UNKNOWN
+                                    if (/UNBEKANNT|UNKNOWN/i.test(news.text)) {
+                                        addDebug('[renderNews] VEREINSWECHSEL übersprungen (UNBEKANNT im Text): ' + news.text);
+                                        continue;
+                                    }
+                                    const regex = /^Vereinswechsel:\s(.+?)\s\(/;
+                                    const match = regex.exec(news.text);
+                                    if (match) {
+
+                                        text = `Vereinswechsel: ${linkPlayer(news.playerId, match[1])}`;
+
+                                    } else {
+                                        text = news.text;
+                                    }
+                                }
+                            } catch (e) {
+                                addDebug('[renderNews] VEREINSWECHSEL Fehler: ' + e.message);
+                                text = news.text;
+                                errorCount++;
+                            }
+                        }
+                        else if (art === 'POSITIONSWECHSEL') {
+                            try {
+                                try {
+                                    const obj = JSON.parse(news.text);
+                                    // Skip if oldPos or newPos is UNBEKANNT/UNKNOWN
+                                    const oldPos = (obj.oldPos || '').toString().toUpperCase();
+                                    const newPos = (obj.newPos || '').toString().toUpperCase();
+                                    if (oldPos === 'UNBEKANNT' || oldPos === 'UNKNOWN' ||
+                                        newPos === 'UNBEKANNT' || newPos === 'UNKNOWN') {
+                                        addDebug('[renderNews] POSITIONSWECHSEL übersprungen (UNBEKANNT): ' + news.text);
+                                        continue;
+                                    }
+                                    const pid = obj.playerId || news.playerId || null;
+                                    text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${obj.oldPos}</b> zu <b>${obj.newPos}</b>`;
+                                } catch (e) {
+                                    // Fallback: skip if text contains UNBEKANNT/UNKNOWN
+                                    if (/UNBEKANNT|UNKNOWN/i.test(news.text)) {
+                                        addDebug('[renderNews] POSITIONSWECHSEL übersprungen (UNBEKANNT im Text): ' + news.text);
+                                        continue;
+                                    }
+                                    text = news.text;
+                                }
+                            } catch (e) {
+                                addDebug('[renderNews] POSITIONSWECHSEL Fehler: ' + e.message);
+                                text = news.text;
+                                errorCount++;
+                            }
+                        }
                         else if (art === 'NEW_PLAYER') {
                             try {
                                 const regex = /^Neuer Spieler:\s(.+?)\s\(ID: (\d+)\)$/;
@@ -276,7 +288,7 @@ async function renderNews(newsList) {
                                     </div>`;
                                 });
                                 text += '</div></div>';
-                                
+
                                 elfContainersToUpdate.push({
                                     containerId: containerId,
                                     players: players
@@ -297,21 +309,21 @@ async function renderNews(newsList) {
                         text = news.text;
                         errorCount++;
                     }
-                    
-                                        html += `<li class="news-list-li">${text}</li>`;
+
+                    html += `<li class="news-list-li">${text}</li>`;
                 }
                 html += `</ul></div></div>`;
             }
             html += `</div>`;
         }
-        
+
         const newsListDiv = document.getElementById('news-list');
         if (newsListDiv) {
             newsListDiv.innerHTML = html || '<div style="padding:16px; color:#888;">Keine News vorhanden.</div>';
             newsListDiv.style.display = '';
             addDebug('[renderNews] Erfolgreich gerendert mit ' + errorCount + ' Fehlern');
-            
-                        requestAnimationFrame(() => {
+
+            requestAnimationFrame(() => {
                 elfContainersToUpdate.forEach(async (item) => {
                     const container = document.getElementById(item.containerId);
                     if (container) {
@@ -337,12 +349,12 @@ async function renderNews(newsList) {
         } else {
             addDebug('[renderNews] FEHLER: news-list nicht gefunden!');
         }
-        
+
     } catch (error) {
         addDebug('[renderNews] Kritischer Fehler: ' + error.message);
         const newsListDiv = document.getElementById('news-list');
         if (newsListDiv) {
             newsListDiv.innerHTML = '<div style="padding:16px; color:#e53935;">Fehler: ' + error.message + '</div>';
-    }
+        }
     }
 }
