@@ -165,11 +165,11 @@ async function renderNews(newsList) {
                                         continue;
                                     }
                                     const pid = obj.playerId || news.playerId || null;
-                                    if (oldClub === "0" && newClub === "0") {
+                                    if ((oldClub === "0" && newClub === "0") || (oldClub === 'UNBEKANNT' && newClub === 'UNBEKANNT')) {
                                         text = `${linkPlayer(pid, obj.playerName)} wechselt außerhalb der Bundesliga`;
-                                    } else if (oldClub === "0") {
+                                    } else if (oldClub === "0" || oldClub === 'UNBEKANNT') {
                                         text = `${linkPlayer(pid, obj.playerName)} wechselt zu <b>${getClubName(obj.newClub)}</b>`;
-                                    } else if (newClub === "0") {
+                                    } else if (newClub === "0" || newClub === 'UNBEKANNT') {
                                         text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${getClubName(obj.oldClub)}</b> zu einem Nicht-Bundesligisten`;
                                     } else {
                                         text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${getClubName(obj.oldClub)}</b> zu <b>${getClubName(obj.newClub)}</b>`;
@@ -177,11 +177,6 @@ async function renderNews(newsList) {
 
                                     
                                 } catch (jsonErr) {
-                                    // Fallback: skip if text contains UNBEKANNT/UNKNOWN
-                                    if (/UNBEKANNT|UNKNOWN/i.test(news.text)) {
-                                        addDebug('[renderNews] VEREINSWECHSEL übersprungen (UNBEKANNT im Text): ' + news.text);
-                                        continue;
-                                    }
                                     const regex = /^Vereinswechsel:\s(.+?)\s\(/;
                                     const match = regex.exec(news.text);
                                     if (match) {
