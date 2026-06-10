@@ -85,7 +85,7 @@ function displayRivals(player, allPlayers) {
             const playerUrl = getPlayerUrlWithParams(rival.id);
             const rankingObj = getLigainsiderRankingObj(rival);
             const ligRank = (rankingObj && rankingObj.rang !== undefined && rankingObj.rang !== null && rankingObj.rang !== 0 && rankingObj.rang !== '') ? rankingObj.rang : '-';
-            const status = statusData.status || 'unbekannt';
+            const status = statusData.status || 'AKTIV';
             // Marktwert als reine Zahl für Sortierung
             const marktwertNum = typeof rival.data?.wert === 'number' ? rival.data.wert : 0;
 
