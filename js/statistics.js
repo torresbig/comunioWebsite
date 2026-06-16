@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const userStats = {};
 
         users.forEach(user => {
-            if (user.user && user.user.id && user.user.id !== "1") {
+            if (user.user && user.user.id && user.user.id !== "1" && user.user.id !== "0") {
                 userStats[user.user.id] = {
                     id: user.user.id,
                     name: user.user.name,
@@ -173,12 +173,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const normalizedBuyerId = resolveUserId(t.buyerId, t.buyer);
             const normalizedSellerId = resolveUserId(t.sellerId, t.seller);
 
-            if (normalizedBuyerId && normalizedBuyerId !== "1" && userStats[normalizedBuyerId]) {
+            if (normalizedBuyerId && normalizedBuyerId !== "1" && normalizedBuyerId !== "0" && userStats[normalizedBuyerId]) {
                 userStats[normalizedBuyerId].transfers++;
                 userStats[normalizedBuyerId].ausgegeben += Number(t.price) || 0;
             }
 
-            if (normalizedSellerId && normalizedSellerId !== "1" && userStats[normalizedSellerId]) {
+            if (normalizedSellerId && normalizedSellerId !== "1" && normalizedSellerId !== "0" && userStats[normalizedSellerId]) {
                 userStats[normalizedSellerId].transfers++;
                 userStats[normalizedSellerId].eingenommen += Number(t.price) || 0;
             }
@@ -231,47 +231,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         let buyCount = 0;
         let sellCount = 0;
 
+        // Hilfsfunktion zur Erkennung des Computers
+        function isComputer(id, name) {
+            return id === "1" || id === "0" || id === 1 || id === 0 || 
+                   (name && name.toLowerCase() === 'computer');
+        }
+
         transfers.forEach(t => {
             const playerId = t.playerId;
-            const rawBuyerId = t.buyerId;
-            const rawSellerId = t.sellerId;
-            const buyerId = resolveUserId(rawBuyerId, t.buyer);
-            const sellerId = resolveUserId(rawSellerId, t.seller);
+            const buyerId = resolveUserId(t.buyerId, t.buyer);
+            const sellerId = resolveUserId(t.sellerId, t.seller);
             const playerName = t.playerName;
             const price = Number(t.price) || 0;
             const transferDate = t.date;
 
-            if (buyerId && buyerId !== "1" && sellerId === "1") {
+            // 1. Wenn ein ECHTER SPIELER kauft (egal von wem)
+            if (buyerId && !isComputer(buyerId, t.buyer)) {
                 const key = `${playerId}_${buyerId}`;
                 if (!tradedPlayers[key]) {
-                    tradedPlayers[key] = {
-                        buys: [],
-                        sells: [],
-                        playerName,
-                        userId: buyerId
-                    };
+                    tradedPlayers[key] = { buys: [], sells: [], playerName, userId: buyerId };
                 }
                 tradedPlayers[key].buys.push({ ...t, price, date: transferDate });
                 buyCount++;
             }
 
-            if (sellerId && sellerId !== "1" && buyerId === "1") {
+            // 2. Wenn ein ECHTER SPIELER verkauft (egal an wen)
+            if (sellerId && !isComputer(sellerId, t.seller)) {
                 const key = `${playerId}_${sellerId}`;
                 if (!tradedPlayers[key]) {
-                    tradedPlayers[key] = {
-                        buys: [],
-                        sells: [],
-                        playerName,
-                        userId: sellerId
-                    };
+                    tradedPlayers[key] = { buys: [], sells: [], playerName, userId: sellerId };
                 }
                 tradedPlayers[key].sells.push({ ...t, price, date: transferDate });
                 sellCount++;
             }
         });
 
-        addDebug(`[DEBUG] Käufe vom Computer: ${buyCount}, Verkäufe an Computer: ${sellCount}`);
-        addDebug(`[DEBUG] Potenzielle getradete Spieler: ${Object.keys(tradedPlayers).length}`);
+        addDebug(`[DEBUG] Erfasste Käufe von echten Spielern: ${buyCount}, Verkäufe: ${sellCount}`);
 
         const transferResults = [];
         let completeCount = 0;
@@ -279,6 +274,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         Object.values(tradedPlayers).forEach(group => {
             const buys = [...group.buys].sort((a, b) => parseGermanDate(a.date) - parseGermanDate(b.date));
             const sells = [...group.sells].sort((a, b) => parseGermanDate(a.date) - parseGermanDate(b.date));
+            
             let buyIndex = 0;
             let sellIndex = 0;
 
@@ -290,6 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (sellTime >= buyTime) {
                     const profit = sell.price - buy.price;
+                    
                     transferResults.push({
                         player: group.playerName,
                         user: userStats[group.userId]?.name || buy.buyer,
@@ -300,40 +297,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                         sellDate: sell.date
                     });
                     completeCount++;
-                    addDebug(`[DEBUG] Kompletter Trade: ${group.playerName} (User ${group.userId}) - Gewinn: ${profit}€`);
                     buyIndex++;
                     sellIndex++;
                 } else {
-                    addDebug(`[DEBUG] Verkauf vor Kauf ignoriert: ${group.playerName} (User ${group.userId}) - Verkauf ${sell.date} vor Kauf ${buy.date}`);
                     sellIndex++;
                 }
-            }
-
-            if (buyIndex < buys.length || sellIndex < sells.length) {
-                addDebug(`[DEBUG] Unmatched transfers für ${group.playerName} (User ${group.userId}) - buys: ${buys.length}, sells: ${sells.length}`);
             }
         });
 
         addDebug(`[DEBUG] Komplette Trades mit buy + sell: ${completeCount}`);
-        addDebug(`[DEBUG] transferResults Länge: ${transferResults.length}`);
 
-        // Sortiere nach Profit
+        // Sortierung für die Anzeige (Beste = Meister Gewinn, Schlechteste = Meister Verlust)
         const sortedByProfit = [...transferResults].sort((a, b) => b.profit - a.profit);
-        stats.bestTransfer = sortedByProfit.slice(0, 10);
-        stats.worstTransfer = [...sortedByProfit].sort((a, b) => a.profit - b.profit).slice(0, 10);
-
-        addDebug(`[DEBUG] Beste Transfers: ${stats.bestTransfer.length}`);
-        if (stats.bestTransfer.length > 0) {
-            addDebug(`[DEBUG] Bester: ${stats.bestTransfer[0].player} +${stats.bestTransfer[0].profit}€`);
-        }
-        addDebug(`[DEBUG] Schlechteste Transfers: ${stats.worstTransfer.length}`);
-        if (stats.worstTransfer.length > 0) {
-            addDebug(`[DEBUG] Schlechtester: ${stats.worstTransfer[0].player} ${stats.worstTransfer[0].profit}€`);
-        }
+        
+        // Top 10 der positiven Transfers (Gewinn)
+        stats.bestTransfer = sortedByProfit.filter(t => t.profit > 0).slice(0, 10);
+        
+        // Top 10 der negativen Transfers (Verlust, d.h. der negativste Wert zuerst)
+        stats.worstTransfer = [...transferResults].sort((a, b) => a.profit - b.profit).slice(0, 10);
 
         // Teuerste Käufe/Verkäufe
         const sortedBuys = [...transfers]
-            .filter(t => t.buyerId && t.buyerId !== "1")
+            .filter(t => t.buyerId && t.buyerId !== "1" && t.buyerId !== "0")
             .sort((a, b) => (b.price || 0) - (a.price || 0))
             .slice(0, 10)
             .map(t => ({
@@ -346,7 +331,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         stats.expensiveBuy = sortedBuys;
 
         const sortedSells = [...transfers]
-            .filter(t => t.sellerId && t.sellerId !== "1")
+            .filter(t => t.sellerId && t.sellerId !== "1" && t.sellerId !== "0")
             .sort((a, b) => (b.price || 0) - (a.price || 0))
             .slice(0, 10)
             .map(t => ({
@@ -387,55 +372,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 4. Statistik-Karten befüllen
         const statsGrid = document.querySelector('.stats-grid');
         if (statsGrid) {
-            // Änderung der renderStatsCard Funktion
-           function renderStatsCard(title, icon, entries, valueFormatter, detailFormatter, isConditional) {
-        if (isConditional && !showStats) {
-            return ''; // Kein HTML, wenn der Parameter nicht gesetzt ist
-        }
+            function renderStatsCard(title, icon, entries, valueFormatter, detailFormatter, isConditional) {
+                if (isConditional && !showStats) {
+                    return '';
+                }
 
-        if (entries.length === 0) {
-            return `<div class="stat-card">
-                <h3><span class="stat-icon">${icon}</span>${title}</h3>
-                <div style="color:#999; font-style:italic; padding:8px;">Keine Daten verfügbar</div>
-            </div>`;
-        }
+                if (entries.length === 0) {
+                    return `<div class="stat-card">
+                        <h3><span class="stat-icon">${icon}</span>${title}</h3>
+                        <div style="color:#999; font-style:italic; padding:8px;">Keine Daten verfügbar</div>
+                    </div>`;
+                }
 
-        const shownEntries = entries.slice(0, 3);
-        const hiddenEntries = entries.slice(3, 10);
+                const shownEntries = entries.slice(0, 3);
+                const hiddenEntries = entries.slice(3, 10);
 
-        return `<div class="stat-card">
-            <div class="stat-card-content">
-                <h3><span class="stat-icon">${icon}</span>${title}</h3>
-                ${shownEntries.map((entry, i) => `
-                    <div class="stat-entry displayed-entry">
-                        <div class="stat-entry-main">
-                            <span class="stat-entry-rank">${i + 1}.</span>
-                            <span>${valueFormatter(entry, i)}</span>
-                        </div>
-                        <div class="stat-entry-secondary">
-                            ${detailFormatter(entry, i)}
-                        </div>
+                return `<div class="stat-card">
+                    <div class="stat-card-content">
+                        <h3><span class="stat-icon">${icon}</span>${title}</h3>
+                        ${shownEntries.map((entry, i) => `
+                            <div class="stat-entry displayed-entry">
+                                <div class="stat-entry-main">
+                                    <span class="stat-entry-rank">${i + 1}.</span>
+                                    <span>${valueFormatter(entry, i)}</span>
+                                </div>
+                                <div class="stat-entry-secondary">
+                                    ${detailFormatter(entry, i)}
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${hiddenEntries.map((entry, i) => `
+                            <div class="stat-entry hidden-entry">
+                                <div class="stat-entry-main">
+                                    <span class="stat-entry-rank">${i + 4}.</span>
+                                    <span>${valueFormatter(entry, i + 3)}</span>
+                                </div>
+                                <div class="stat-entry-secondary">
+                                    ${detailFormatter(entry, i + 3)}
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
-                `).join('')}
-                ${hiddenEntries.map((entry, i) => `
-                    <div class="stat-entry hidden-entry">
-                        <div class="stat-entry-main">
-                            <span class="stat-entry-rank">${i + 4}.</span>
-                            <span>${valueFormatter(entry, i + 3)}</span>
+                    ${entries.length > 3 ? `
+                        <div class="stat-card-footer">
+                            <button onclick="toggleStatsCard(this)" class="toggle-button">Top 10 anzeigen</button>
                         </div>
-                        <div class="stat-entry-secondary">
-                            ${detailFormatter(entry, i + 3)}
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-            ${entries.length > 3 ? `
-                <div class="stat-card-footer">
-                    <button onclick="toggleStatsCard(this)" class="toggle-button">Top 10 anzeigen</button>
-                </div>
-            ` : ''}
-        </div>`;
-    }
+                    ` : ''}
+                </div>`;
+            }
 
             statsGrid.innerHTML = `
                 ${renderStatsCard(
@@ -491,13 +475,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 stats.highestBalance,
                 (u) => `${formatCurrency(u.kontostand)}`,
                 (u) => `${u.name}`,
-                true // conditional
-               
+                true
             )}
             `;
         }
 
-        // 5. Sortierfunktionen für die Tabelle (korrigierte Indizes)
+        // 5. Sortierfunktionen für die Tabelle
         const table = document.getElementById('userTable');
         if (table) {
             const headers = table.querySelectorAll('th');
@@ -507,24 +490,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const isAsc = header.getAttribute('data-sort') === 'asc';
 
                     if (index === 0) {
-                        // Name sortieren
                         rows.sort((a, b) => {
                             const nameA = a.cells[0].textContent.toLowerCase();
                             const nameB = b.cells[0].textContent.toLowerCase();
                             return isAsc ? nameB.localeCompare(nameA) : nameA.localeCompare(nameB);
                         });
-
-
                     } else if ([1, 2, 5, 6, 7, 8].includes(index)) {
-                        // Währungen (€) sortieren: Kontostand(1), Teamwert(2), PunkteEinnahmen(5), Ausgaben(6), Einnahmen(7), Gesamt(8)
-
                         rows.sort((a, b) => {
                             const valA = parseFloat(a.cells[index].textContent.replace(/[^\d-]/g, '') || 0);
                             const valB = parseFloat(b.cells[index].textContent.replace(/[^\d-]/g, '') || 0);
                             return isAsc ? valB - valA : valA - valB;
                         });
                     } else {
-                        // Zahlen sortieren (Transfers(3), Punkte(4))
                         rows.sort((a, b) => {
                             const valA = parseFloat(a.cells[index].textContent || 0);
                             const valB = parseFloat(b.cells[index].textContent || 0);
@@ -532,14 +509,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         });
                     }
 
-                    // Daten rendern
                     table.querySelector('tbody').innerHTML = '';
                     rows.forEach(row => table.querySelector('tbody').appendChild(row));
 
-                    // Sortierstatus umkehren
                     header.setAttribute('data-sort', isAsc ? 'desc' : 'asc');
 
-                    // Alle anderen Header zurücksetzen
                     headers.forEach(h => {
                         if (h !== header) h.removeAttribute('data-sort');
                     });
