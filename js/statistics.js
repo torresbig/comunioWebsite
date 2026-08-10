@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     loginName: user.user.loginName,
                     kontostand: user.guthaben || 0,
                     teamwert: user.teamValue || 0,
+                    gesamtwert: (user.teamValue || 0) + (user.guthaben || 0),
                     transfers: 0,
                     punkte: user.punkte || 0,
                     punkteEinnahmen: (user.punkte || 0) * 10000,
@@ -203,6 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     <td>${user.name} <small>(${user.loginName || user.id})</small></td>
                                     <td class="currency"${tooltip ? ` title="${tooltip}"` : ''}>${formatCurrency(user.kontostand)}</td>
                                     <td class="currency">${formatCurrency(user.teamwert)}</td>
+                                    <td class="currency">${formatCurrency(user.gesamtwert)}</td>
                                     <td class="text-center">${user.transfers}</td>
                                     <td class="text-center">${user.punkte}</td>
                                     <td class="currency positive">+${formatCurrency(user.punkteEinnahmen)}</td>

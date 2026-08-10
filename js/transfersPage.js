@@ -51,95 +51,106 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (t.seller) allUsersSet.add(t.seller);
     });
     const allUsers = Array.from(allUsersSet).sort();
+    const defaultUser = allUsers.includes("Computer") ? "Computer" : "";
 
-    // --- Filter-Dropdown erstellen (Standard Computer)
+    // --- Filter-Dropdown erstellen
     allUsers.forEach(u => {
         const opt = document.createElement("option");
         opt.value = u;
         opt.textContent = u;
-        if (u === "Computer") opt.selected = true;
         userFilter.appendChild(opt);
     });
+    userFilter.value = defaultUser;
 
     // --- Tabelle rendern
-   function renderTable(filterUser) {
-    tableBody.innerHTML = "";
-    const filtered = transfers.filter(t => t.buyer === filterUser || t.seller === filterUser);
+    function renderTable(filterUser) {
+        tableBody.innerHTML = "";
+        const filtered = filterUser ? transfers.filter(t => t.buyer === filterUser || t.seller === filterUser) : transfers;
 
-    let totalPurchases = 0, totalSales = 0, profitLoss = 0; // Summen init
+        let totalPurchases = 0, totalSales = 0, profitLoss = 0; // Summen init
 
     filtered.forEach(t => {
-        const currentValue = playerDb[t.playerId] || t.value || 0;
-        let dealHtml = "";
-        let diff = 0;
-        let tooltip = "";
+            const transferValue = Number(t.value) || 0;
+            const currentRawValue = Number(playerDb[t.playerId]);
+            const currentValue = Number.isFinite(currentRawValue) ? currentRawValue : transferValue;
+            let dealHtml = "";
+            let diff = 0;
+            let tooltip = "";
+            const price = Number(t.price) || 0;
 
-        if (t.buyer === filterUser) { // Kauf
-            diff = currentValue - t.price;
-            totalPurchases += t.price; // Einkäufe aufsummieren
-            tooltip = `Aktueller Wert minus Kaufpreis: ${formatCurrency(diff)}`;
+            if (filterUser) {
+                if (t.buyer === filterUser) { // Kauf
+                    diff = currentValue - price;
+                    totalPurchases += price;
+                    tooltip = `Aktueller Wert minus Kaufpreis: ${formatCurrency(diff)}`;
+                } else if (t.seller === filterUser) { // Verkauf
+                    diff = price - transferValue;
+                    totalSales += price;
+                    profitLoss += diff;
+                    tooltip = `Verkaufspreis minus Marktwert bei Transfer: ${formatCurrency(diff)}`;
+                }
+            } else {
+                diff = transferValue - price;
+                tooltip = `Marktwert bei Transfer minus Preis: ${formatCurrency(diff)}`;
+            }
+
             if (diff > 0) dealHtml = `<span style="color:#27ae60;font-weight:bold;" title="${tooltip}">&#9650;</span>`;
             else if (diff < 0) dealHtml = `<span style="color:#e74c3c;font-weight:bold;" title="${tooltip}">&#9660;</span>`;
-            else dealHtml = `<span style="color:#888;font-weight:bold;" title="Keine Änderung">&#9654;</span>`;
-        } else if (t.seller === filterUser) { // Verkauf
-            diff = t.price - currentValue;
-            totalSales += t.price; // Verkäufe aufsummieren
-            profitLoss += diff;   // Gewinn/Verlust aufsummieren
-            tooltip = `Verkaufspreis minus aktueller Wert: ${formatCurrency(diff)}`;
-            if (diff > 0) dealHtml = `<span style="color:#27ae60;font-weight:bold;" title="${tooltip}">&#9650;</span>`;
-            else if (diff < 0) dealHtml = `<span style="color:#e74c3c;font-weight:bold;" title="${tooltip}">&#9660;</span>`;
-            else dealHtml = `<span style="color:#888;font-weight:bold;" title="Keine Änderung">&#9654;</span>`;
+            else if (transferValue || filterUser) dealHtml = `<span style="color:#888;font-weight:bold;" title="Keine Änderung">&#9654;</span>`;
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td data-label="Datum">${t.date}</td>
+                <td data-label="Spieler"><a class="player-link" href="player.html?id=${t.playerId}" target="_blank">${t.playerName}</a></td>
+                <td data-label="Verkäufer">${t.seller}</td>
+                <td data-label="Käufer">${t.buyer}</td>
+                <td data-label="Preis">${formatCurrency(price)}</td>
+                <td data-label="Marktwert (Transfer)">${formatCurrency(transferValue)}</td>
+                <td data-label="Aktueller Wert">${formatCurrency(currentValue)}</td>
+                <td data-label="Deal" style="text-align:center">${dealHtml}</td>
+            `;
+            tableBody.appendChild(tr);
+        });
+
+        const labelTotalPurchases = document.getElementById("labelTotalPurchases");
+        const labelTotalSales = document.getElementById("labelTotalSales");
+        const labelBalance = document.getElementById("labelBalance");
+        const labelProfitLoss = document.getElementById("labelProfitLoss");
+
+        if (filterUser) {
+            labelTotalPurchases.textContent = "Gesamtausgaben:";
+            labelTotalSales.textContent = "Gesamteinnahmen:";
+            labelBalance.textContent = "Transferbilanz:";
+            labelProfitLoss.textContent = "Gewinn/Verlust bei Verkäufen:";
+            document.getElementById("totalPurchases").textContent = formatCurrency(totalPurchases);
+            document.getElementById("totalSales").textContent = formatCurrency(totalSales);
+            document.getElementById("balance").textContent = formatCurrency(totalSales - totalPurchases);
+            document.getElementById("profitLoss").textContent = formatCurrency(profitLoss) + " " + (profitLoss >= 0 ? "📈" : "📉");
+        } else {
+            const totalVolume = transfers.reduce((sum, t) => sum + (Number(t.price) || 0), 0);
+            const transferCount = filtered.length;
+            labelTotalPurchases.textContent = "Gesamtvolumen:";
+            labelTotalSales.textContent = "Anzahl Transfers:";
+            labelBalance.textContent = "Aktueller Filter:";
+            labelProfitLoss.textContent = "Hinweis:";
+            document.getElementById("totalPurchases").textContent = formatCurrency(totalVolume);
+            document.getElementById("totalSales").textContent = transferCount;
+            document.getElementById("balance").textContent = filterUser ? filterUser : "Alle Benutzer";
+            document.getElementById("profitLoss").textContent = "Wähle einen Benutzer für detaillierte Auswertung.";
         }
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${t.date}</td>
-            <td><a class="player-link" href="player.html?id=${t.playerId}" target="_blank">${t.playerName}</a></td>
-            <td>${t.seller}</td>
-            <td>${t.buyer}</td>
-            <td>${formatCurrency(t.price)}</td>
-            <td>${formatCurrency(currentValue)}</td>
-            <td style="text-align:center">${dealHtml}</td>
-        `;
-        tableBody.appendChild(tr);
-    });
-
-    // Summen im HTML anzeigen (IDs müssen im HTML existieren)
-    document.getElementById("totalPurchases").textContent = formatCurrency(totalPurchases);
-    document.getElementById("totalSales").textContent = formatCurrency(totalSales);
-    document.getElementById("balance").textContent = formatCurrency(totalSales - totalPurchases);
-    document.getElementById("profitLoss").textContent = formatCurrency(profitLoss) + " " + (profitLoss >= 0 ? "📈" : "📉");
-}
-
+    }
 
     // Währungsformat (mit Komma und €)
     function formatCurrency(v) {
-        if (v == null) return "-";
-        return (parseInt(v) || 0).toLocaleString("de-DE") + " €";
+        if (v == null || isNaN(Number(v))) return "-";
+        return Number(v).toLocaleString("de-DE") + " €";
     }
 
-    // --- Initial-Tabelle für "Computer"
-    renderTable("Computer");
+    // --- Initial-Tabelle mit aktuellem Filterwert
+    renderTable(userFilter.value);
 
     // --- Filter-Event
     userFilter.addEventListener("change", () => {
         renderTable(userFilter.value);
     });
 });
-
-// --- Zusatz: Beispiel für <select id="userFilter"> und Tabelle:
-/// <select id="userFilter"></select>
-/// <table id="transfersTable">
-///   <thead>
-///     <tr>
-///       <th>Datum</th>
-///       <th>Spieler</th>
-///       <th>Verkäufer</th>
-///       <th>Käufer</th>
-///       <th>Preis</th>
-///       <th>Akt. Wert</th>
-///       <th>Deal</th>
-///     </tr>
-///   </thead>
-///   <tbody></tbody>
-/// </table>

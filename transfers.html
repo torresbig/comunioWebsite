@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚽ Comunio Ultraz - Transferhistorie</title>
     <link rel="stylesheet" href="css/tabelStyle.css">
     <link rel="stylesheet" href="css/styleMenueHamburger.css">
@@ -45,7 +46,7 @@
     </div>
 
         <!-- Filter -->
-        <div style="margin-bottom: 15px;">
+        <div class="filter-row">
             <label for="userFilter">Filter nach Benutzer:</label>
             <select id="userFilter">
                 <option value="">-- Alle --</option>
@@ -56,32 +57,35 @@
         <div id="summaryBox" class="info-card">
             <h3>Zusammenfassung</h3>
             <div class="info-card-content">
-                <div class="info-row"><span class="info-label">Gesamtausgaben:</span> <span class="info-value"
+                <div class="info-row"><span class="info-label" id="labelTotalPurchases">Gesamtausgaben:</span> <span class="info-value"
                         id="totalPurchases">-</span></div>
-                <div class="info-row"><span class="info-label">Gesamteinnahmen:</span> <span class="info-value"
+                <div class="info-row"><span class="info-label" id="labelTotalSales">Gesamteinnahmen:</span> <span class="info-value"
                         id="totalSales">-</span></div>
-                <div class="info-row"><span class="info-label">Transferbilanz:</span> <span class="info-value"
+                <div class="info-row"><span class="info-label" id="labelBalance">Transferbilanz:</span> <span class="info-value"
                         id="balance">-</span></div>
-                <div class="info-row"><span class="info-label">Gewinn/Verlust bei Verkäufen:</span> <span
+                <div class="info-row"><span class="info-label" id="labelProfitLoss">Gewinn/Verlust bei Verkäufen:</span> <span
                         class="info-value" id="profitLoss">-</span></div>
             </div>
         </div>
 
         <!-- Tabelle -->
-        <table class="rivals-table" id="transfersTable">
-            <thead>
-                <tr>
-                    <th>Datum</th>
-                    <th>Spieler</th>
-                    <th>Verkäufer</th>
-                    <th>Käufer</th>
-                    <th>Preis</th>
-                    <th>Aktueller Wert</th>
-                    <th>Deal</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="rivals-table-container">
+            <table class="rivals-table" id="transfersTable">
+                <thead>
+                    <tr>
+                        <th>Datum</th>
+                        <th>Spieler</th>
+                        <th>Verkäufer</th>
+                        <th>Käufer</th>
+                        <th>Preis</th>
+                        <th>Marktwert (Transfer)</th>
+                        <th>Aktueller Wert</th>
+                        <th>Deal</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
 
     </div>
 
