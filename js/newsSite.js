@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (newsData.lastUpdate) {
       const lastUpdateDiv = document.getElementById('last-update-info');
       if (lastUpdateDiv) {
-        lastUpdateDiv.textContent = `Letzte Aktualisierung: ${newsData.lastUpdate}`;
+        lastUpdateDiv.textContent = `Letzte Datenaktualisierung: ${newsData.lastUpdate}`;
       }
     }
 
