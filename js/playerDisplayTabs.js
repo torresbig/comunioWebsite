@@ -36,15 +36,111 @@ function getPlayerUrlWithParams(playerId) {
     return playerUrl;
 }
 
+// Normalisiert Positions-Labels für robustere Vergleiche
+function normalizePosition(label) {
+    if (!label && label !== 0) return '';
+    try {
+        let s = String(label).toLowerCase().trim();
+        s = s.replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+        s = s.replace(/[^a-z0-9]/g, '');
+        return s;
+    } catch (e) {
+        return '';
+    }
+}
+
+function matchesSelectedPosition(rival, player, selected) {
+    const selRaw = selected || 'comunio';
+    const sel = normalizePosition(selRaw);
+    const playerComunio = normalizePosition(player.data?.position || '');
+    const rivalComunio = normalizePosition(rival.data?.position || '');
+    if (sel === 'comunio') {
+        return rivalComunio === playerComunio;
+    }
+    // Rival - check spielerDaten.hauptposition
+    const rivalHd = rival.data?.spielerDaten?.hauptposition || '';
+    if (rivalHd && normalizePosition(rivalHd) === sel) return true;
+    // Rival - check spielerDaten.nebenpositionen
+    const neben = rival.data?.spielerDaten?.nebenpositionen || [];
+    if (Array.isArray(neben)) {
+        for (const np of neben) {
+            if (normalizePosition(np) === sel) return true;
+        }
+    }
+    // Fallback: compare Comunio position normalized (equality)
+    if (rivalComunio && rivalComunio === sel) return true;
+    return false;
+}
+
 function displayRivals(player, allPlayers) {
     addDebug('Erstelle Rivalen-Tabelle', 'info');
     const container = document.getElementById('rivalsList');
     const header = document.getElementById('rivalsHeader');
     if (!container) return;
-    const rivals = allPlayers.filter(p =>
-        p.data?.position === player.data?.position &&
-        p.data?.verein === player.data?.verein
-    );
+    // Ermittle mögliche Vergleichsoptionen aus Spieler-Infos
+    const playerPositions = player?.data?.spielerDaten || {};
+    const haupt = playerPositions.hauptposition;
+    const neben = Array.isArray(playerPositions.nebenpositionen) ? playerPositions.nebenpositionen : [];
+    const hasPlayerPositions = !!(haupt || (neben && neben.length > 0));
+
+    // Existierendes Select vor DOM-Änderungen abfragen
+    const existingSelect = document.getElementById('rivals-position-select');
+
+    // Wenn keine Spielerpositionen mehr vorhanden sind, entferne ggf. das Select
+    if (!hasPlayerPositions && existingSelect) {
+        const wrapper = existingSelect.closest('.rivals-select-wrapper');
+        if (wrapper) wrapper.remove();
+    }
+
+    // Filter zunächst nach Verein, die genaue Positions-Filterung erfolgt weiter unten
+    const teamPlayers = allPlayers.filter(p => p.data?.verein === player.data?.verein);
+
+    // Bestimme Auswahl (falls bereits vorhanden im DOM) oder default auf 'comunio'
+    let selectedValue = existingSelect ? existingSelect.value : 'comunio';
+
+    // Falls kein Select im DOM, aber der Spieler hat positionsdaten -> erstelle neues Select
+    if (!existingSelect && hasPlayerPositions && header) {
+        const select = document.createElement('select');
+        select.id = 'rivals-position-select';
+        select.style.marginLeft = '12px';
+        const optComunio = document.createElement('option');
+        optComunio.value = 'comunio';
+        optComunio.textContent = player.data?.position || 'Comunio';
+        select.appendChild(optComunio);
+        if (haupt) {
+            const opt = document.createElement('option');
+            opt.value = haupt;
+            opt.textContent = haupt;
+            select.appendChild(opt);
+        }
+        if (neben && neben.length > 0) {
+            neben.forEach(np => {
+                const opt = document.createElement('option');
+                opt.value = np;
+                opt.textContent = np;
+                select.appendChild(opt);
+            });
+        }
+        select.addEventListener('change', () => {
+            displayRivals(player, allPlayers);
+        });
+        const wrapper = document.createElement('span');
+        wrapper.className = 'rivals-select-wrapper';
+        const label = document.createElement('label');
+        label.htmlFor = 'rivals-position-select';
+        label.style.fontSize = '0.9em';
+        label.style.marginLeft = '8px';
+        label.textContent = 'Position vergleichen:';
+        wrapper.appendChild(label);
+        wrapper.appendChild(select);
+        header.appendChild(wrapper);
+        // Wenn Hauptposition vorhanden -> standardmäßig Hauptposition auswählen
+        if (haupt) select.value = haupt;
+        selectedValue = select.value;
+    }
+
+    // Endgültige Rivalen-Liste, abhängig von Auswahl
+    const rivals = teamPlayers.filter(p => matchesSelectedPosition(p, player, selectedValue));
 
     rivals.sort((a, b) => {
         const aRankingObj = getLigainsiderRankingObj(a);
@@ -55,7 +151,29 @@ function displayRivals(player, allPlayers) {
     });
 
     addDebug(`${rivals.length} Rivalen gefunden`, 'success');
-    header.textContent = `${rivals.length} Direkte Konkurrenten im Team`;
+    if (header) {
+        // Ensure single title element; clear original header text only once
+        let title = header.querySelector('.rivals-title');
+        if (!title) {
+            // Entferne nur reine Textknoten (z.B. statischen Header-Text), behalte vorhandene Elemente (z.B. select-wrapper)
+            Array.from(header.childNodes).forEach(n => {
+                if (n.nodeType === Node.TEXT_NODE && n.textContent.trim()) n.remove();
+            });
+            title = document.createElement('span');
+            title.className = 'rivals-title';
+            header.insertBefore(title, header.firstChild);
+        }
+        title.textContent = `${rivals.length} Direkte Konkurrenten im Team`;
+
+        // If a select-wrapper exists, ensure it's placed below the title
+        const wrapper = header.querySelector('.rivals-select-wrapper');
+        if (wrapper) {
+            wrapper.style.display = 'block';
+            wrapper.style.marginTop = '8px';
+            // move to end so it's after title
+            header.appendChild(wrapper);
+        }
+    }
 
     if (rivals.length > 0) {
         let html = `
