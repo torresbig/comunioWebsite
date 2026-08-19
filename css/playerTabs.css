@@ -50,6 +50,38 @@
     margin-top: 8px;
 }
 
+.rivals-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin-top: 8px;
+}
+
+.rivals-controls .rivals-select-wrapper {
+    margin-top: 0;
+}
+
+.rivals-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9em;
+}
+
+#rivals-reset-button {
+    padding: 4px 10px;
+    border: 1px solid #9aa7b2;
+    border-radius: 4px;
+    background: #fff;
+    color: #2c3e50;
+    cursor: pointer;
+}
+
+#rivals-reset-button:hover {
+    background: #f1f7ff;
+}
+
 .rivals-select-wrapper label {
     font-size: 0.9em;
     margin-left: 8px;
@@ -70,8 +102,46 @@
     color: #666;
 }
 
+#rivalsList {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.rival-club-logo {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+
+.player-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+}
+
+.player-name-cell .player-link {
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 600px) {
     .tab-button {
         font-size: 16px;
+    }
+
+    .rivals-controls {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .rivals-controls .rivals-select-wrapper {
+        width: 100%;
+    }
+
+    .rivals-position-select {
+        max-width: calc(100% - 12px);
     }
 }

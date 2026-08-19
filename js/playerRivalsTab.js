@@ -15,7 +15,7 @@ function normalizePosition(label) {
     }
 }
 
-function matchesSelectedPosition(rival, player, selected) {
+function matchesSelectedPosition(rival, player, selected, mainOnly = false) {
     const selection = normalizePosition(selected || 'comunio');
     const playerPosition = normalizePosition(player.data?.position || '');
     const rivalPosition = normalizePosition(rival.data?.position || '');
@@ -23,13 +23,90 @@ function matchesSelectedPosition(rival, player, selected) {
 
     const mainPosition = rival.data?.spielerDaten?.hauptposition || '';
     if (mainPosition && normalizePosition(mainPosition) === selection) return true;
+    if (mainOnly) return false;
     const secondaryPositions = rival.data?.spielerDaten?.nebenpositionen || [];
-    if (Array.isArray(secondaryPositions)) {
-        for (const position of secondaryPositions) {
-            if (normalizePosition(position) === selection) return true;
-        }
-    }
-    return rivalPosition !== '' && rivalPosition === selection;
+    return Array.isArray(secondaryPositions)
+        && secondaryPositions.some(position => normalizePosition(position) === selection);
+}
+
+function formatCompactCurrency(value) {
+    const amount = Number(value) || 0;
+    if (!amount) return '-';
+    return amount < 1000000
+        ? `${(amount / 1000).toFixed(0)} Tsd. €`
+        : `${(amount / 1000000).toFixed(2)} Mio. €`;
+}
+
+function getClubName(clubId) {
+    const clubMap = window.clubsMap;
+    return clubMap?.get(String(clubId)) || clubMap?.get(clubId) || `Verein (ID: ${clubId})`;
+}
+
+function createRivalsControls(player, header, onChange) {
+    const controls = document.createElement('div');
+    controls.className = 'rivals-controls';
+
+    const positionWrapper = document.createElement('span');
+    positionWrapper.className = 'rivals-select-wrapper';
+    const label = document.createElement('label');
+    label.htmlFor = 'rivals-position-select';
+    label.textContent = 'Position vergleichen:';
+    const select = document.createElement('select');
+    select.id = 'rivals-position-select';
+    select.className = 'rivals-position-select';
+
+    const positions = [
+        { value: 'comunio', text: player.data?.position || 'Comunio' },
+        { value: player.data?.spielerDaten?.hauptposition, text: player.data?.spielerDaten?.hauptposition },
+        ...(Array.isArray(player.data?.spielerDaten?.nebenpositionen)
+            ? player.data.spielerDaten.nebenpositionen.map(position => ({ value: position, text: position }))
+            : [])
+    ];
+    const seenPositions = new Set();
+    positions.forEach(position => {
+        const normalized = normalizePosition(position.value);
+        if (!position.value || seenPositions.has(normalized)) return;
+        seenPositions.add(normalized);
+        const option = document.createElement('option');
+        option.value = position.value;
+        option.textContent = position.text;
+        select.appendChild(option);
+    });
+    const defaultPosition = player.data?.spielerDaten?.hauptposition || 'comunio';
+    select.value = defaultPosition;
+    select.addEventListener('change', onChange);
+    positionWrapper.append(label, select);
+
+    const mainOnlyLabel = document.createElement('label');
+    mainOnlyLabel.className = 'rivals-checkbox-label';
+    const mainOnlyCheckbox = document.createElement('input');
+    mainOnlyCheckbox.type = 'checkbox';
+    mainOnlyCheckbox.id = 'rivals-main-position-only-checkbox';
+    mainOnlyCheckbox.addEventListener('change', onChange);
+    mainOnlyLabel.append(mainOnlyCheckbox, document.createTextNode('Nur Hauptposition berücksichtigen'));
+
+    const allClubsLabel = document.createElement('label');
+    allClubsLabel.className = 'rivals-checkbox-label';
+    const allClubsCheckbox = document.createElement('input');
+    allClubsCheckbox.type = 'checkbox';
+    allClubsCheckbox.id = 'rivals-all-clubs-checkbox';
+    allClubsCheckbox.addEventListener('change', onChange);
+    allClubsLabel.append(allClubsCheckbox, document.createTextNode('Vergleich über alle Vereine'));
+
+    const resetButton = document.createElement('button');
+    resetButton.type = 'button';
+    resetButton.id = 'rivals-reset-button';
+    resetButton.textContent = 'Reset';
+    resetButton.addEventListener('click', () => {
+        select.value = defaultPosition;
+        mainOnlyCheckbox.checked = false;
+        allClubsCheckbox.checked = false;
+        onChange();
+    });
+
+    controls.append(positionWrapper, mainOnlyLabel, allClubsLabel, resetButton);
+    header.appendChild(controls);
+    return { select, mainOnlyCheckbox, allClubsCheckbox };
 }
 
 function displayRivals(player, allPlayers) {
@@ -38,58 +115,25 @@ function displayRivals(player, allPlayers) {
     const header = document.getElementById('rivalsHeader');
     if (!container) return;
 
-    const playerPositions = player?.data?.spielerDaten || {};
-    const mainPosition = playerPositions.hauptposition;
-    const secondaryPositions = Array.isArray(playerPositions.nebenpositionen)
-        ? playerPositions.nebenpositionen
-        : [];
-    const hasPlayerPositions = !!(mainPosition || secondaryPositions.length > 0);
-    const existingSelect = document.getElementById('rivals-position-select');
-
-    if (!hasPlayerPositions && existingSelect) {
-        const wrapper = existingSelect.closest('.rivals-select-wrapper');
-        if (wrapper) wrapper.remove();
-    }
-
-    const teamPlayers = allPlayers.filter(item => item.data?.verein === player.data?.verein);
-    let selectedValue = existingSelect ? existingSelect.value : 'comunio';
-
-    if (!existingSelect && hasPlayerPositions && header) {
-        const select = document.createElement('select');
-        select.id = 'rivals-position-select';
-        select.className = 'rivals-position-select';
-        const comunioOption = document.createElement('option');
-        comunioOption.value = 'comunio';
-        comunioOption.textContent = player.data?.position || 'Comunio';
-        select.appendChild(comunioOption);
-        if (mainPosition) {
-            const option = document.createElement('option');
-            option.value = mainPosition;
-            option.textContent = mainPosition;
-            select.appendChild(option);
+    const existingControls = document.querySelector('.rivals-controls');
+    const controls = existingControls
+        ? {
+            select: document.getElementById('rivals-position-select'),
+            mainOnlyCheckbox: document.getElementById('rivals-main-position-only-checkbox'),
+            allClubsCheckbox: document.getElementById('rivals-all-clubs-checkbox')
         }
-        secondaryPositions.forEach(position => {
-            const option = document.createElement('option');
-            option.value = position;
-            option.textContent = position;
-            select.appendChild(option);
-        });
-        select.addEventListener('change', () => displayRivals(player, allPlayers));
+        : header ? createRivalsControls(player, header, () => displayRivals(player, allPlayers)) : null;
+    if (!controls) return;
 
-        const wrapper = document.createElement('span');
-        wrapper.className = 'rivals-select-wrapper';
-        const label = document.createElement('label');
-        label.htmlFor = 'rivals-position-select';
-        label.textContent = 'Position vergleichen:';
-        wrapper.appendChild(label);
-        wrapper.appendChild(select);
-        header.appendChild(wrapper);
-        if (mainPosition) select.value = mainPosition;
-        selectedValue = select.value;
-    }
+    const selectedValue = controls.select.value;
+    const compareMainOnly = controls.mainOnlyCheckbox.checked;
+    const compareAllClubs = controls.allClubsCheckbox.checked;
+    const candidates = compareAllClubs
+        ? allPlayers
+        : allPlayers.filter(item => item.data?.verein === player.data?.verein);
 
-    const rivals = teamPlayers
-        .filter(item => matchesSelectedPosition(item, player, selectedValue))
+    const rivals = candidates
+        .filter(item => matchesSelectedPosition(item, player, selectedValue, compareMainOnly))
         .sort((first, second) => {
             const firstRanking = getLigainsiderRankingObj(first);
             const secondRanking = getLigainsiderRankingObj(second);
@@ -109,17 +153,13 @@ function displayRivals(player, allPlayers) {
             title.className = 'rivals-title';
             header.insertBefore(title, header.firstChild);
         }
-        title.textContent = `${rivals.length} Direkte Konkurrenten im Team`;
-        const wrapper = header.querySelector('.rivals-select-wrapper');
-        if (wrapper) {
-            wrapper.style.display = 'block';
-            wrapper.style.marginTop = '8px';
-            header.appendChild(wrapper);
-        }
+        title.textContent = compareAllClubs
+            ? `${rivals.length} Konkurrenten über alle Vereine`
+            : `${rivals.length} Direkte Konkurrenten im Team`;
     }
 
     if (!rivals.length) {
-        container.innerHTML = '<p>Keine direkten Konkurrenten gefunden</p>';
+        container.innerHTML = `<p>${compareAllClubs ? 'Keine Konkurrenten gefunden' : 'Keine direkten Konkurrenten gefunden'}</p>`;
         return;
     }
 
@@ -138,12 +178,18 @@ function displayRivals(player, allPlayers) {
         const ranking = getLigainsiderRankingObj(rival);
         const ligRank = ranking?.rang || '-';
         const marketValue = typeof rival.data?.wert === 'number' ? rival.data.wert : 0;
+        const realValue = typeof rival.data?.realWert === 'number' ? rival.data.realWert : 0;
+        const clubId = rival.data?.verein || '0';
+        const clubName = getClubName(clubId);
+        const clubLogo = compareAllClubs
+            ? `<img src="${DATA_URLS.logos}${getLogoFileName(clubId)}" class="rival-club-logo" alt="${clubName}" title="${clubName}">`
+            : '';
         html += `<tr data-player-id="${rival.id}">
-            <td class="player-cell" data-sort="${rival.name}"><div class="player-name-cell"><a href="${getPlayerUrlWithParams(rival.id)}" class="player-link" title="Zum Spieler">${rival.name}</a></div><div class="player-id-cell">(${rival.id})</div></td>
+            <td class="player-cell" data-sort="${rival.name}"><div class="player-name-cell">${clubLogo}<a href="${getPlayerUrlWithParams(rival.id)}" class="player-link" title="Zum Spieler">${rival.name}</a></div><div class="player-id-cell">(${rival.id})</div></td>
             <td data-sort="${status}"><div class="rival-status" title="${statusParts.join(' | ') || status}"><div>${getStatusIndicator(status)}</div><small>${status}</small></div></td>
             <td class="ligainsider-ranking" data-sort="${ligRank === '-' ? Number.MAX_SAFE_INTEGER : ligRank}">${ligRank}</td>
-            <td data-sort="${marketValue}">${formatCurrencyFull(rival.data?.wert || 0)}</td>
-            <td data-sort="${rival.data?.realWert || 0}">${formatCurrencyFull(rival.data?.realWert || 0)}</td>
+            <td data-sort="${marketValue}">${formatCompactCurrency(marketValue)}</td>
+            <td data-sort="${realValue}">${formatCompactCurrency(realValue)}</td>
             <td data-sort="${rival.data?.punkte || 0}">${rival.data?.punkte || 0}</td>
             <td data-sort="${ownerName}">${ownerName}</td>
         </tr>`;

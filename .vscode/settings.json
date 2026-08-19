@@ -1,4 +1,10 @@
 {
     "livePreview.defaultPreviewPath": "/index.html",
-    "CodeGPT.apiKey": "Anthropic"
+    "CodeGPT.apiKey": "Anthropic",
+    "chat.tools.terminal.autoApprove": {
+        "/^node --check js/playerRivalsTab\\.js$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }

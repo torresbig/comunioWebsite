@@ -1,5 +1,7 @@
  .rivals-table {
           width: 100%;
+          min-width: 0;
+          table-layout: fixed;
           border-collapse: collapse;
           margin-top: 10px;
           background: white;
@@ -11,11 +13,27 @@
 
       .rivals-table th,
       .rivals-table td {
-          padding: 12px 10px;
+          padding: 8px 6px;
           text-align: left;
           border-bottom: 1px solid #eee;
           font-size: 13px;
+          overflow-wrap: anywhere;
       }
+
+      .rivals-table th:nth-child(1),
+      .rivals-table td:nth-child(1) { width: 27%; }
+      .rivals-table th:nth-child(2),
+      .rivals-table td:nth-child(2) { width: 12%; }
+      .rivals-table th:nth-child(3),
+      .rivals-table td:nth-child(3) { width: 12%; }
+      .rivals-table th:nth-child(4),
+      .rivals-table td:nth-child(4),
+      .rivals-table th:nth-child(5),
+      .rivals-table td:nth-child(5) { width: 14%; }
+      .rivals-table th:nth-child(6),
+      .rivals-table td:nth-child(6) { width: 9%; }
+      .rivals-table th:nth-child(7),
+      .rivals-table td:nth-child(7) { width: 12%; }
 
       /* Make Ligainsider Ranking column narrower in rivals table */
       .rivals-table th.ligainsider-ranking,
@@ -67,4 +85,30 @@
           position: relative;
           background: white;
           /* Hintergrund passend zur Tabelle */
+      }
+
+      @media (max-width: 600px) {
+          .rivals-table th,
+          .rivals-table td {
+              padding: 5px 3px;
+              font-size: 10px;
+          }
+
+          .rivals-table th {
+              padding-right: 3px;
+          }
+
+          .rivals-table .rival-status small,
+          .rivals-table .player-id-cell {
+              display: none;
+          }
+
+          .rivals-table .rival-club-logo {
+              width: 18px;
+              height: 18px;
+          }
+
+          .rivals-table .sort-arrow {
+              display: none;
+          }
       }
