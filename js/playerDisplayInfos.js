@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadOwnersData();
     await loadInjuriesMap();
-    initTabs();
+    initTabs('#tabBar');
 
 
  // URL-Parameter für withMenue parsen und verarbeiten (funktioniert auch wenn keine params vorhanden sind)

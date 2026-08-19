@@ -149,7 +149,7 @@
   <script src="js/debugPanel.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/hamburgerMenu.js"></script>
-  <script src="js/playerDisplayTabs.js"></script>
+  <script src="js/tabController.js"></script>
   <script src="js/generatePlayerTable.js"></script>
   <script src="js/smokeTest.js" type="module"></script>
   <script src="js/userInfo.js"></script>
@@ -218,7 +218,6 @@
         processUrlParams(params);
 
         initUserDropdown();
-        initTabs();
         // Run smoke tests (module import via dynamic import to avoid module scoping issues)
         try {
           import('./js/smokeTest.js').then(m => {
@@ -612,7 +611,7 @@
     // Nach Laden der Seite starten
     document.addEventListener('DOMContentLoaded', () => {
       loadData();
-      initTabs();
+      initTabs('.tabs');
 
       // Spaltensortierung hinzufügen
       const tables = document.querySelectorAll('.rivals-table');

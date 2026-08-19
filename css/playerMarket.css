@@ -1,0 +1,25 @@
+.market-toggle-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.market-graph-toggle {
+    padding: 6px 14px;
+    border-radius: 7px;
+    border: 1px solid #3498db;
+    background: #3498db;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.market-graph-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.market-graph-container {
+    width: 98%;
+    max-width: 680px;
+}

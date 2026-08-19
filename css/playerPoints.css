@@ -1,0 +1,131 @@
+.points-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: #f9f9ff;
+    border-radius: 10px;
+    overflow: visible;
+    font-size: 15px;
+    box-sizing: border-box;
+    min-width: 100%;
+}
+
+.points-table th,
+.points-table td {
+    padding: 8px 4px;
+    text-align: center;
+    border-bottom: 1px solid #e3e7fa;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    font-size: 12px;
+    min-width: 50px;
+}
+
+.points-table th {
+    background: #e3e7fa;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.points-table tr:nth-child(even) {
+    background: #f6f8fa;
+}
+
+.points-table tr:hover {
+    background: #eef2fa;
+}
+
+.matchday-cell {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.points-cell {
+    font-weight: 600;
+    color: #27ae60;
+}
+
+.points-info-popup {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2001;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.points-info-popup.open {
+    display: flex;
+}
+
+.points-info-content {
+    background: white;
+    border-radius: 16px 16px 0 0;
+    padding: 24px;
+    max-height: 80vh;
+    width: 100%;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.points-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #e3e7fa;
+    padding-bottom: 12px;
+}
+
+.points-info-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.points-info-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #888;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.points-info-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.points-info-line {
+    font-size: 14px;
+    color: #2c3e50;
+    line-height: 1.4;
+}
+
+.points-info-line.section-header {
+    font-weight: 600;
+    color: #34495e;
+    margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+    .points-table th,
+    .points-table td {
+        padding: 6px 2px;
+        font-size: 11px;
+    }
+}

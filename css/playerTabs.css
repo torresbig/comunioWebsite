@@ -1,0 +1,77 @@
+.tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    margin: 20px 0 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-button {
+    position: relative;
+    padding: 5px 12px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    margin: 0 2px;
+    border-radius: 16px 16px 0 0;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+}
+
+.tab-button.active {
+    background: #3498db;
+}
+
+.tab-button .trend-arrow {
+    display: flex;
+    align-items: center;
+    margin-left: 7px;
+}
+
+.tab-content {
+    display: none;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 0 0 10px 10px;
+    box-sizing: border-box;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.rivals-select-wrapper {
+    display: block;
+    margin-top: 8px;
+}
+
+.rivals-select-wrapper label {
+    font-size: 0.9em;
+    margin-left: 8px;
+}
+
+.rivals-position-select {
+    margin-left: 12px;
+}
+
+.rival-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.rival-status small {
+    font-size: 0.8em;
+    color: #666;
+}
+
+@media (max-width: 600px) {
+    .tab-button {
+        font-size: 16px;
+    }
+}
