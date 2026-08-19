@@ -217,7 +217,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateLigainsiderRanking(player);
 
         safeSet('comunioPosition', 'textContent', player.data?.position || '-');
-        safeSet('marketValue', 'textContent', formatCurrencyFull(player.data?.wert || 0));
+        const marketValueElement = document.getElementById('marketValue');
+        if (marketValueElement) {
+            marketValueElement.innerHTML = `${formatCurrencyFull(player.data?.wert || 0)} ${unicodeTrend(getPlayerValueTrend(player))}`;
+        }
         safeSet('realmarketValue', 'textContent', formatCurrencyFull(player.data?.realWert || 0));
         safeSet('pointsWithLastYear', 'textContent', player.data?.punkte + " (" + (player.data?.lastSeasonPoints || 0) + ")" || '-');
         safeSet('owner', 'textContent', globalOwnersMap.get(player.id) || 'Computer');

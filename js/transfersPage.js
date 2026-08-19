@@ -13,8 +13,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     const playerDbJson = await playerDbResp.json();
     const playerDb = {};
     (playerDbJson.playerDB || []).forEach(p => {
-        // ID und aktueller Wert merken
-        playerDb[String(p.id)] = p.data?.wert || 0;
+        // ID und aktuellen Wert mit Referenzwert merken
+        playerDb[String(p.id)] = {
+            value: p.data?.wert || 0,
+            lastValue: p.data?.lastWert
+        };
     });
 
     // --- Transfernews laden
@@ -71,7 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     filtered.forEach(t => {
             const transferValue = Number(t.value) || 0;
-            const currentRawValue = Number(playerDb[t.playerId]);
+            const currentPlayer = playerDb[t.playerId] || {};
+            const currentRawValue = Number(currentPlayer.value);
             const currentValue = Number.isFinite(currentRawValue) ? currentRawValue : transferValue;
             let dealHtml = "";
             let diff = 0;
@@ -106,7 +110,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <td data-label="Käufer">${t.buyer}</td>
                 <td data-label="Preis">${formatCurrency(price)}</td>
                 <td data-label="Marktwert (Transfer)">${formatCurrency(transferValue)}</td>
-                <td data-label="Aktueller Wert">${formatCurrency(currentValue)}</td>
+                <td data-label="Aktueller Wert">${formatCurrency(currentValue)} ${unicodeTrend(getValueTrend(currentValue, currentPlayer.lastValue))}</td>
                 <td data-label="Deal" style="text-align:center">${dealHtml}</td>
             `;
             tableBody.appendChild(tr);

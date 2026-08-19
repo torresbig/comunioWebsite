@@ -1,0 +1,26 @@
+.trend-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+    line-height: 1;
+    vertical-align: middle;
+    position: relative;
+    top: -0.15em;
+    margin-left: 4px;
+    cursor: help;
+}
+
+.trend-up {
+    color: #27ae60;
+}
+
+.trend-down {
+    color: #e74c3c;
+}
+
+.trend-eq {
+    color: #888;
+    font-size: 1.35em;
+    font-weight: 700;
+}

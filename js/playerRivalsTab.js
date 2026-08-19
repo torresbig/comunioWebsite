@@ -188,7 +188,7 @@ function displayRivals(player, allPlayers) {
             <td class="player-cell" data-sort="${rival.name}"><div class="player-name-cell">${clubLogo}<a href="${getPlayerUrlWithParams(rival.id)}" class="player-link" title="Zum Spieler">${rival.name}</a></div><div class="player-id-cell">(${rival.id})</div></td>
             <td data-sort="${status}"><div class="rival-status" title="${statusParts.join(' | ') || status}"><div>${getStatusIndicator(status)}</div><small>${status}</small></div></td>
             <td class="ligainsider-ranking" data-sort="${ligRank === '-' ? Number.MAX_SAFE_INTEGER : ligRank}">${ligRank}</td>
-            <td data-sort="${marketValue}">${formatCompactCurrency(marketValue)}</td>
+            <td data-sort="${marketValue}">${formatCompactCurrency(marketValue)} ${unicodeTrend(getPlayerValueTrend(rival))}</td>
             <td data-sort="${realValue}">${formatCompactCurrency(realValue)}</td>
             <td data-sort="${rival.data?.punkte || 0}">${rival.data?.punkte || 0}</td>
             <td data-sort="${ownerName}">${ownerName}</td>

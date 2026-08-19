@@ -50,6 +50,7 @@ function renderTable(players) {
                 ? `${(marketValueSort / 1000).toFixed(0)} Tsd. €`
                 : `${(marketValueSort / 1000000).toFixed(2)} Mio. €`;
         }
+            marketValue += ` ${unicodeTrend(getPlayerValueTrend(player))}`;
         const owner = ownersMap.get(player.id) || 'Computer';
         const points = player.data?.punkte || 0;
         row.innerHTML = `

@@ -53,6 +53,27 @@ function getPlayerUrl(playerId) {
   }
 }
 
+function getValueTrend(value, lastValue) {
+  if (lastValue === null || lastValue === undefined || lastValue === '') return '';
+  const current = Number(value);
+  const previous = Number(lastValue);
+  if (!Number.isFinite(current) || !Number.isFinite(previous)) return '';
+  if (current > previous) return 'up';
+  if (current < previous) return 'down';
+  return 'eq';
+}
+
+function getPlayerValueTrend(player) {
+  return getValueTrend(player?.data?.wert, player?.data?.lastWert);
+}
+
+function unicodeTrend(trend) {
+  if (trend === "up") return '<span class="trend-mini trend-up" title="Wert gestiegen">&#9650;</span>';
+  if (trend === "down") return '<span class="trend-mini trend-down" title="Wert gefallen">&#9660;</span>';
+  if (trend === "eq") return '<span class="trend-mini trend-eq" title="Wert gleichbleibend">&#8226;</span>';
+  return "";
+}
+
 // Hilfsfunktion innerhalb von renderNews oder global verfügbar
 function linkPlayer(playerId, playerName) {
     if (!playerId) {

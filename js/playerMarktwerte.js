@@ -288,13 +288,6 @@ async function displayMarketValue(player) {
     addDebug('Marktwerte-Anzeige aktualisiert', 'success');
 }
 
-function unicodeTrend(trend) {
-    if (trend === "up") return '<span class="trend-mini trend-up">&#9650;</span>';
-    if (trend === "down") return '<span class="trend-mini trend-down">&#9660;</span>';
-    if (trend === "eq") return '<span class="trend-mini trend-eq">&#8213;</span>';
-    return "";
-}
-
 function avgIcon() {
     return `<svg class="market-avg-icon" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#b3c6e7" stroke="#3498db" stroke-width="2"/><text x="10" y="14" text-anchor="middle" font-size="10" fill="#3498db" font-family="Arial" font-weight="bold">Ø</text></svg>`;
 }
