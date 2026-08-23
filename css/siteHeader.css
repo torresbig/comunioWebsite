@@ -1,0 +1,74 @@
+* {
+    box-sizing: border-box;
+}
+
+.site-header {
+    background: linear-gradient(135deg, #34495e, #2c3e50);
+    color: white;
+    padding: 20px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    height: 55px;
+    min-height: 55px;
+    max-height: 55px;
+    box-sizing: border-box;
+}
+
+.site-header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    max-height: 25px;
+    height: 25px;
+    margin: 0 auto;
+    padding: 10px 0;
+}
+
+.site-header-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.site-header-title {
+    font-family: Arial, sans-serif;
+    font-size: 19.2px !important;
+    line-height: 40px !important;
+    color: white;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+}
+
+.site-header-title::before {
+    content: "📰 ";
+}
+
+.site-header .hamburger-button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    font-size: inherit;
+}
+
+body.page-player-db .site-header-title,
+body.page-transfermarkt .site-header-title,
+body.page-statistik .site-header-title,
+body.page-transfers .site-header-title,
+body.page-accounts .site-header-title {
+    font-size: 19.2px !important;
+    line-height: 40px !important;
+}
+
+.site-header-player-data {
+    display: none;
+}
