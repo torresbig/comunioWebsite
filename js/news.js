@@ -41,8 +41,10 @@ async function loadClubsData() {
 
 // Hilfsfunktion für Vereinsnamen
 function getClubName(clubId) {
-    if (!clubId) return 'N/A';
-    return clubsMap.get(clubId.toString()) || `Verein (ID: ${clubId})`;
+    if (clubId === null || clubId === undefined || clubId === '' || clubId === '0') return null;
+    const normalized = clubId.toString().trim();
+    if (/^(UNBEKANNT|UNKNOWN)$/i.test(normalized)) return null;
+    return clubsMap.get(normalized) || null;
 }
 
 
@@ -156,26 +158,21 @@ async function renderNews(newsList) {
                             try {
                                 try {
                                     const obj = JSON.parse(news.text);
-                                    // Skip if oldClub or newClub is UNBEKANNT/UNKNOWN
-                                    const oldClub = (obj.oldClub || '').toString().toUpperCase();
-                                    const newClub = (obj.newClub || '').toString().toUpperCase();
-                                    if (oldClub === 'UNBEKANNT' || oldClub === 'UNKNOWN' ||
-                                        newClub === 'UNBEKANNT' || newClub === 'UNKNOWN') {
-                                        addDebug('[renderNews] VEREINSWECHSEL übersprungen (UNBEKANNT): ' + news.text);
-                                        continue;
-                                    }
+                                    const oldClub = (obj.oldClub ?? '').toString().trim();
+                                    const newClub = (obj.newClub ?? '').toString().trim();
+                                    const oldClubName = getClubName(oldClub);
+                                    const newClubName = getClubName(newClub);
                                     const pid = obj.playerId || news.playerId || null;
-                                    if ((oldClub === "0" && newClub === "0") || (oldClub === 'UNBEKANNT' && newClub === 'UNBEKANNT')) {
-                                        text = `${linkPlayer(pid, obj.playerName)} wechselt außerhalb der Bundesliga`;
-                                    } else if (oldClub === "0" || oldClub === 'UNBEKANNT') {
-                                        text = `${linkPlayer(pid, obj.playerName)} wechselt zu <b>${getClubName(obj.newClub)}</b>`;
-                                    } else if (newClub === "0" || newClub === 'UNBEKANNT') {
-                                        text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${getClubName(obj.oldClub)}</b> zu einem Nicht-Bundesligisten`;
-                                    } else {
-                                        text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${getClubName(obj.oldClub)}</b> zu <b>${getClubName(obj.newClub)}</b>`;
-                                    }
 
-                                    
+                                    if ((oldClub === '0' && newClub === '0') || (!oldClubName && !newClubName)) {
+                                        text = `${linkPlayer(pid, obj.playerName)} wechselt außerhalb der Bundesliga`;
+                                    } else if (!oldClubName && newClubName) {
+                                        text = `${linkPlayer(pid, obj.playerName)} wechselt zu <b>${newClubName}</b>`;
+                                    } else if (oldClubName && !newClubName) {
+                                        text = `${linkPlayer(pid, obj.playerName)} verlässt <b>${oldClubName}</b> zu einem Nicht-Bundesligisten`;
+                                    } else {
+                                        text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${oldClubName}</b> zu <b>${newClubName}</b>`;
+                                    }
                                 } catch (jsonErr) {
                                     const regex = /^Vereinswechsel:\s(.+?)\s\(/;
                                     const match = regex.exec(news.text);
