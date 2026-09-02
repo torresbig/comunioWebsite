@@ -214,7 +214,6 @@ function sortedData() {
         switch (sortColumnIndex) {
             case 0: return cmpStr(a.verein, b.verein);
             case 1: return cmpStr(a.playerName, b.playerName);
-
             case 2: {
                 // Status aus injuriesMap (bevorzugt) oder item.status
                 const statusA = window.injuriesMap?.get(String(a.playerID))?.status || a.status || '';
@@ -223,14 +222,15 @@ function sortedData() {
             }
             case 3: return cmpStr(a.position, b.position);
             case 4: return cmpNum(a.punkte, b.punkte);
-            case 5: return cmpNum(a.preis, b.preis);
-            case 6: return cmpStr(ownersMap.get(a.playerID), ownersMap.get(b.playerID));
-            case 7: // Restzeit-Sortierung:
+            case 5: return cmpNum(a.preis, b.preis); // Geändert: Marktwert entfällt, Case 5 ist jetzt Preis
+            case 6: return cmpStr(ownersMap.get(a.playerID), ownersMap.get(b.playerID)); // Case 6: Besitzer
+            case 7: // Case 7: Restzeit
                 return sortDirection * (getTimeLeftForSort(a.setOnMarket) - getTimeLeftForSort(b.setOnMarket));
             default: return 0;
         }
     });
 }
+
 function cmpStr(a, b) {
     return sortDirection * String(a).localeCompare(String(b));
 }
