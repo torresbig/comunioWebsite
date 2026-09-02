@@ -65,8 +65,7 @@ function initSortEvents() {
 }
 
 /**
- * Erstellt die HTML-Tabelle mit Spielerinformationen, sortiert nach aktueller Einstellung.
- * @param {Array} data Array von Spielern (sortiert)
+ * Erstellt die HTML-Tabelle mit Spielerinformationen.
  */
 function renderTable(data) {
     const tbody = document.querySelector('#transferTable tbody');
@@ -74,14 +73,14 @@ function renderTable(data) {
 
     data.forEach(item => {
         const row = document.createElement('tr');
-        // ---- CELLS ----
+
         // Verein (rechtsbündig)
         const clubCell = document.createElement('td');
         clubCell.className = 'club';
         const clubLogo = document.createElement('img');
         clubLogo.src = DATA_URLS.logos + getLogoFileName(item.verein);
         clubLogo.alt = `Club ${item.verein}`;
-        clubLogo.width = 30;  // in Pixel, an Statusbild anpassen
+        clubLogo.width = 30;
         clubLogo.height = 30;
         clubCell.appendChild(clubLogo);
 
@@ -101,8 +100,7 @@ function renderTable(data) {
         playerInfo.appendChild(playerId);
         playerCell.appendChild(playerInfo);
 
-
-        // Status - aus injuriesMap (falls vorhanden), sonst aus item.status
+        // Status (aus injuriesMap oder item.status)
         const statusCell = document.createElement('td');
         statusCell.className = 'status-logo';
         const statusWrapper = document.createElement('div');
@@ -110,10 +108,9 @@ function renderTable(data) {
         statusWrapper.style.flexDirection = 'column';
         statusWrapper.style.alignItems = 'center';
 
-        // Status aus injuriesMap ermitteln
-        const injuryStatusData = window.injuriesMap?.get(String(item.playerID)) || {};
+        const injuryStatusData = window.injuriesMap?.get(String(item.playerID)) 
+                              || window.injuriesMap?.get(Number(item.playerID)) || {};
         let statusValue = injuryStatusData?.status || item.status || null;
-        // Fallback auf AKTIV, falls kein Status vorhanden/leer/unbekannt (wie in playerDisplayInfos.js)
         if (!statusValue || statusValue.toLowerCase() === 'unbekannt' || statusValue === '' || statusValue === null || statusValue === undefined) {
             statusValue = 'AKTIV';
         }
@@ -129,23 +126,27 @@ function renderTable(data) {
         // Position
         const positionCell = document.createElement('td');
         positionCell.className = 'position';
-
         const posLogoFile = getLogoPositionFilename(item.position);
         const img = document.createElement('img');
         img.src = `logos/${posLogoFile}`;
         img.className = 'club-logo';
         img.alt = item.position;
         img.title = item.position;
-        img.width = 30;  // in Pixel, an Statusbild anpassen
+        img.width = 30;
         img.height = 30;
         positionCell.appendChild(img);
 
-        // Preis & Marktwert kombiniert (rechtsbündig)
+        // Punkte (zentriert)
+        const pointsCell = document.createElement('td');
+        pointsCell.className = 'points';
+        pointsCell.style.textAlign = 'center';
+        pointsCell.textContent = item.punkte || 0;
+
+        // Preis & Marktwert kombiniert (Zwei Zeilen)
         const priceCell = document.createElement('td');
         priceCell.className = 'price';
         priceCell.style.textAlign = 'right';
 
-        // 1. Oben: Preis
         const priceSpan = document.createElement('div');
         priceSpan.textContent = formatCurrency(item.preis);
         if (item.wert > item.preis) {
@@ -154,7 +155,6 @@ function renderTable(data) {
         }
         priceCell.appendChild(priceSpan);
 
-        // 2. Unten: Marktwert in Klammern
         const valueSpan = document.createElement('div');
         valueSpan.style.fontSize = '0.85em';
         valueSpan.style.opacity = '0.8';
@@ -165,15 +165,10 @@ function renderTable(data) {
         const ownerCell = document.createElement('td');
         ownerCell.className = 'owner';
         ownerCell.style.textAlign = 'center';
-        ownerCell.textContent = ownersMap.get(item.playerID) || "Computer";
+        const ownerName = ownersMap.get(item.playerID) || ownersMap.get(Number(item.playerID)) || "Computer";
+        ownerCell.textContent = ownerName;
 
-        // Punkte (zentriert)
-        const pointsCell = document.createElement('td');
-        pointsCell.className = 'points';
-        pointsCell.style.textAlign = 'center';
-        pointsCell.textContent = item.punkte || 0;
-
-        // Restzeit (rechtsbündig, Färbung, Striche bei Ablauf)
+        // Restzeit (rechtsbündig)
         const timeCell = document.createElement('td');
         timeCell.className = 'time';
         timeCell.style.textAlign = 'right';
@@ -207,29 +202,44 @@ function renderTable(data) {
 }
 
 /**
- * Liefert die sortierte Kopie der Daten nach Spalte und Typ.
+ * Sortiert die Daten nach Spalte und Typ.
  */
-function sortedData() {
-    return originalData.slice().sort((a, b) => {
+function sortedData(arr = null) {
+    const data = (arr || originalData).slice();
+    return data.sort((a, b) => {
         switch (sortColumnIndex) {
             case 0: return cmpStr(a.verein, b.verein);
             case 1: return cmpStr(a.playerName, b.playerName);
-            case 2: {
-                // Status aus injuriesMap (bevorzugt) oder item.status
-                const statusA = window.injuriesMap?.get(String(a.playerID))?.status || a.status || '';
-                const statusB = window.injuriesMap?.get(String(b.playerID))?.status || b.status || '';
-                return cmpStr(statusA, statusB);
+            
+            case 2: { // Status: Ausfälle/Verletzte zusammenfassen, Aktive ans Ende
+                const injuryA = window.injuriesMap?.get(String(a.playerID)) || window.injuriesMap?.get(Number(a.playerID));
+                const injuryB = window.injuriesMap?.get(String(b.playerID)) || window.injuriesMap?.get(Number(b.playerID));
+                
+                const statusA = (injuryA?.status || a.status || 'AKTIV').trim().toUpperCase();
+                const statusB = (injuryB?.status || b.status || 'AKTIV').trim().toUpperCase();
+
+                if (statusA === statusB) return 0;
+                if (statusA === 'AKTIV') return 1 * sortDirection;
+                if (statusB === 'AKTIV') return -1 * sortDirection;
+
+                return sortDirection * statusA.localeCompare(statusB);
             }
+            
             case 3: return cmpStr(a.position, b.position);
             case 4: return cmpNum(a.punkte, b.punkte);
-            case 5: return cmpNum(a.preis, b.preis); // Geändert: Marktwert entfällt, Case 5 ist jetzt Preis
-            case 6: return cmpStr(ownersMap.get(a.playerID), ownersMap.get(b.playerID)); // Case 6: Besitzer
-            case 7: // Case 7: Restzeit
+            case 5: return cmpNum(a.preis, b.preis); // Preis (enthält auch Marktwert)
+            case 6: { // Besitzer
+                const ownerA = ownersMap.get(a.playerID) || ownersMap.get(Number(a.playerID)) || "Computer";
+                const ownerB = ownersMap.get(b.playerID) || ownersMap.get(Number(b.playerID)) || "Computer";
+                return cmpStr(ownerA, ownerB);
+            }
+            case 7: // Restzeit
                 return sortDirection * (getTimeLeftForSort(a.setOnMarket) - getTimeLeftForSort(b.setOnMarket));
             default: return 0;
         }
     });
 }
+
 
 function cmpStr(a, b) {
     return sortDirection * String(a).localeCompare(String(b));
