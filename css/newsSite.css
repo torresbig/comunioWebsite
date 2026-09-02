@@ -207,50 +207,61 @@
      display: block;
      min-height: 220px;
      background: white;
-     border-radius: 8px;
+    border-radius: 10px;
      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
      overflow-y: auto;
-     padding: 15px;
+    padding: 22px 28px 28px;
      margin: 0;
      max-height: 100%;
  }
 
  /* ===== NEWS DAY ===== */
  .news-day {
-     background: white;
-     border-radius: 8px;
-     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border: 1px solid #dfe7ef;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(31, 52, 73, 0.06);
      overflow: hidden;
-     border-left: 4px solid #2c3e50;
-     transition: all 0.2s ease;
-     margin-bottom: 15px;
+    border-left: 4px solid #2f7d7a;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    margin: 0 auto 20px;
+    max-width: 1040px;
      display: block;
  }
 
  .news-day:hover {
-     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 7px 18px rgba(31, 52, 73, 0.11);
      transform: translateY(-2px);
  }
 
  .news-date {
-     background: #2c3e50;
-     color: white;
-     padding: 8px 12px;
-     font-weight: 500;
-     font-size: 0.85em;
+    background: #f1f7f7;
+    border-bottom: 1px solid #dfe7ef;
+    color: #193b4d;
+    padding: 11px 15px;
+    font-weight: 700;
+    font-size: 0.92em;
      display: flex;
      align-items: center;
-     gap: 6px;
+    justify-content: space-between;
+    gap: 12px;
  }
 
  .news-date:before {
-     content: "📅";
-     font-size: 0.95em;
+    content: "📅";
+    margin-right: 7px;
  }
+
+.news-day-count {
+    color: #5d7180;
+    font-size: 0.8em;
+    font-weight: 600;
+    white-space: nowrap;
+}
 
  /* ===== NEWS TYPES (collapsible) ===== */
  .news-art-collapsible {
-     border-bottom: 1px solid #e8eef5;
+    border-bottom: 1px solid #edf1f4;
  }
 
  .news-art-collapsible:last-child {
@@ -258,10 +269,10 @@
  }
 
  .news-art-header {
-     background: #f8f9fa;
-     padding: 10px 15px;
+    background: #ffffff;
+    padding: 11px 15px;
      font-weight: 600;
-     color: #2c3e50;
+    color: #29485a;
      font-size: 0.95em;
      cursor: pointer;
      user-select: none;
@@ -272,12 +283,30 @@
  }
 
  .news-art-header:hover {
-     background: #eef1f5;
+    background: #f6fafb;
  }
 
  .news-art-title {
      flex: 1;
+     letter-spacing: 0.01em;
  }
+
+.news-art-icon {
+    width: 24px;
+    text-align: center;
+    font-size: 1.05em;
+ }
+
+.news-art-count {
+    min-width: 22px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #e6f2f1;
+    color: #236966;
+    font-size: 0.78em;
+    line-height: 1.3;
+    text-align: center;
+}
 
  
 
@@ -305,18 +334,19 @@
  /* ===== NEWS LIST ===== */
  .news-list-ul {
      list-style: none;
-     padding: 10px 15px;
+    padding: 5px 22px 14px 50px;
      margin: 0;
      background: white;
      display: block;
  }
 
  .news-list-li {
-     padding: 8px 12px;
-     margin-bottom: 6px;
-     background: #f8f9fa;
-     border-left: 3px solid #2c3e50;
-     border-radius: 3px;
+    position: relative;
+    padding: 8px 10px;
+    margin-bottom: 3px;
+    background: transparent;
+    border-left: 0;
+    border-radius: 4px;
      font-size: 0.9em;
      line-height: 1.5;
      color: #34495e;
@@ -329,9 +359,19 @@
  }
 
  .news-list-li:hover {
-     background: #eef7ff;
-     border-left-color: #34495e;
+    background: #f3f8f8;
  }
+
+.news-list-li:before {
+    content: "";
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4aa19b;
+    left: -25px;
+    top: 16px;
+}
 
  .player-entry {
      display: inline-flex;
@@ -459,13 +499,29 @@
          font-size: 0.8em;
      }
 
+     .news-day-count {
+         font-size: 0.75em;
+     }
+
      .news-list-li {
          font-size: 0.85em;
          padding: 6px 10px;
      }
 
+     .news-list-ul {
+         padding-left: 30px;
+     }
+
      .news-container {
          padding: 12px;
+     }
+
+     .news-list-ul {
+         padding-left: 30px;
+     }
+
+     .news-list-li:before {
+         left: -19px;
      }
  }
 

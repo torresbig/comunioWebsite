@@ -50,6 +50,26 @@ function getClubName(clubId) {
 
 async function renderNews(newsList) {
     try {
+        const newsArtOrder = [
+            'ELFDESTAGES',
+            'USERPOINTS',
+            'TRANSFER',
+            'SPIELERSTATUS',
+            'POSITIONSWECHSEL',
+            'VEREINSWECHSEL',
+            'NEW_PLAYER'
+        ];
+        const newsArtLabels = {
+            ELFDESTAGES: ['🏆', 'Elf des Tages'],
+            USERPOINTS: ['📈', 'Userpoints'],
+            TRANSFER: ['💸', 'Transfers'],
+            SPIELERSTATUS: ['🚦', 'Spielerstatus'],
+            POSITIONSWECHSEL: ['🔀', 'Positionswechsel'],
+            VEREINSWECHSEL: ['🔄', 'Vereinswechsel'],
+            NEW_PLAYER: ['✨', 'Neue Spieler']
+        };
+        const collapsedByDefault = new Set(['POSITIONSWECHSEL', 'VEREINSWECHSEL', 'NEW_PLAYER']);
+
         // Lade Vereinsdaten, falls noch nicht geschehen
         if (clubsMap.size === 0) {
             await loadClubsData();
@@ -86,15 +106,28 @@ async function renderNews(newsList) {
                 }
             }
 
-            html += `<div class="news-day"><div class="news-date">${day.date}</div>`;
+            const groupedNewsCount = Object.values(grouped).reduce((count, entries) => count + entries.length, 0);
+            html += `<div class="news-day"><div class="news-date"><span>${day.date}</span><span class="news-day-count">${groupedNewsCount} ${groupedNewsCount === 1 ? 'Meldung' : 'Meldungen'}</span></div>`;
 
-            for (const art of Object.keys(grouped).sort()) {
-                const defaultCollapsed = !(art === 'TRANSFER' || art === 'POSITIONSWECHSEL' || art === 'SPIELERSTATUS' || art === 'VEREINSWECHSEL');
+            const orderedArts = Object.keys(grouped).sort((a, b) => {
+                const orderA = newsArtOrder.indexOf(a);
+                const orderB = newsArtOrder.indexOf(b);
+                if (orderA === -1 && orderB === -1) return a.localeCompare(b);
+                if (orderA === -1) return 1;
+                if (orderB === -1) return -1;
+                return orderA - orderB;
+            });
+
+            for (const art of orderedArts) {
+                const [icon, label] = newsArtLabels[art] || ['📰', art];
+                const defaultCollapsed = collapsedByDefault.has(art) && orderedArts.length > 1;
                 const collapsedClass = defaultCollapsed ? ' collapsed' : '';
                 html += `<div class="news-art-collapsible${collapsedClass}">
                     <div class="news-art-header" onclick="toggleArtSection(this)">
-                                                <span class="toggle-icon">▼</span>
-                        <span class="news-art-title">${art}</span>
+                        <span class="toggle-icon">▼</span>
+                        <span class="news-art-icon" aria-hidden="true">${icon}</span>
+                        <span class="news-art-title">${label}</span>
+                        <span class="news-art-count">${grouped[art].length}</span>
                     </div>
                     <div class="news-art-content${collapsedClass}">
                         <ul class="news-list-ul">`;
@@ -169,7 +202,7 @@ async function renderNews(newsList) {
                                     } else if (!oldClubName && newClubName) {
                                         text = `${linkPlayer(pid, obj.playerName)} wechselt zu <b>${newClubName}</b>`;
                                     } else if (oldClubName && !newClubName) {
-                                        text = `${linkPlayer(pid, obj.playerName)} verlässt <b>${oldClubName}</b> zu einem Nicht-Bundesligisten`;
+                                        text = `${linkPlayer(pid, obj.playerName)} verlässt von <b>${oldClubName}</b> die Bundesliga`;
                                     } else {
                                         text = `${linkPlayer(pid, obj.playerName)} wechselt von <b>${oldClubName}</b> zu <b>${newClubName}</b>`;
                                     }
