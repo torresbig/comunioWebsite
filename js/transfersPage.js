@@ -47,6 +47,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
+    function parseTransferDate(dateString) {
+        if (!dateString) return 0;
+
+        const germanDate = String(dateString).match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+        if (germanDate) {
+            const [, day, month, year, hours = "0", minutes = "0"] = germanDate;
+            return new Date(year, month - 1, day, hours, minutes).getTime();
+        }
+
+        const timestamp = Date.parse(dateString);
+        return Number.isNaN(timestamp) ? 0 : timestamp;
+    }
+
+    transfers.sort((a, b) => parseTransferDate(b.date) - parseTransferDate(a.date));
+
     // --- User-Liste sammeln
     const allUsersSet = new Set();
     transfers.forEach(t => {
