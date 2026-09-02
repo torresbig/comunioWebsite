@@ -78,27 +78,52 @@ function applyAllFilters() {
     renderTable(sortedData(filteredData));
 }
 
-// Passe sortedData an, so dass optional ein custom Array übernommen wird
+/**
+ * Initialisiert Click-Events für alle th-Header.
+ * Ruft bei Klick applyAllFilters auf, damit Filter erhalten bleiben!
+ */
+function initSortEvents() {
+    document.querySelectorAll('#transferTable th').forEach((th, idx) => {
+        th.style.cursor = 'pointer';
+        // Entferne alte Listener, falls vorhanden, indem wir sie neu zuweisen
+        th.onclick = () => {
+            if (sortColumnIndex === idx) {
+                sortDirection *= -1; // Richtung wechseln
+            } else {
+                sortColumnIndex = idx;
+                sortDirection = 1; // Default: aufsteigend
+            }
+            // WICHTIG: Filter neu anwenden, inkl. neuer Sortierung!
+            applyAllFilters();
+        };
+    });
+}
+
+/**
+ * Sortiert ein gegebenes Array (oder originalData) nach der aktuellen Spalte.
+ */
 function sortedData(arr = null) {
     const data = (arr || originalData).slice();
     return data.sort((a, b) => {
         switch (sortColumnIndex) {
             case 0: return cmpStr(a.verein, b.verein);
             case 1: return cmpStr(a.playerName, b.playerName);
-            case 2: {
-    const injuryA = window.injuriesMap?.get(String(a.playerID)) || window.injuriesMap?.get(Number(a.playerID));
-    const injuryB = window.injuriesMap?.get(String(b.playerID)) || window.injuriesMap?.get(Number(b.playerID));
-    
-    const statusA = injuryA?.status || a.status || 'AKTIV';
-    const statusB = injuryB?.status || b.status || 'AKTIV';
-    return cmpStr(statusA, statusB);
-}
-
+            
+            case 2: { // Status (mit injuriesMap-Check für String/Number)
+                const injuryA = window.injuriesMap?.get(String(a.playerID)) || window.injuriesMap?.get(Number(a.playerID));
+                const injuryB = window.injuriesMap?.get(String(b.playerID)) || window.injuriesMap?.get(Number(b.playerID));
+                
+                const statusA = injuryA?.status || a.status || 'AKTIV';
+                const statusB = injuryB?.status || b.status || 'AKTIV';
+                return cmpStr(statusA, statusB);
+            }
+            
             case 3: return cmpStr(a.position, b.position);
             case 4: return cmpNum(a.punkte, b.punkte);
-            case 5: return cmpNum(a.preis, b.preis);
-            case 6: return cmpStr(ownersMap.get(a.playerID), ownersMap.get(b.playerID));
-            case 7:
+            case 5: return cmpNum(a.preis, b.preis); // Preis (enthält auch Marktwert)
+            case 6: return cmpStr(ownersMap.get(a.playerID) || ownersMap.get(Number(a.playerID)) || "Computer", 
+                                  ownersMap.get(b.playerID) || ownersMap.get(Number(b.playerID)) || "Computer");
+            case 7: // Restzeit
                 return sortDirection * (getTimeLeftForSort(a.setOnMarket) - getTimeLeftForSort(b.setOnMarket));
             default: return 0;
         }
@@ -175,24 +200,7 @@ function applyAllFilters() {
 }
 
 
-// Passe sortedData, so dass optional ein custom Array übernommen wird
-function sortedData(arr = null) {
-    const data = (arr || originalData).slice();
-    return data.sort((a, b) => {
-        switch (sortColumnIndex) {
-            case 0: return cmpStr(a.verein, b.verein);
-            case 1: return cmpStr(a.playerName, b.playerName);
-            case 2: return cmpStr(a.status, b.status);
-            case 3: return cmpStr(a.position, b.position);
-            case 4: return cmpNum(a.wert, b.wert);
-            case 5: return cmpNum(a.preis, b.preis);
-            case 6: return cmpStr(ownersMap.get(a.playerID), ownersMap.get(b.playerID));
-            case 7:
-                return sortDirection * (getTimeLeftForSort(a.setOnMarket) - getTimeLeftForSort(b.setOnMarket));
-            default: return 0;
-        }
-    });
-}
+
 
 // --- Damit die Filter auch initial nach dem Laden angewandt werden, passe loadTransferMarktData an:
 async function loadTransferMarktData() {
