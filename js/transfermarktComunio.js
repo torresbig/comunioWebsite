@@ -102,19 +102,6 @@ function renderTable(data) {
         playerCell.appendChild(playerInfo);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
         // Status - aus injuriesMap (falls vorhanden), sonst aus item.status
         const statusCell = document.createElement('td');
         statusCell.className = 'status-logo';
@@ -123,7 +110,7 @@ function renderTable(data) {
         statusWrapper.style.flexDirection = 'column';
         statusWrapper.style.alignItems = 'center';
 
-                // Status aus injuriesMap ermitteln
+        // Status aus injuriesMap ermitteln
         const injuryStatusData = window.injuriesMap?.get(String(item.playerID)) || {};
         let statusValue = injuryStatusData?.status || item.status || null;
         // Fallback auf AKTIV, falls kein Status vorhanden/leer/unbekannt (wie in playerDisplayInfos.js)
@@ -153,25 +140,26 @@ function renderTable(data) {
         img.height = 30;
         positionCell.appendChild(img);
 
-        // Marktwert (rechtsbündig)
-        const valueCell = document.createElement('td');
-        valueCell.className = 'value';
-        valueCell.style.textAlign = 'right';
-        if (item.wert > item.preis) {
-            const valueSpan = document.createElement('span');
-            valueSpan.style.fontWeight = 'bold';
-            valueSpan.style.color = 'green';
-            valueSpan.textContent = formatCurrency(item.wert);
-            valueCell.appendChild(valueSpan);
-        } else {
-            valueCell.textContent = formatCurrency(item.wert);
-        }
-
-        // Preis (rechtsbündig)
+        // Preis & Marktwert kombiniert (rechtsbündig)
         const priceCell = document.createElement('td');
         priceCell.className = 'price';
         priceCell.style.textAlign = 'right';
-        priceCell.textContent = formatCurrency(item.preis);
+
+        // 1. Oben: Preis
+        const priceSpan = document.createElement('div');
+        priceSpan.textContent = formatCurrency(item.preis);
+        if (item.wert > item.preis) {
+            priceSpan.style.fontWeight = 'bold';
+            priceSpan.style.color = 'green';
+        }
+        priceCell.appendChild(priceSpan);
+
+        // 2. Unten: Marktwert in Klammern
+        const valueSpan = document.createElement('div');
+        valueSpan.style.fontSize = '0.85em';
+        valueSpan.style.opacity = '0.8';
+        valueSpan.textContent = `(${formatCurrency(item.wert)})`;
+        priceCell.appendChild(valueSpan);
 
         // Besitzer (zentriert)
         const ownerCell = document.createElement('td');
@@ -190,7 +178,6 @@ function renderTable(data) {
         timeCell.className = 'time';
         timeCell.style.textAlign = 'right';
         const remainingTime = calculateRemainingTime(item.remainingDate);
-        //const remainingTime = calculateRemainingTime(item.setOnMarket);
         timeCell.textContent = remainingTime;
         if (remainingTime === 'Abgelaufen') {
             row.classList.add('expired');
@@ -212,7 +199,6 @@ function renderTable(data) {
         row.appendChild(statusCell);
         row.appendChild(positionCell);
         row.appendChild(pointsCell);
-        row.appendChild(valueCell);
         row.appendChild(priceCell);
         row.appendChild(ownerCell);
         row.appendChild(timeCell);
@@ -237,10 +223,9 @@ function sortedData() {
             }
             case 3: return cmpStr(a.position, b.position);
             case 4: return cmpNum(a.punkte, b.punkte);
-            case 5: return cmpNum(a.wert, b.wert);
-            case 6: return cmpNum(a.preis, b.preis);
-            case 7: return cmpStr(ownersMap.get(a.playerID), ownersMap.get(b.playerID));
-            case 8: // Restzeit-Sortierung:
+            case 5: return cmpNum(a.preis, b.preis);
+            case 6: return cmpStr(ownersMap.get(a.playerID), ownersMap.get(b.playerID));
+            case 7: // Restzeit-Sortierung:
                 return sortDirection * (getTimeLeftForSort(a.setOnMarket) - getTimeLeftForSort(b.setOnMarket));
             default: return 0;
         }
@@ -284,16 +269,6 @@ function calculateRemainingTime(dateString) {
     const hours = Math.floor(diffMS / (1000 * 60 * 60));
     const minutes = Math.floor((diffMS % (1000 * 60 * 60)) / (1000 * 60));
     return `${hours}h ${minutes}m`;
-}
-
-
-
-// Hilfsfunktion für die Sortierung, gibt Unterschied in Minuten zurück
-function getTimeLeftForSort(remainingDate) {
-    const now = new Date();
-    const endDate = new Date(remainingDate);
-    if (endDate <= now) return -1;
-    return endDate - now; // Differenz in Millisekunden
 }
 
 function getTimeLeftForSort(dateString) {
