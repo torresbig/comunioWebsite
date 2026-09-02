@@ -86,11 +86,14 @@ function sortedData(arr = null) {
             case 0: return cmpStr(a.verein, b.verein);
             case 1: return cmpStr(a.playerName, b.playerName);
             case 2: {
-                // Status aus injuriesMap (bevorzugt) oder item.status
-                const statusA = window.injuriesMap?.get(String(a.playerID))?.status || a.status || 'AKTIV';
-                const statusB = window.injuriesMap?.get(String(b.playerID))?.status || b.status || 'AKTIV';
-                return cmpStr(statusA, statusB);
-            }
+    const injuryA = window.injuriesMap?.get(String(a.playerID)) || window.injuriesMap?.get(Number(a.playerID));
+    const injuryB = window.injuriesMap?.get(String(b.playerID)) || window.injuriesMap?.get(Number(b.playerID));
+    
+    const statusA = injuryA?.status || a.status || 'AKTIV';
+    const statusB = injuryB?.status || b.status || 'AKTIV';
+    return cmpStr(statusA, statusB);
+}
+
             case 3: return cmpStr(a.position, b.position);
             case 4: return cmpNum(a.punkte, b.punkte);
             case 5: return cmpNum(a.preis, b.preis);
@@ -123,7 +126,6 @@ async function loadTransferMarktData() {
     }
 }
 
-// Kombiniere alle Filter und rendere die gefilterte Tabelle
 function applyAllFilters() {
     const isComputerOwner = document.getElementById('filterComputerOwner').checked;
     const isPrice160000 = document.getElementById('filterPrice160000').checked;
@@ -132,29 +134,46 @@ function applyAllFilters() {
 
     let filteredData = originalData.filter(item => {
         let show = true;
-        // Nur Computer-Angebote
+        
+        // 1. Nur Computer-Angebote
         if (isComputerOwner) {
-            let owner = ownersMap.get(item.playerID).trim();
-            let isComp = (owner === "Computer");
-            show = show && isComp;
+            let owner = (ownersMap.get(item.playerID) || ownersMap.get(Number(item.playerID)) || "Computer").toString().trim();
+            show = show && (owner === "Computer");
         }
-        // Preis = 160000
+        
+        // 2. Preis = 160000
         if (isPrice160000) {
-            show = show && (item.preis === 160000);
+            show = show && (Number(item.preis) === 160000);
         }
-        // Status ungleich aktiv
+        
+        // 3. Status ungleich aktiv
         if (isNotStatusAktiv) {
-            show = show && (item.status.toLowerCase() !== "aktiv");
+            // Prüfe Map sowohl mit String als auch mit Number (Falle bei Map-Keys!)
+            const injuryStatusData = window.injuriesMap?.get(String(item.playerID)) 
+                                  || window.injuriesMap?.get(Number(item.playerID)) 
+                                  || {};
+
+            let statusValue = injuryStatusData?.status || item.status || null;
+            
+            if (!statusValue || statusValue.toLowerCase() === 'unbekannt' || statusValue === '') {
+                statusValue = 'AKTIV';
+            }
+            
+            const isAktiv = statusValue.toString().trim().toLowerCase() === 'aktiv';
+            show = show && !isAktiv;
         }
-        // Preis niedriger als Wert
+        
+        // 4. Preis niedriger als Wert
         if (isPriceBelowValue) {
-            show = show && (item.preis < item.wert);
+            show = show && (Number(item.preis) < Number(item.wert));
         }
+        
         return show;
     });
 
     renderTable(sortedData(filteredData));
 }
+
 
 // Passe sortedData, so dass optional ein custom Array übernommen wird
 function sortedData(arr = null) {
