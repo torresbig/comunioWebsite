@@ -136,3 +136,74 @@
     cursor: default !important;
     /* kein Zeiger bei Hover/Klick */
 }
+
+/* Auf breiten Bildschirmen wird das mobile Menue zu einer festen Seitenleiste. */
+@media (min-width: 901px) {
+    body {
+        margin-left: 264px !important;
+        width: auto;
+    }
+
+    .hamburger-menu {
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 264px;
+        padding: 24px 16px;
+        background: #243746;
+        border-right: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 4px 0 18px rgba(18, 32, 43, 0.2);
+        overflow-y: auto;
+    }
+
+    .hamburger-menu::before {
+        content: "Comunio Ultraz";
+        display: block;
+        margin: 0 8px 28px;
+        color: #ffffff;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    .hamburger-button {
+        display: none;
+    }
+
+    .hamburger-dropdown,
+    .hamburger-dropdown.show {
+        position: static;
+        display: block;
+        min-width: 0;
+        padding: 0;
+        overflow: visible;
+        background: transparent;
+        box-shadow: none;
+        animation: none;
+    }
+
+    .menu-item {
+        margin-bottom: 4px;
+        padding: 12px 14px;
+        color: #e7eef2;
+        border: 0;
+        border-radius: 6px;
+        font-size: 0.94rem;
+    }
+
+    .menu-item:hover,
+    .menu-item.active {
+        background: #344f61;
+        color: #ffffff !important;
+    }
+
+    .menu-tarn,
+    .menu-tarn:hover,
+    .menu-tarn:active,
+    .menu-tarn:focus {
+        margin-top: 24px;
+        color: rgba(231, 238, 242, 0.5) !important;
+        text-align: left;
+        padding: 8px 14px;
+    }
+}

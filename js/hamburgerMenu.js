@@ -40,6 +40,20 @@ document.addEventListener('DOMContentLoaded', function () {
     linkStatistik.href = getLokalOderGitURL(WEBSITE_URLS.statistikUrl, "statistik.html");
   }
 
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  const pageLinks = {
+    'index.html': linkIndex,
+    'playerDb.html': linkPlayerDb,
+    'statistik.html': linkStatistik,
+    'transfermarktComunio.html': linkTransfermarktComunio,
+    'transfers.html': linkTransferuebersicht,
+    'useruebersicht.html': linkUseruebersicht
+  };
+  if (pageLinks[currentPage]) {
+    pageLinks[currentPage].classList.add('active');
+    pageLinks[currentPage].setAttribute('aria-current', 'page');
+  }
+
 
   // Geheimer Link-Mechanismus für 5 Klicks
   let tarnClick = 0, tarnTimeout = null;
