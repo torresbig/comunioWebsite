@@ -122,7 +122,7 @@ async function renderNews(newsList) {
                 const [icon, label] = newsArtLabels[art] || ['📰', art];
                 const defaultCollapsed = collapsedByDefault.has(art) && orderedArts.length > 1;
                 const collapsedClass = defaultCollapsed ? ' collapsed' : '';
-                html += `<div class="news-art-collapsible${collapsedClass}">
+                html += `<div class="news-art-collapsible${collapsedClass}" data-news-art="${art}">
                     <div class="news-art-header" onclick="toggleArtSection(this)">
                         <span class="toggle-icon">▼</span>
                         <span class="news-art-icon" aria-hidden="true">${icon}</span>

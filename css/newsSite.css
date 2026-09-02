@@ -282,6 +282,34 @@
      transition: background 0.2s ease;
  }
 
+.news-art-collapsible[data-news-art="ELFDESTAGES"] .news-art-header {
+    background: #fff8e7;
+}
+
+.news-art-collapsible[data-news-art="USERPOINTS"] .news-art-header {
+    background: #eef8f1;
+}
+
+.news-art-collapsible[data-news-art="TRANSFER"] .news-art-header {
+    background: #edf5ff;
+}
+
+.news-art-collapsible[data-news-art="SPIELERSTATUS"] .news-art-header {
+    background: #fff1ed;
+}
+
+.news-art-collapsible[data-news-art="POSITIONSWECHSEL"] .news-art-header {
+    background: #f4efff;
+}
+
+.news-art-collapsible[data-news-art="VEREINSWECHSEL"] .news-art-header {
+    background: #eaf8f7;
+}
+
+.news-art-collapsible[data-news-art="NEW_PLAYER"] .news-art-header {
+    background: #fff0f7;
+}
+
  .news-art-header:hover {
     background: #f6fafb;
  }
@@ -334,7 +362,7 @@
  /* ===== NEWS LIST ===== */
  .news-list-ul {
      list-style: none;
-    padding: 5px 22px 14px 50px;
+    padding: 5px 22px 14px 22px;
      margin: 0;
      background: white;
      display: block;
@@ -363,14 +391,7 @@
  }
 
 .news-list-li:before {
-    content: "";
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #4aa19b;
-    left: -25px;
-    top: 16px;
+    display: none;
 }
 
  .player-entry {
@@ -517,11 +538,7 @@
      }
 
      .news-list-ul {
-         padding-left: 30px;
-     }
-
-     .news-list-li:before {
-         left: -19px;
+         padding: 4px 10px 12px;
      }
  }
 
@@ -590,4 +607,49 @@
      margin: 12px 0 8px 0;
      text-align: right;
      /* Für dezente Ausrichtung */
+ }
+
+ /* ===== DESKTOP LAYOUT ===== */
+ @media (min-width: 769px) {
+     .container {
+         max-width: 1500px;
+         padding: 28px 42px 0;
+     }
+
+     .news-container {
+         background: transparent;
+         border-radius: 0;
+         box-shadow: none;
+         padding: 0 0 30px;
+     }
+
+     .news-day {
+         max-width: none;
+         border-radius: 8px;
+         margin-bottom: 24px;
+     }
+
+     .news-date {
+         padding: 14px 22px;
+         font-size: 1.05em;
+     }
+
+     .news-day-count {
+         font-size: 0.85em;
+     }
+
+     .news-art-header {
+         padding: 15px 22px;
+         font-size: 1.05em;
+     }
+
+     .news-list-ul {
+         padding: 8px 30px 18px 30px;
+     }
+
+     .news-list-li {
+         padding: 10px 12px;
+         font-size: 1em;
+         line-height: 1.6;
+     }
  }
