@@ -45,31 +45,35 @@ function applyAllFilters() {
     let filteredData = originalData.filter(item => {
         let show = true;
         
-        // Nur Computer-Angebote
+        // 1. Nur Computer-Angebote
         if (isComputerOwner) {
-            let owner = (ownersMap.get(item.playerID) || "Computer").trim();
-            let isComp = (owner === "Computer");
-            show = show && isComp;
+            let owner = (ownersMap.get(item.playerID) || ownersMap.get(Number(item.playerID)) || "Computer").toString().trim();
+            show = show && (owner === "Computer");
         }
         
-        // Preis = 160000
+        // 2. Preis = 160000
         if (isPrice160000) {
-            show = show && (item.preis === 160000);
+            show = show && (Number(item.preis) === 160000);
         }
         
-        // Status ungleich aktiv (unter Berücksichtigung der injuriesMap)
+        // 3. Status ungleich aktiv (prüft injuriesMap sowohl als String als auch Number)
         if (isNotStatusAktiv) {
-            const injuryStatusData = window.injuriesMap?.get(String(item.playerID)) || {};
-            let statusValue = injuryStatusData?.status || item.status || 'AKTIV';
-            if (!statusValue || statusValue.toLowerCase() === 'unbekannt') {
+            const injuryStatusData = window.injuriesMap?.get(String(item.playerID)) 
+                                  || window.injuriesMap?.get(Number(item.playerID)) 
+                                  || {};
+
+            let statusValue = injuryStatusData?.status || item.status || null;
+            if (!statusValue || statusValue.toLowerCase() === 'unbekannt' || statusValue === '' || statusValue === null || statusValue === undefined) {
                 statusValue = 'AKTIV';
             }
-            show = show && (statusValue.toLowerCase() !== "aktiv");
+            
+            const isAktiv = statusValue.toString().trim().toLowerCase() === 'aktiv';
+            show = show && !isAktiv;
         }
         
-        // Preis niedriger als Wert
+        // 4. Preis niedriger als Wert
         if (isPriceBelowValue) {
-            show = show && (item.preis < item.wert);
+            show = show && (Number(item.preis) < Number(item.wert));
         }
         
         return show;
@@ -78,57 +82,6 @@ function applyAllFilters() {
     renderTable(sortedData(filteredData));
 }
 
-/**
- * Initialisiert Click-Events für alle th-Header.
- * Ruft bei Klick applyAllFilters auf, damit Filter erhalten bleiben!
- */
-function initSortEvents() {
-    document.querySelectorAll('#transferTable th').forEach((th, idx) => {
-        th.style.cursor = 'pointer';
-        // Entferne alte Listener, falls vorhanden, indem wir sie neu zuweisen
-        th.onclick = () => {
-            if (sortColumnIndex === idx) {
-                sortDirection *= -1; // Richtung wechseln
-            } else {
-                sortColumnIndex = idx;
-                sortDirection = 1; // Default: aufsteigend
-            }
-            // WICHTIG: Filter neu anwenden, inkl. neuer Sortierung!
-            applyAllFilters();
-        };
-    });
-}
-
-/**
- * Sortiert ein gegebenes Array (oder originalData) nach der aktuellen Spalte.
- */
-function sortedData(arr = null) {
-    const data = (arr || originalData).slice();
-    return data.sort((a, b) => {
-        switch (sortColumnIndex) {
-            case 0: return cmpStr(a.verein, b.verein);
-            case 1: return cmpStr(a.playerName, b.playerName);
-            
-            case 2: { // Status (mit injuriesMap-Check für String/Number)
-                const injuryA = window.injuriesMap?.get(String(a.playerID)) || window.injuriesMap?.get(Number(a.playerID));
-                const injuryB = window.injuriesMap?.get(String(b.playerID)) || window.injuriesMap?.get(Number(b.playerID));
-                
-                const statusA = injuryA?.status || a.status || 'AKTIV';
-                const statusB = injuryB?.status || b.status || 'AKTIV';
-                return cmpStr(statusA, statusB);
-            }
-            
-            case 3: return cmpStr(a.position, b.position);
-            case 4: return cmpNum(a.punkte, b.punkte);
-            case 5: return cmpNum(a.preis, b.preis); // Preis (enthält auch Marktwert)
-            case 6: return cmpStr(ownersMap.get(a.playerID) || ownersMap.get(Number(a.playerID)) || "Computer", 
-                                  ownersMap.get(b.playerID) || ownersMap.get(Number(b.playerID)) || "Computer");
-            case 7: // Restzeit
-                return sortDirection * (getTimeLeftForSort(a.setOnMarket) - getTimeLeftForSort(b.setOnMarket));
-            default: return 0;
-        }
-    });
-}
 
 // --- Damit die Filter auch initial nach dem Laden angewandt werden, passe loadTransferMarktData an:
 async function loadTransferMarktData() {
