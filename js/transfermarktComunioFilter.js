@@ -44,6 +44,94 @@ function applyAllFilters() {
 
     let filteredData = originalData.filter(item => {
         let show = true;
+        
+        // Nur Computer-Angebote
+        if (isComputerOwner) {
+            let owner = (ownersMap.get(item.playerID) || "Computer").trim();
+            let isComp = (owner === "Computer");
+            show = show && isComp;
+        }
+        
+        // Preis = 160000
+        if (isPrice160000) {
+            show = show && (item.preis === 160000);
+        }
+        
+        // Status ungleich aktiv (unter Berücksichtigung der injuriesMap)
+        if (isNotStatusAktiv) {
+            const injuryStatusData = window.injuriesMap?.get(String(item.playerID)) || {};
+            let statusValue = injuryStatusData?.status || item.status || 'AKTIV';
+            if (!statusValue || statusValue.toLowerCase() === 'unbekannt') {
+                statusValue = 'AKTIV';
+            }
+            show = show && (statusValue.toLowerCase() !== "aktiv");
+        }
+        
+        // Preis niedriger als Wert
+        if (isPriceBelowValue) {
+            show = show && (item.preis < item.wert);
+        }
+        
+        return show;
+    });
+
+    renderTable(sortedData(filteredData));
+}
+
+// Passe sortedData an, so dass optional ein custom Array übernommen wird
+function sortedData(arr = null) {
+    const data = (arr || originalData).slice();
+    return data.sort((a, b) => {
+        switch (sortColumnIndex) {
+            case 0: return cmpStr(a.verein, b.verein);
+            case 1: return cmpStr(a.playerName, b.playerName);
+            case 2: {
+                // Status aus injuriesMap (bevorzugt) oder item.status
+                const statusA = window.injuriesMap?.get(String(a.playerID))?.status || a.status || 'AKTIV';
+                const statusB = window.injuriesMap?.get(String(b.playerID))?.status || b.status || 'AKTIV';
+                return cmpStr(statusA, statusB);
+            }
+            case 3: return cmpStr(a.position, b.position);
+            case 4: return cmpNum(a.punkte, b.punkte);
+            case 5: return cmpNum(a.preis, b.preis);
+            case 6: return cmpStr(ownersMap.get(a.playerID), ownersMap.get(b.playerID));
+            case 7:
+                return sortDirection * (getTimeLeftForSort(a.setOnMarket) - getTimeLeftForSort(b.setOnMarket));
+            default: return 0;
+        }
+    });
+}
+
+// --- Damit die Filter auch initial nach dem Laden angewandt werden, passe loadTransferMarktData an:
+async function loadTransferMarktData() {
+    try {
+        showLoading();
+        addDebug("Lade Transfermarkt-Liste...");
+        const response = await fetch(DATA_URLS.transfermarkt);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        addDebug(`${data.length} Einträge geladen`);
+        ownersMap = window.globalOwnersMap || new Map();
+        originalData = data;
+        applyAllFilters(); // GANZ WICHTIG für initiales Anwenden und Sortieren!
+        hideLoading();
+        showContent();
+        initSortEvents();
+    } catch (error) {
+        hideLoading();
+        throw error;
+    }
+}
+
+// Kombiniere alle Filter und rendere die gefilterte Tabelle
+function applyAllFilters() {
+    const isComputerOwner = document.getElementById('filterComputerOwner').checked;
+    const isPrice160000 = document.getElementById('filterPrice160000').checked;
+    const isNotStatusAktiv = document.getElementById('filterNotStatusAktiv').checked;
+    const isPriceBelowValue = document.getElementById('filterPriceBelowValue').checked;
+
+    let filteredData = originalData.filter(item => {
+        let show = true;
         // Nur Computer-Angebote
         if (isComputerOwner) {
             let owner = ownersMap.get(item.playerID).trim();
