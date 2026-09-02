@@ -1,11 +1,24 @@
 /* User info card styling */
 .user-info-card {
-  background: linear-gradient(180deg,#ffffff, #f7f9fb);
-  border: 1px solid #e1e6ea;
+  background: transparent;
+  border: none;
   padding: 14px 16px;
   border-radius: 10px;
-  margin: 10px 0 18px 0;
-  box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+  margin: 0 0 4px 0;
+  box-shadow: none;
+  color: #f8fafc;
+}
+
+.user-info-card .user-info-name,
+.user-info-card .user-stats-big,
+.user-info-card .user-info-section-label,
+.user-info-card .user-info-value {
+  color: #f8fafc;
+}
+
+.user-info-card .user-info-login,
+.user-info-card .user-info-label {
+  color: #d5e0e8;
 }
 
 .user-info-header {
@@ -150,7 +163,7 @@
   width: 100%;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #e6eefc;
+  border-top: 1px solid rgba(226, 232, 240, 0.35);
 }
 
 .user-sparkline-container {
@@ -158,8 +171,11 @@
   width: 100%;
   max-width: 500px;
   padding: 8px;
-  background: #f9fafb;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 6px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;

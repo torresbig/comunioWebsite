@@ -1,13 +1,13 @@
-body {
+body.page-user-overview {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background: #f4f6f8;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-main {
+main.user-overview {
   display: flex;
-  gap: 20px;
+  gap: 8px;
   padding: 20px;
 }
 
@@ -19,11 +19,11 @@ main {
   position: relative;
 }
 
-.dropdown {
+.page-user-overview .dropdown {
   position: relative;
 }
 
-.dropdown ul {
+.page-user-overview .dropdown ul {
   display: none;
   position: absolute;
   left: 0;
@@ -39,33 +39,92 @@ main {
   list-style: none;
 }
 
-.dropdown ul.show {
+.page-user-overview .dropdown ul.show {
   display: block;
 }
 
-.dropdown ul li {
+.page-user-overview .dropdown ul li {
   padding: 8px 12px;
   cursor: pointer;
 }
 
-.dropdown ul li:hover {
+.page-user-overview .dropdown ul li:hover {
   background: #eef3f7;
 }
 
-table {
+.page-user-overview table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 12px;
 }
 
-table th,
-table td {
+.page-user-overview table th,
+.page-user-overview table td {
   padding: 8px;
   border: 1px solid #ddd;
   text-align: left;
 }
 
-table tr.selected {
+.page-user-overview .rivals-table th {
+  position: sticky;
+  top: -1px;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.page-user-overview .rivals-table thead {
+  position: sticky;
+  top: -1px;
+  z-index: 3;
+}
+
+.page-user-overview .rivals-table {
+  overflow: visible;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.page-user-overview .rivals-table th:nth-child(1),
+.page-user-overview .rivals-table td:nth-child(1) {
+  width: 58px;
+  white-space: nowrap;
+}
+
+.page-user-overview .rivals-table th:nth-child(2),
+.page-user-overview .rivals-table td:nth-child(2) {
+  width: 30%;
+}
+
+.page-user-overview .rivals-table th:nth-child(3),
+.page-user-overview .rivals-table td:nth-child(3),
+.page-user-overview .rivals-table th:nth-child(4),
+.page-user-overview .rivals-table td:nth-child(4) {
+  width: 78px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.page-user-overview .rivals-table th:nth-child(5),
+.page-user-overview .rivals-table td:nth-child(5) {
+  width: 130px;
+  white-space: nowrap;
+}
+
+.page-user-overview .rivals-table th:nth-child(6),
+.page-user-overview .rivals-table td:nth-child(6) {
+  width: 70px;
+  white-space: nowrap;
+}
+
+.page-user-overview .rivals-table .club-logo,
+.page-user-overview .rivals-table .pos-logo {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.page-user-overview table tr.selected {
   background: #d0e7ff;
 }
 
@@ -149,7 +208,7 @@ table tr.selected {
 .user-overview {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
   padding: 15px;
 }
 
@@ -237,18 +296,6 @@ table tr.selected {
     flex: 1;
 }
 
-h1 {
-    font-size: 1.5em;
-    color: white;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: 0.5px;
-}
-
-h1:before {
-    content: "👥";
-}
-
 /* Spezifische Logo-Styles nur für die Userübersicht */
 .rivals-table .club-logo {
   width: 25px;
@@ -259,7 +306,7 @@ h1:before {
 /* Zusätzlicher Block für mobile Geräte */
 @media (max-width: 600px) {
   /* Tabellen kleiner machen */
-  table,
+  .page-user-overview table,
   .rivals-table,
   .table-card table {
     font-size: 11px !important;       /* Kleinere Schrift */
@@ -282,7 +329,7 @@ h1:before {
   }
 }
 /* Ganz wichtig: Die Seite selbst darf kein overflow-x zulassen */
-body {
+body.page-user-overview {
   overflow-x: hidden;
 }
 
@@ -314,7 +361,7 @@ body {
   }
 
   /* Body soll niemals horizontal scrollen */
-  body {
+  body.page-user-overview {
     overflow-x: hidden;
   }
 }

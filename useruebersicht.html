@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="css/useruebersicht.css">
   <link rel="stylesheet" href="css/siteHeader.css?v=20260832">
   <link rel="stylesheet" href="css/trend.css">
-  <link rel="stylesheet" href="css/stylePlayer.css">
+  <link rel="stylesheet" href="css/playerTabs.css">
   <link rel="stylesheet" href="css/tabelStyle.css">
   <link rel="stylesheet" href="css/styleMenueHamburger.css">
   <link rel="stylesheet" href="css/debugPanel.css">
@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="css/pageBackground.css">
 </head>
 
-<body>
+<body class="page-user-overview">
   <!-- Floating Debug Button and Panel -->
   <button id="floatingDebugBtn" title="Debug"><span style="pointer-events:none;">🐞</span></button>
   <div id="floatingDebugPanel">
@@ -48,8 +48,7 @@
                 erstellt von comunioFanApp</div>
         </div>
   </div>
-  <header>
-   <!-- ===== NAVBAR HEADER ===== -->
+  <!-- ===== NAVBAR HEADER ===== -->
     <div class="site-header">
       <div class="site-header-inner">
         <div class="site-header-center">
@@ -57,7 +56,6 @@
             </div>
         </div>
     </div>
-  </header>
   <main class="user-overview">
 
     <!-- User Dropdown -->
@@ -78,10 +76,10 @@
         <table id="playerTable" class="rivals-table">
           <thead>
             <tr>
+              <th>Club</th>
               <th>Spieler</th>
-              <th>Verein</th>
-              <th>Position</th>
               <th>Status</th>
+              <th>Pos.</th>
               <th>Marktwert</th>
               <th>Punkte</th>
             </tr>
@@ -153,7 +151,6 @@
   <script src="js/utils.js"></script>
   <script src="js/hamburgerMenu.js"></script>
   <script src="js/tabController.js"></script>
-  <script src="js/generatePlayerTable.js"></script>
   <script src="js/smokeTest.js" type="module"></script>
   <script src="js/userInfo.js"></script>
 
@@ -403,7 +400,7 @@
       setTimeout(() => {
         const playerTable = document.getElementById('playerTable');
         if (playerTable) {
-          sortTable(playerTable, 2); // Position ist Spalte 2 (0-basiert)
+          sortTable(playerTable, 3); // Position ist Spalte 3 (0-basiert)
         }
       }, 100);
       clearDetails();
@@ -464,7 +461,8 @@
         const hauptposition = player.data?.spielerDaten?.hauptposition || "N/A";
         const nebenpositionen = player.data?.spielerDaten?.nebenpositionen || [];
         const nebenpositionenTooltip = nebenpositionen.length > 0 ? "Hauptposition: " + hauptposition + " | Nebenposition: " + nebenpositionen.join(", ") : "";
-        const positionHtml = `<span title="${nebenpositionenTooltip}">${position}</span>`;
+        const posLogoFile = getLogoPositionFilename(position);
+        const positionHtml = `<img src="logos/${posLogoFile}" class="pos-logo" alt="${position}" title="${nebenpositionenTooltip || position}">`;
         const status = player.data?.status?.status || 'AKTIV';
 
         let statusClass = "";
@@ -487,12 +485,12 @@
         const lastUpdate = player.data?.lastUpdate || 'Unbekannt';
 
         row.innerHTML = `
-        <td data-sort="${player.name}">${playerNameHtml}</td>
         <td data-sort="${clubName}">${logoHtml}</td>
-        <td data-sort="${String(positionSortValue).padStart(3, '0')}_${position}">${positionHtml}</td>
+        <td data-sort="${player.name}">${playerNameHtml}</td>
         <td data-sort="${status}" class="${statusClass}">
   <span title="${getStatusDisplayName(status)}">${getStatusIndicator(status)}</span>
 </td>
+        <td data-sort="${String(positionSortValue).padStart(3, '0')}_${position}">${positionHtml}</td>
         <td data-sort="${marketValueSort}">${marketValue}</td>
         <td data-sort="${points}">${points}</td>
       `;
@@ -500,7 +498,7 @@
       });
 
       // Initial sort by position (column index 2)
-      sortTable(document.getElementById('playerTable'), 2);
+      sortTable(document.getElementById('playerTable'), 3);
     }
 
     // Transfers anzeigen (mit Filtern für Käufe/Verkäufe)

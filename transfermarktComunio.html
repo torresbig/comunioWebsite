@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="css/transfermarktComunio.css">
     <link rel="stylesheet" href="css/siteHeader.css?v=20260832">
     <link rel="stylesheet" href="css/pageBackground.css">
+    <link rel="stylesheet" href="css/filterDesign.css">
 </head>
 
 <body class="page-transfermarkt">
@@ -67,11 +68,10 @@
 
         <!-- Content -->
         <div id="content" style="display:none;">
-            <!-- Filtermenü, zuerst eingeklappt -->
-<div id="filterMenuContainer" style="margin-bottom:16px;">
-  <button id="toggleFilterMenuBtn" style="margin-bottom:6px;">🔎 Filter anzeigen</button>
-  <form id="filterForm" style="display:none; background:#fff; border-radius:8px; box-shadow:0 1px 6px rgba(0,0,0,0.09); padding:12px; margin-bottom:10px;">
-    <div style="display:flex; flex-wrap:wrap; gap:16px;">
+                        <div id="filterMenuContainer" class="filter-section">
+    <button id="toggleFilterMenuBtn" type="button">Filter</button>
+    <form id="filterForm">
+        <div>
       <label>
         <input type="checkbox" id="filterComputerOwner" /> Nur Computer-Angebote
       </label>
@@ -85,7 +85,7 @@
         <input type="checkbox" id="filterPriceBelowValue" /> Preis < Marktwert
       </label>
     </div>
-    <button type="button" id="resetFilterBtn" style="margin-top:10px;">Reset Filter</button>
+        <button type="button" id="resetFilterBtn">Filter zurücksetzen</button>
   </form>
         </div>
             <div class="table-container">

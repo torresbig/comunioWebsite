@@ -12,14 +12,14 @@ function setupFilterMenu() {
     const filterForm = document.getElementById('filterForm');
     const resetBtn = document.getElementById('resetFilterBtn');
 
+    let open = !window.matchMedia('(max-width: 767px)').matches;
+    filterForm.hidden = !open;
+    toggleBtn.setAttribute('aria-expanded', String(open));
+
     toggleBtn.addEventListener('click', () => {
-        if (filterForm.style.display === 'none' || filterForm.style.display === '') {
-            filterForm.style.display = 'block';
-            toggleBtn.textContent = "🔎 Filter ausblenden";
-        } else {
-            filterForm.style.display = 'none';
-            toggleBtn.textContent = "🔎 Filter anzeigen";
-        }
+        open = !open;
+        filterForm.hidden = !open;
+        toggleBtn.setAttribute('aria-expanded', String(open));
     });
 
     // Checkbox Events

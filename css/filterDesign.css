@@ -1,0 +1,178 @@
+/* Shared filter panel design */
+.filter-header,
+.toggle-label,
+#toggleFilterMenuBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 15px;
+    border: 0;
+    border-radius: 6px 6px 0 0;
+    background: #2c3e50;
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-align: left;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.filter-header:hover,
+.toggle-label:hover,
+#toggleFilterMenuBtn:hover {
+    background: #34495e;
+}
+
+.page-news .filter-header::before {
+    display: none;
+}
+
+.page-player-db #content,
+.page-transfermarkt main {
+    padding: 5px 20px 0;
+    box-sizing: border-box;
+}
+
+.page-news .container {
+    padding-top: 5px;
+}
+
+.page-news .last-update-info {
+    margin-top: 0;
+}
+
+.page-player-db #filterLabel {
+    margin-top: 0;
+}
+
+.page-player-db .filter-table-gap,
+.page-transfermarkt #filterMenuContainer {
+    margin-bottom: 0 !important;
+}
+
+.page-player-db .filter-table-gap {
+    display: none;
+}
+
+.page-transfermarkt .table-container {
+    margin-top: 0;
+}
+
+.filter-header::before,
+.toggle-label::before,
+#toggleFilterMenuBtn::before {
+    content: '🔍';
+}
+
+.filter-toggle-icon,
+.toggle-label::after {
+    margin-left: auto;
+    transition: transform 0.3s ease;
+}
+
+.filter-section,
+#filterMenuContainer,
+.page-player-db #filterLabel {
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-content,
+#filterForm,
+.page-player-db #filterContentWrapper {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-top: 0;
+    border-radius: 0 0 6px 6px;
+    padding: 15px;
+}
+
+.page-player-db #filterLabel:not(.open) + #filterContentWrapper {
+    padding: 0;
+}
+
+#filterForm[hidden] {
+    display: none;
+}
+
+.filters,
+#filterForm > div {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    padding: 5px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.filter-group,
+#filterForm label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 0;
+    color: #555;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+#filterForm label {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px;
+}
+
+.filter-group select,
+.filter-group input,
+#filterForm input[type='checkbox'] {
+    accent-color: #2c3e50;
+}
+
+.filter-group select,
+.filter-group input[type='text'] {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    color: #2c3e50;
+    font-size: 0.9em;
+}
+
+#filterForm > button,
+#resetFilters,
+#resetFilterBtn {
+    margin-top: 15px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 4px;
+    background: #2c3e50;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+@media (max-width: 767px) {
+    .page-player-db #content,
+    .page-transfermarkt main {
+        padding-top: 5px;
+    }
+
+    .filters,
+    #filterForm > div {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .filter-content,
+    #filterForm,
+    .page-player-db #filterContentWrapper {
+        padding: 12px;
+    }
+}

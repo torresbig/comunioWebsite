@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function setupToggle(labelId, contentId) {
         const label = document.getElementById(labelId);
         const content = document.getElementById(contentId);
-        let open = false;
+        let open = !window.matchMedia('(max-width: 767px)').matches;
         function update() {
             let maxHeight = '300px';
             if (open) {

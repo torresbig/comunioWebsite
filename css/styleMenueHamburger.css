@@ -141,7 +141,7 @@
 @media (min-width: 901px) {
     body {
         margin-left: 264px !important;
-        width: auto;
+        width: auto !important;
     }
 
     .hamburger-menu {
@@ -149,6 +149,7 @@
         left: 0;
         bottom: 0;
         width: 264px;
+        box-sizing: border-box;
         padding: 24px 16px;
         background: #243746;
         border-right: 1px solid rgba(255, 255, 255, 0.12);
@@ -188,6 +189,7 @@
         color: #e7eef2;
         border: 0;
         border-radius: 6px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         font-size: 0.94rem;
     }
 
@@ -206,4 +208,5 @@
         text-align: left;
         padding: 8px 14px;
     }
+
 }
