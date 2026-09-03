@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <td data-label="Käufer">${t.buyer}</td>
                 <td data-label="Preis">${formatCurrency(price)}</td>
                 <td data-label="Marktwert (Transfer)">${formatCurrency(transferValue)}</td>
-                <td data-label="Aktueller Wert">${formatCurrency(currentValue)} ${unicodeTrend(getValueTrend(currentValue, currentPlayer.lastValue))}</td>
+                <td data-label="Aktueller Wert"><span class="transfer-value">${formatCurrency(currentValue)}</span>${unicodeTrend(getValueTrend(currentValue, currentPlayer.lastValue))}</td>
                 <td data-label="Deal" style="text-align:center">${dealHtml}</td>
             `;
             tableBody.appendChild(tr);

@@ -22,6 +22,45 @@ function toggleArtSection(headerEl) {
 
 // Globale clubsMap für andere Skripte
 let clubsMap = new Map();
+let newsPagination = {
+    newsList: [],
+    renderedDays: 0,
+    batchSize: 0,
+    loading: false,
+    bottomTriggered: false,
+    listenerAttached: false
+};
+
+function getNewsBatchSize() {
+    return window.matchMedia('(max-width: 767px)').matches ? 5 : 10;
+}
+
+function initNewsPagination() {
+    if (newsPagination.listenerAttached) return;
+    const newsListDiv = document.getElementById('news-list');
+    if (!newsListDiv) return;
+
+    const loadMoreIfNeeded = (event) => {
+        const nearBottom = newsListDiv.scrollTop + newsListDiv.clientHeight >= newsListDiv.scrollHeight - 80;
+        const pageNearBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 80;
+        const atBottom = event.currentTarget === newsListDiv ? nearBottom : pageNearBottom;
+
+        if (!atBottom) {
+            newsPagination.bottomTriggered = false;
+            return;
+        }
+
+        if (!newsPagination.bottomTriggered && newsPagination.renderedDays < newsPagination.newsList.length) {
+            newsPagination.bottomTriggered = true;
+            renderNews(newsPagination.newsList, true);
+        }
+    };
+
+    newsListDiv.addEventListener('scroll', loadMoreIfNeeded, { passive: true });
+    window.addEventListener('scroll', loadMoreIfNeeded, { passive: true });
+    window.addEventListener('resize', loadMoreIfNeeded, { passive: true });
+    newsPagination.listenerAttached = true;
+}
 
 // Lädt Vereinsdaten asynchron
 async function loadClubsData() {
@@ -48,7 +87,7 @@ function getClubName(clubId) {
 }
 
 
-async function renderNews(newsList) {
+async function renderNews(newsList, loadMore = false) {
     try {
         const newsArtOrder = [
             'ELFDESTAGES',
@@ -85,11 +124,38 @@ async function renderNews(newsList) {
             return new Date(db) - new Date(da);
         });
 
+        if (!loadMore) {
+            newsPagination.newsList = newsList;
+            newsPagination.renderedDays = 0;
+            newsPagination.batchSize = getNewsBatchSize();
+            newsPagination.bottomTriggered = false;
+        }
+
+        if (newsPagination.newsList.length === 0) {
+            const newsListDiv = document.getElementById('news-list');
+            if (newsListDiv) {
+                newsListDiv.innerHTML = '<div style="padding:16px; color:#888;">Keine News vorhanden.</div>';
+            }
+            newsPagination.loading = false;
+            return;
+        }
+
+        if (newsPagination.loading || newsPagination.renderedDays >= newsPagination.newsList.length) {
+            return;
+        }
+
+        newsPagination.loading = true;
+        const visibleNews = newsPagination.newsList.slice(
+            0,
+            newsPagination.renderedDays + newsPagination.batchSize
+        );
+        newsPagination.renderedDays = visibleNews.length;
+
         let html = '';
         let errorCount = 0;
         let elfContainersToUpdate = [];
 
-        for (const day of newsList) {
+        for (const day of visibleNews) {
             const newsForDisplay = day.news.filter(n => n.art !== 'OWNERCHANGE' && n.art !== 'UNBESTIMMT');
 
             const grouped = {};
@@ -139,9 +205,9 @@ async function renderNews(newsList) {
                             try {
                                 const obj = JSON.parse(news.text);
                                 const pid = obj.playerId || news.playerId || null;
-                                const sellerLink = obj.seller === 'Computer' ? obj.seller : `<a href="${getUseruebersichtUrl(obj.seller)}" style="color:#00f; text-decoration:underline;">${obj.seller}</a>`;
-                                const buyerLink = obj.buyer === 'Computer' ? obj.buyer : `<a href="${getUseruebersichtUrl(obj.buyer)}" style="color:#00f; text-decoration:underline;">${obj.buyer}</a>`;
-                                text = `${linkPlayer(pid, obj.playerName)} von <b style="color:#00f;">${sellerLink}</b> zu <b style="color:#00f;">${buyerLink}</b> für <b>${obj.price.toLocaleString('de-DE')} €</b> (Marktwert: ${obj.playerValue.toLocaleString('de-DE')} €)`;
+                                const sellerLink = obj.seller === 'Computer' ? `<span class="computer-name">${obj.seller}</span>` : `<a class="user-name" href="${getUseruebersichtUrl(obj.seller)}">${obj.seller}</a>`;
+                                const buyerLink = obj.buyer === 'Computer' ? `<span class="computer-name">${obj.buyer}</span>` : `<a class="user-name" href="${getUseruebersichtUrl(obj.buyer)}">${obj.buyer}</a>`;
+                                text = `${linkPlayer(pid, obj.playerName)} von <b class="transfer-user">${sellerLink}</b> zu <b class="transfer-user">${buyerLink}</b> für <b>${obj.price.toLocaleString('de-DE')} €</b> <span class="market-value">(Wert: ${obj.playerValue.toLocaleString('de-DE')} €)</span>`;
                             } catch (e) {
                                 addDebug('[renderNews] TRANSFER Parse-Fehler: ' + e.message);
                                 text = news.text;
@@ -151,8 +217,8 @@ async function renderNews(newsList) {
                         else if (art === 'USERPOINTS') {
                             try {
                                 const obj = JSON.parse(news.text);
-                                const userLink = obj.userName === 'Computer' ? obj.userName : `<a href="${getUseruebersichtUrl(obj.userName)}" style="color:#00f; text-decoration:underline;">${obj.userName}</a>`;
-                                text = `<div class="player-entry"><b style="color:#00f;">${userLink}</b> - <span class="points">${obj.gamedayPoints} Pkt.</span> (Gesamt: ${obj.totalPoints} Pkt.)</div>`;
+                                const userLink = obj.userName === 'Computer' ? `<span class="computer-name">${obj.userName}</span>` : `<a class="user-name" href="${getUseruebersichtUrl(obj.userName)}">${obj.userName}</a>`;
+                                text = `<div class="player-entry"><b class="transfer-user">${userLink}</b> - <span class="points">${obj.gamedayPoints} Pkt.</span> (Gesamt: ${obj.totalPoints} Pkt.)</div>`;
                             } catch (e) {
                                 addDebug('[renderNews] USERPOINTS Parse-Fehler: ' + e.message);
                                 text = news.text;
@@ -346,6 +412,8 @@ async function renderNews(newsList) {
         if (newsListDiv) {
             newsListDiv.innerHTML = html || '<div style="padding:16px; color:#888;">Keine News vorhanden.</div>';
             newsListDiv.style.display = '';
+            initNewsPagination();
+            newsPagination.loading = false;
             addDebug('[renderNews] Erfolgreich gerendert mit ' + errorCount + ' Fehlern');
 
             requestAnimationFrame(() => {
@@ -376,6 +444,7 @@ async function renderNews(newsList) {
         }
 
     } catch (error) {
+        newsPagination.loading = false;
         addDebug('[renderNews] Kritischer Fehler: ' + error.message);
         const newsListDiv = document.getElementById('news-list');
         if (newsListDiv) {

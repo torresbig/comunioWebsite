@@ -77,11 +77,10 @@ function unicodeTrend(trend) {
 // Hilfsfunktion innerhalb von renderNews oder global verfügbar
 function linkPlayer(playerId, playerName) {
     if (!playerId) {
-        // Keine playerId vorhanden, kein Link, nur farbig hervorgehoben
-        return `<span style="color:#80f; font-weight:bold;">${playerName}</span>`;
+    return `<span class="player-link">${playerName}</span>`;
     }
     const url = getPlayerUrl(playerId);
-    return `<a href="${url}" style="color:#80f; font-weight:bold;">${playerName}</a>`;
+  return `<a class="player-link" href="${url}">${playerName}</a>`;
 }
 
 

@@ -166,7 +166,15 @@ function renderTable(data) {
         ownerCell.className = 'owner';
         ownerCell.style.textAlign = 'center';
         const ownerName = ownersMap.get(item.playerID) || ownersMap.get(Number(item.playerID)) || "Computer";
-        ownerCell.textContent = ownerName;
+        if (ownerName === 'Computer') {
+            ownerCell.textContent = ownerName;
+        } else {
+            const ownerLink = document.createElement('a');
+            ownerLink.href = getUseruebersichtUrl(ownerName);
+            ownerLink.className = 'owner-name';
+            ownerLink.textContent = ownerName;
+            ownerCell.appendChild(ownerLink);
+        }
 
         // Restzeit (rechtsbündig)
         const timeCell = document.createElement('td');

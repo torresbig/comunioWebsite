@@ -1,0 +1,1513 @@
+:root {
+    --page-bg: #121212;
+    --page-bg-raised: #1a1b24;
+    --surface: #303241;
+    --surface-raised: #393b4b;
+    --surface-hover: #454758;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --text: #f4f3f8;
+    --text-muted: #b9b8c7;
+    --accent: #8a2be2;
+    --accent-soft: rgba(138, 43, 226, 0.18);
+    --success: #55d187;
+    --danger: #ff7181;
+    --shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+    --radius: 12px;
+}
+
+html {
+    background: var(--page-bg);
+}
+
+body,
+body.page-player-db,
+body.page-transfermarkt,
+body.page-statistik,
+body.page-transfers,
+body.page-accounts,
+body.page-user-overview {
+    background: var(--page-bg) !important;
+    color: var(--text) !important;
+    font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+label,
+span,
+li {
+    color: inherit;
+}
+
+.container,
+main.user-overview {
+    width: min(100%, 1240px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.site-header,
+.navbar,
+.navbar-userueber {
+    background: var(--page-bg-raised) !important;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+}
+
+.site-header-title,
+.site-header h1,
+.navbar h1,
+.player-name {
+    color: var(--text) !important;
+}
+
+.hamburger-button {
+    background: var(--surface-raised) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 10px !important;
+}
+
+.hamburger-button:hover,
+.hamburger-button:focus-visible {
+    background: var(--accent) !important;
+    outline: 2px solid rgba(138, 43, 226, 0.45);
+    outline-offset: 2px;
+}
+
+.hamburger-dropdown {
+    background: var(--surface) !important;
+    border: 1px solid var(--border);
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+.menu-item {
+    color: var(--text) !important;
+    border-bottom-color: var(--border) !important;
+}
+
+.menu-item:hover,
+.menu-item.active {
+    background: var(--accent-soft) !important;
+    color: var(--text) !important;
+}
+
+.info-card,
+.stat-card,
+.table-card,
+.details-card,
+.transfer-section,
+.table-container,
+.spielerdb-player-table,
+.rivals-table-container,
+.user-info-card,
+.news-container,
+.news-day,
+.top11-container {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+.info-card,
+.stat-card,
+.table-card,
+.details-card,
+.transfer-section {
+    color: var(--text);
+}
+
+.info-card h3,
+.stat-card h3,
+.details-card h2,
+#rivalsHeader,
+.tab-content h3,
+.stats-grid h2 {
+    color: var(--text) !important;
+    border-bottom-color: var(--accent) !important;
+}
+
+.info-row,
+.stat-card-footer,
+.stat-entry,
+.user-table th,
+.user-table td,
+.rivals-table th,
+.rivals-table td,
+.table-card th,
+.table-card td,
+th,
+td {
+    border-color: var(--border) !important;
+}
+
+.info-label,
+.stat-entry-secondary,
+.market-list-date,
+.status-label,
+.rival-status small,
+.player-id {
+    color: var(--text-muted) !important;
+}
+
+.info-value,
+.stat-entry-main,
+.market-list-value {
+    color: var(--text) !important;
+}
+
+.stat-entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 14px;
+    margin-bottom: 8px;
+    padding: 12px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.stat-entry:first-child {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent) !important;
+}
+
+.stat-entry-main {
+    grid-column: 1 / -1;
+    align-items: baseline;
+}
+
+.stat-entry-rank {
+    color: #c58aff !important;
+}
+
+.stat-entry-secondary {
+    grid-column: 1;
+    margin-top: 0;
+    line-height: 1.4;
+}
+
+.stat-entry .currency,
+.stat-entry .profit,
+.stat-entry .loss {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.profit,
+.positive {
+    color: var(--success) !important;
+}
+
+.loss,
+.negative {
+    color: var(--danger) !important;
+}
+
+.toggle-button,
+.market-graph-toggle,
+#rivals-reset-button,
+.filter-group button,
+#userSelectBtn {
+    background: transparent !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 8px !important;
+    transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.toggle-button:hover,
+.toggle-button:focus-visible,
+.market-graph-toggle:hover,
+.market-graph-toggle:focus-visible,
+#rivals-reset-button:hover,
+#userSelectBtn:hover,
+.filter-group button:hover {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+}
+
+.toggle-button.expanded {
+    background: var(--accent) !important;
+}
+
+.tabs {
+    justify-content: flex-start;
+    gap: 6px;
+    margin: 20px 0 0 !important;
+    padding: 6px;
+    background: var(--surface-raised) !important;
+    border: 1px solid var(--border) !important;
+    border-bottom: 0 !important;
+    border-radius: var(--radius) var(--radius) 0 0 !important;
+    overflow-x: auto;
+}
+
+.tab-button {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 8px 14px !important;
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    border: 1px solid transparent !important;
+    border-radius: 8px !important;
+    font-size: 0.98rem !important;
+    white-space: nowrap;
+}
+
+.tab-button:hover,
+.tab-button:focus-visible {
+    background: var(--accent-soft) !important;
+    color: var(--text) !important;
+    outline: none;
+}
+
+.tab-button.active {
+    background: var(--accent) !important;
+    color: #fff !important;
+    border-color: #a85be9 !important;
+}
+
+.tab-content {
+    padding: 18px !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 0 0 var(--radius) var(--radius) !important;
+    color: var(--text);
+}
+
+.market-month-block,
+.market-list-row,
+.market-graph-container {
+    background: var(--surface-raised) !important;
+    border: 1px solid var(--border) !important;
+}
+
+.market-month-header {
+    background: var(--accent-soft) !important;
+    color: var(--text) !important;
+}
+
+table,
+.user-table,
+.rivals-table {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+}
+
+th,
+.user-table th,
+.rivals-table th,
+.table-card th {
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+}
+
+tr:nth-child(even),
+.user-table tr:nth-child(even),
+.rivals-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.025) !important;
+}
+
+tr:hover,
+.user-table tr:hover,
+.rivals-table tr:hover,
+.table-card tr:hover {
+    background: var(--accent-soft) !important;
+}
+
+@media (min-width: 768px) {
+    .page-user-overview .player-section {
+        align-items: stretch;
+    }
+
+    .page-user-overview .player-section .rivals-table-container {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .page-user-overview .player-section .details-card {
+        flex: 0 1 clamp(340px, 34%, 420px);
+        min-width: 340px;
+        max-height: 400px;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+    .page-user-overview .rivals-table a,
+    .page-user-overview .rivals-table a:visited {
+        color: var(--text) !important;
+    }
+
+    .page-user-overview .rivals-table a:hover,
+    .page-user-overview .rivals-table a:focus-visible {
+        color: var(--accent) !important;
+    }
+
+    .page-user-overview .player-section #playerTable th:nth-child(5),
+    .page-user-overview .player-section #playerTable td:nth-child(5),
+    .page-user-overview .player-section #playerTable th:nth-child(6),
+    .page-user-overview .player-section #playerTable td:nth-child(6),
+    .page-user-overview .transfer-section .rivals-table th:nth-child(4),
+    .page-user-overview .transfer-section .rivals-table td:nth-child(4) {
+        text-align: right !important;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1100px) {
+    .page-user-overview .player-section {
+        gap: 12px;
+    }
+
+    .page-user-overview .player-section .details-card {
+        flex-basis: 32%;
+        min-width: 280px;
+    }
+
+    .page-user-overview .player-section #playerTable {
+        table-layout: fixed;
+    }
+
+    .page-user-overview .player-section #playerTable th:nth-child(1),
+    .page-user-overview .player-section #playerTable td:nth-child(1) {
+        width: 38px;
+    }
+
+    .page-user-overview .player-section #playerTable th:nth-child(2),
+    .page-user-overview .player-section #playerTable td:nth-child(2) {
+        width: auto;
+    }
+
+    .page-user-overview .player-section #playerTable th:nth-child(3),
+    .page-user-overview .player-section #playerTable td:nth-child(3) {
+        width: 52px;
+    }
+
+    .page-user-overview .player-section #playerTable th:nth-child(4),
+    .page-user-overview .player-section #playerTable td:nth-child(4) {
+        width: 58px;
+    }
+
+    .page-user-overview .player-section #playerTable th:nth-child(5),
+    .page-user-overview .player-section #playerTable td:nth-child(5) {
+        width: 110px;
+    }
+
+    .page-user-overview .player-section #playerTable th:nth-child(6),
+    .page-user-overview .player-section #playerTable td:nth-child(6) {
+        width: 50px;
+    }
+
+    .page-user-overview .player-section #playerTable .club-logo,
+    .page-user-overview .player-section #playerTable .pos-logo {
+        width: 22px;
+        height: 22px;
+    }
+}
+
+@media (min-width: 901px) {
+    .hamburger-menu {
+        background: #171821 !important;
+        border-right-color: var(--border) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    body,
+    body.page-user-overview {
+        padding-top: 0 !important;
+    }
+
+    .hamburger-menu {
+        top: 8px !important;
+        left: 10px !important;
+        z-index: 2000 !important;
+    }
+
+    .hamburger-dropdown {
+        top: 48px !important;
+        left: 0 !important;
+        right: auto !important;
+        width: min(280px, calc(100vw - 20px));
+        max-height: calc(100vh - 68px);
+        overflow-y: auto;
+    }
+
+    .site-header,
+    .navbar,
+    .navbar-userueber {
+        min-height: 64px !important;
+        height: auto !important;
+        padding: 12px 12px 12px 62px !important;
+    }
+
+    .container,
+    main.user-overview,
+    .user-overview {
+        width: 100%;
+        padding: 12px !important;
+    }
+
+    .site-header-title {
+        font-size: 1rem !important;
+        line-height: 1.2 !important;
+    }
+
+    .stat-entry {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .stat-entry .currency,
+    .stat-entry .profit,
+    .stat-entry .loss {
+        font-size: 0.95rem;
+    }
+
+    .rivals-table-container,
+    .table-container,
+    .spielerdb-player-table {
+        overflow-x: auto;
+        max-width: 100%;
+    }
+
+    .page-user-overview .player-section #playerTable,
+    .page-user-overview .player-section #playerTable tbody,
+    .page-user-overview .player-section #playerTable tr,
+    .page-user-overview .player-section #playerTable td {
+        display: block;
+    }
+
+    .page-user-overview .player-section #playerTable {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0 !important;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+        background: transparent !important;
+    }
+
+    .page-user-overview .player-section .rivals-table-container {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+
+    .page-user-overview .player-section #playerTable thead {
+        display: none;
+    }
+
+    .page-user-overview .player-section #playerTable tr {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr) 24px 28px 82px 46px;
+        grid-template-rows: auto;
+        gap: 8px;
+        column-gap: 9px;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        background: var(--surface-raised) !important;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+        transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .page-user-overview .player-section #playerTable tr:hover,
+    .page-user-overview .player-section #playerTable tr.selected {
+        background: var(--surface-hover) !important;
+        border-color: var(--border-strong);
+    }
+
+    .page-user-overview .player-section #playerTable tr:active {
+        transform: scale(0.995);
+    }
+
+    .page-user-overview .player-section #playerTable td {
+        box-sizing: border-box;
+        width: auto !important;
+        max-width: 100%;
+        padding: 0 !important;
+        border: 0 !important;
+        min-width: 0;
+        white-space: normal !important;
+        overflow: hidden !important;
+        text-overflow: clip !important;
+    }
+
+    .page-user-overview .player-section #playerTable td::before {
+        display: none;
+        margin-bottom: 3px;
+        color: var(--text-muted);
+        font-size: 0.62rem;
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .page-user-overview .player-section #playerTable td:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .page-user-overview .player-section #playerTable td:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        align-items: center;
+        overflow: hidden !important;
+        font-weight: 700;
+        font-size: 0.98rem;
+        line-height: 1.2;
+    }
+
+    .page-user-overview .player-section #playerTable td:nth-child(3) {
+        grid-column: 3;
+        grid-row: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .page-user-overview .player-section #playerTable td:nth-child(4) {
+        grid-column: 4;
+        grid-row: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .page-user-overview .player-section #playerTable td:nth-child(5) {
+        grid-column: 5;
+        grid-row: 1;
+        text-align: right;
+        font-size: 0.74rem;
+        line-height: 1.15;
+        white-space: nowrap !important;
+    }
+
+    .page-user-overview .player-section #playerTable td:nth-child(5)::before {
+        display: none;
+    }
+
+    .page-user-overview .player-section #playerTable td:nth-child(6) {
+        grid-column: 6;
+        grid-row: 1;
+        width: 46px !important;
+        min-width: 46px;
+        max-width: 46px;
+        text-align: right;
+        font-size: 1rem;
+        line-height: 1;
+        font-weight: 700;
+        overflow: visible !important;
+    }
+
+    .page-user-overview .player-section #playerTable td:nth-child(6)::before {
+        display: none;
+    }
+
+    .page-user-overview .player-section #playerTable td a {
+        display: -webkit-box;
+        color: var(--text) !important;
+        min-width: 0;
+        overflow: hidden;
+        overflow-wrap: break-word;
+        word-break: normal;
+        line-height: 1.2;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    .page-user-overview .player-section #playerTable td a:hover,
+    .page-user-overview .player-section #playerTable td a:focus-visible {
+        color: var(--accent) !important;
+    }
+
+    .page-user-overview .player-section #playerTable td:nth-child(3)::before,
+    .page-user-overview .player-section #playerTable td:nth-child(4)::before {
+        display: none;
+    }
+
+    .page-user-overview .player-section #playerTable .club-logo,
+    .page-user-overview .player-section #playerTable .pos-logo {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+    }
+
+    .page-user-overview .player-section #playerTable td:nth-child(3) > span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        font-size: 1.15rem;
+        line-height: 1;
+    }
+
+    @media (max-width: 360px) {
+        .page-user-overview .player-section #playerTable tr {
+            grid-template-columns: 24px minmax(0, 1fr) 22px 24px 72px 40px;
+            gap: 5px;
+            column-gap: 6px;
+            padding: 9px 10px;
+        }
+
+        .page-user-overview .player-section #playerTable .club-logo,
+        .page-user-overview .player-section #playerTable .pos-logo,
+        .page-user-overview .player-section #playerTable td:nth-child(3) > span {
+            width: 24px;
+            height: 24px;
+        }
+
+        .page-user-overview .player-section #playerTable td:nth-child(5) {
+            font-size: 0.68rem;
+        }
+
+        .page-user-overview .player-section #playerTable td:nth-child(6) {
+            width: 40px !important;
+            min-width: 40px;
+            max-width: 40px;
+        }
+    }
+
+    .transfer-section {
+        overflow: hidden !important;
+    }
+
+    .tab-content {
+        padding: 12px !important;
+        overflow-x: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
+
+/* News bleiben bewusst hell, damit die vielen kompakten Meldungen schnell lesbar sind. */
+.page-news .container {
+    gap: 0;
+}
+
+.page-news .filter-section {
+    margin-bottom: 0 !important;
+    background: #f7f8fa !important;
+    border: 1px solid #dfe5ec !important;
+    box-shadow: 0 8px 22px rgba(20, 35, 50, 0.12) !important;
+}
+
+.page-news .filter-content {
+    background: #f7f8fa !important;
+    border-color: #dfe5ec !important;
+}
+
+.page-news .filter-group label {
+    color: #34495e !important;
+}
+
+.page-news .filter-group select,
+.page-news .filter-group input {
+    background: #ffffff !important;
+    color: #24364b !important;
+    border-color: #cbd5df !important;
+}
+
+.page-news .news-container {
+    background: #f7f8fa !important;
+    border: 1px solid #dfe5ec !important;
+    border-radius: 0 0 var(--radius) var(--radius) !important;
+    box-shadow: 0 10px 26px rgba(20, 35, 50, 0.12) !important;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+.page-news .news-container > .news-day:first-child {
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+}
+
+.page-news .news-day {
+    background: #ffffff !important;
+    border-color: #d7e0e8 !important;
+    color: #24364b !important;
+}
+
+.page-news .news-date,
+.page-news .news-art-header,
+.page-news .news-list-ul,
+.page-news .news-empty {
+    color: #24364b !important;
+}
+
+.page-news .news-date {
+    background: #eef3f7 !important;
+    border-bottom-color: #d7e0e8 !important;
+}
+
+.page-news .news-art-header {
+    background: #ffffff !important;
+    border-bottom-color: #e5ebf0 !important;
+}
+
+.page-news .news-art-collapsible[data-news-art="ELFDESTAGES"] .news-art-header {
+    background: #fff8e7 !important;
+}
+
+.page-news .news-art-collapsible[data-news-art="USERPOINTS"] .news-art-header {
+    background: #eef8f1 !important;
+}
+
+.page-news .news-art-collapsible[data-news-art="TRANSFER"] .news-art-header {
+    background: #edf5ff !important;
+}
+
+.page-news .news-art-collapsible[data-news-art="SPIELERSTATUS"] .news-art-header {
+    background: #fff1ed !important;
+}
+
+.page-news .news-art-collapsible[data-news-art="POSITIONSWECHSEL"] .news-art-header {
+    background: #f4efff !important;
+}
+
+.page-news .news-art-collapsible[data-news-art="VEREINSWECHSEL"] .news-art-header {
+    background: #eaf8f7 !important;
+}
+
+.page-news .news-art-collapsible[data-news-art="NEW_PLAYER"] .news-art-header {
+    background: #fff0f7 !important;
+}
+
+.page-news .news-list-li,
+.page-news .news-list-li a,
+.page-news .player-entry,
+.page-news .news-list-li strong,
+.page-news .news-list-li span {
+    color: #24364b !important;
+}
+
+.page-news .news-list-li:hover {
+    background: #f0f5f8 !important;
+}
+
+.page-news .elf-player-entry,
+.page-news .top11-container {
+    background: #f4f7fa !important;
+    color: #24364b !important;
+    border-color: #d7e0e8 !important;
+}
+
+.page-news .news-art-collapsible[data-news-art="ELFDESTAGES"] .top11-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+.page-news .news-art-collapsible[data-news-art="ELFDESTAGES"] .top11-container > h3 {
+    display: none !important;
+}
+
+.page-news .top11-container h3,
+.page-news .position-group h4 {
+    color: #29485a !important;
+    border-bottom-color: #d7e0e8 !important;
+}
+
+.page-news .points,
+.page-news .points-small {
+    color: #167348 !important;
+    background: #e4f6eb !important;
+}
+
+.page-news .last-update-info {
+    color: #637386 !important;
+    background: transparent !important;
+}
+
+/* Gemeinsame dunkle Oberflaechen fuer Filter, Selects und Scrollbars. */
+.filter-section,
+#filterMenuContainer,
+.page-player-db #filterLabel,
+.filter-content,
+#filterForm,
+.page-player-db #filterContentWrapper,
+.filters,
+#filterForm > div {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+.filter-group,
+.filter-group label,
+#filterForm label {
+    color: var(--text-muted) !important;
+}
+
+.filter-group select,
+.filter-group input,
+#filterForm input,
+#filterForm select,
+.page-transfers .filter-row select {
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+    border-color: var(--border-strong) !important;
+}
+
+.filter-group select:focus,
+.filter-group input:focus,
+#filterForm input:focus,
+#filterForm select:focus,
+.page-transfers .filter-row select:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-soft) !important;
+    outline: none;
+}
+
+.filter-group select option,
+#filterForm select option,
+.page-transfers .filter-row select option {
+    background: var(--surface-raised);
+    color: var(--text);
+}
+
+select,
+input,
+textarea,
+button {
+    color-scheme: dark;
+}
+
+* {
+    scrollbar-color: var(--surface-hover) var(--page-bg);
+    scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--page-bg);
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #535666;
+    border: 2px solid var(--page-bg);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+/* Die News bleiben dunkel, erhalten aber ausreichend Kontrast fuer lange Listen. */
+.page-news .filter-section,
+.page-news .filter-content,
+.page-news .news-container {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+
+.page-news .filter-group label,
+.page-news .news-day-count,
+.page-news .last-update-info {
+    color: var(--text-muted) !important;
+}
+
+.page-news .filter-group select,
+.page-news .filter-group input {
+    background: var(--surface-raised) !important;
+    color: var(--text) !important;
+    border-color: var(--border-strong) !important;
+}
+
+.page-news .news-day {
+    background: var(--surface-raised) !important;
+    border-color: var(--border-strong) !important;
+}
+
+.page-news .news-date,
+.page-news .news-art-header {
+    background: var(--surface-hover) !important;
+    border-color: var(--border) !important;
+    color: var(--text) !important;
+}
+
+.page-news .news-date {
+    justify-content: flex-start !important;
+}
+
+.page-news .news-date .news-day-count {
+    margin-left: auto;
+}
+
+.page-news .news-art-collapsible[data-news-art="ELFDESTAGES"] .news-art-header,
+.page-news .news-art-collapsible[data-news-art="USERPOINTS"] .news-art-header,
+.page-news .news-art-collapsible[data-news-art="TRANSFER"] .news-art-header,
+.page-news .news-art-collapsible[data-news-art="SPIELERSTATUS"] .news-art-header,
+.page-news .news-art-collapsible[data-news-art="POSITIONSWECHSEL"] .news-art-header,
+.page-news .news-art-collapsible[data-news-art="VEREINSWECHSEL"] .news-art-header,
+.page-news .news-art-collapsible[data-news-art="NEW_PLAYER"] .news-art-header {
+    background: var(--surface-hover) !important;
+}
+
+.page-news .news-list-ul {
+    background: var(--surface-raised) !important;
+}
+
+.page-news .news-list-li,
+.page-news .news-list-li a,
+.page-news .player-entry,
+.page-news .news-list-li strong,
+.page-news .news-list-li span,
+.page-news .top11-container,
+.page-news .top11-container h3,
+.page-news .position-group h4 {
+    color: var(--text) !important;
+}
+
+.page-news .news-list-li:hover {
+    background: var(--surface-hover) !important;
+}
+
+.page-news .news-list-li a {
+    color: #f4f3f8 !important;
+    text-decoration: underline !important;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.page-news .news-list-li .user-name {
+    color: #7fd1c5 !important;
+}
+
+.page-news .news-list-li .computer-name {
+    color: #aeb8b8 !important;
+    font-weight: 600;
+}
+
+.page-news .news-list-li .transfer-user {
+    color: inherit !important;
+}
+
+.page-news .elf-player-entry,
+.page-news .top11-container {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+
+.page-news .points,
+.page-news .points-small {
+    color: #8ff0b5 !important;
+    background: rgba(85, 209, 135, 0.16) !important;
+}
+
+/* Links bleiben unterscheidbar, ohne die alten Neonfarben zu verwenden. */
+.player-link,
+.page-transfermarkt .player-name,
+.page-transfers .player-link,
+.page-news .news-list-li a[href*="player.html"],
+.page-news .news-list-li a[href*="player"] {
+    color: #d09aff !important;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.player-link:hover,
+.player-link:focus-visible,
+.page-transfermarkt .player-name:hover,
+.page-transfermarkt .player-name:focus-visible,
+.page-transfers .player-link:hover,
+.page-transfers .player-link:focus-visible,
+.page-news .news-list-li a[href*="player.html"]:hover,
+.page-news .news-list-li a[href*="player.html"]:focus-visible,
+.page-news .news-list-li a[href*="player"]:hover,
+.page-news .news-list-li a[href*="player"]:focus-visible {
+    color: #ba8eec !important;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.page-news .news-list-li a[href*="useruebersicht"],
+.page-news .news-list-li .owner-name a {
+    color: #72d7d5 !important;
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-color: rgba(114, 215, 213, 0.45);
+    text-underline-offset: 3px;
+}
+
+.page-news .news-list-li a[href*="useruebersicht"]:hover,
+.page-news .news-list-li a[href*="useruebersicht"]:focus-visible,
+.page-news .news-list-li .owner-name a:hover,
+.page-news .news-list-li .owner-name a:focus-visible {
+    color: #b5fffb !important;
+    text-decoration-color: currentColor;
+}
+
+.page-news .news-list-li .player-link,
+.page-news .news-list-li a.player-link {
+    color: #cd8be7 !important;
+    font-weight: 700;
+    text-decoration: underline !important;
+    text-decoration-color: currentColor !important;
+    text-underline-offset: 3px;
+}
+
+.page-news .news-list-li a.user-name,
+.page-news .news-list-li a.user-name[href*="useruebersicht"] {
+    color: #7fd1c5 !important;
+    font-weight: 700;
+    text-decoration: underline !important;
+    text-decoration-color: rgba(127, 209, 197, 0.55) !important;
+    text-underline-offset: 3px;
+}
+
+.page-news .news-list-li a.user-name:hover,
+.page-news .news-list-li a.user-name:focus-visible {
+    color: #ba8eec !important;
+    text-decoration-color: currentColor !important;
+}
+
+.page-transfermarkt .player-name {
+    color: #f4f3f8 !important;
+    font-weight: 400;
+    text-decoration: underline !important;
+    text-decoration-color: currentColor !important;
+    text-underline-offset: 3px;
+}
+
+.page-transfermarkt .player-name:hover,
+.page-transfermarkt .player-name:focus-visible,
+.page-transfermarkt .owner-name:hover,
+.page-transfermarkt .owner-name:focus-visible {
+    color: #ba8eec !important;
+    text-decoration-color: currentColor !important;
+}
+
+.page-transfermarkt .owner-name {
+    color: #f4f3f8 !important;
+    font-weight: 400;
+    text-decoration: underline !important;
+    text-decoration-color: currentColor !important;
+    text-underline-offset: 3px;
+}
+
+.page-transfermarkt .player-id {
+    display: none;
+}
+
+.page-transfermarkt .time-high {
+    background: #244a38 !important;
+    color: #a9f0c2 !important;
+}
+
+.page-transfermarkt .time-medium {
+    background: #5a4820 !important;
+    color: #ffe6a0 !important;
+}
+
+.page-transfermarkt .time-low,
+.page-transfermarkt .expired {
+    background: #6b2e38 !important;
+    color: #ffc0c8 !important;
+}
+
+.page-transfermarkt tr.expired {
+    color: #ffc0c8 !important;
+}
+
+/* Transferhistorie: Geldspalten buendig, Parteien kompakt und mittig. */
+.page-transfers #transfersTable {
+    table-layout: fixed !important;
+}
+
+.page-transfers #transfersTable td {
+    text-align: right !important;
+}
+
+.page-transfers #transfersTable td:nth-child(8) {
+    text-align: center !important;
+}
+
+.page-transfers #transfersTable th:nth-child(1),
+.page-transfers #transfersTable td:nth-child(1) { width: 11%; }
+.page-transfers #transfersTable th:nth-child(2),
+.page-transfers #transfersTable td:nth-child(2) { width: 16%; }
+.page-transfers #transfersTable th:nth-child(3),
+.page-transfers #transfersTable td:nth-child(3),
+.page-transfers #transfersTable th:nth-child(4),
+.page-transfers #transfersTable td:nth-child(4) {
+    width: 12%;
+    text-align: center !important;
+}
+.page-transfers #transfersTable th:nth-child(5),
+.page-transfers #transfersTable td:nth-child(5) { width: 13%; }
+.page-transfers #transfersTable th:nth-child(6),
+.page-transfers #transfersTable td:nth-child(6) { width: 15%; }
+.page-transfers #transfersTable th:nth-child(7),
+.page-transfers #transfersTable td:nth-child(7) { width: 16%; }
+.page-transfers #transfersTable th:nth-child(8),
+.page-transfers #transfersTable td:nth-child(8) { width: 5%; }
+
+.page-transfers #transfersTable th:nth-child(5),
+.page-transfers #transfersTable th:nth-child(6),
+.page-transfers #transfersTable th:nth-child(7),
+.page-transfers #transfersTable td:nth-child(5),
+.page-transfers #transfersTable td:nth-child(6),
+.page-transfers #transfersTable td:nth-child(7) {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.page-transfers #transfersTable th:nth-child(8),
+.page-transfers #transfersTable td:nth-child(8) {
+    text-align: center !important;
+}
+
+.page-transfers #transfersTable td:nth-child(7) {
+    display: table-cell;
+    white-space: nowrap;
+}
+
+.page-transfers #transfersTable td:nth-child(7) .transfer-value {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.page-transfers #transfersTable td:nth-child(7) .trend-mini {
+    width: 18px;
+    min-width: 18px;
+    margin: 0 0 0 4px;
+}
+
+.page-transfers #transfersTable td:nth-child(3),
+.page-transfers #transfersTable td:nth-child(4) {
+    text-align: right !important;
+}
+
+.page-transfers #transfersTable th:nth-child(5),
+.page-transfers #transfersTable th:nth-child(6),
+.page-transfers #transfersTable th:nth-child(7) {
+    white-space: normal !important;
+    line-height: 1.2;
+}
+
+.page-transfers #transfersTable .trend-up,
+.page-transfers #transfersTable td:nth-child(8) span[style*="#27ae60"] {
+    color: #55d187 !important;
+}
+
+.page-transfers #transfersTable .trend-down,
+.page-transfers #transfersTable td:nth-child(8) span[style*="#e74c3c"] {
+    color: #ff7181 !important;
+}
+
+.page-transfers #transfersTable .trend-eq,
+.page-transfers #transfersTable td:nth-child(8) span[style*="#888"] {
+    color: #b9b8c7 !important;
+}
+
+@media (max-width: 767px) {
+    .page-transfers .rivals-table-container,
+    .page-transfers .rivals-table,
+    .page-transfers .rivals-table tbody,
+    .page-transfers .rivals-table tr,
+    .page-transfers .rivals-table td {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+    }
+
+    .page-transfers .rivals-table tr {
+        background: var(--surface-raised) !important;
+        border-color: var(--border-strong) !important;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2) !important;
+        transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    .page-transfers .rivals-table tr:nth-child(even),
+    .page-transfers .rivals-table tr:nth-child(odd) {
+        background: var(--surface-raised) !important;
+    }
+
+    .page-transfers .rivals-table tr:hover {
+        background: var(--surface-hover) !important;
+        box-shadow: 0 9px 22px rgba(0, 0, 0, 0.28) !important;
+        transform: translateY(-1px);
+    }
+
+    .page-transfers .rivals-table tr:hover td {
+        background: transparent !important;
+    }
+
+    .page-transfers .rivals-table td {
+        border-color: var(--border) !important;
+    }
+
+    .page-transfers .rivals-table td::before {
+        color: var(--text-muted) !important;
+    }
+
+    .page-transfers .rivals-table td a,
+    .page-transfers .rivals-table td span {
+        color: var(--text) !important;
+    }
+
+    .page-transfers #transfersTable {
+        table-layout: auto !important;
+    }
+
+    .page-transfers #transfersTable td:nth-child(5),
+    .page-transfers #transfersTable td:nth-child(6) {
+        display: grid;
+        grid-template-columns: minmax(0, 45%) minmax(0, 1fr);
+        align-items: center;
+        text-align: right !important;
+    }
+
+    .page-transfers #transfersTable td:nth-child(7) {
+        display: grid;
+        grid-template-columns: minmax(0, 45%) minmax(0, 1fr) 18px;
+        align-items: center;
+        text-align: right !important;
+    }
+
+    .page-transfers #transfersTable td:nth-child(5)::before,
+    .page-transfers #transfersTable td:nth-child(6)::before,
+    .page-transfers #transfersTable td:nth-child(7)::before {
+        grid-column: 1;
+        text-align: left;
+    }
+
+    .page-transfers #transfersTable td:nth-child(5)::after,
+    .page-transfers #transfersTable td:nth-child(6)::after {
+        display: none;
+    }
+
+    .page-transfers #transfersTable td:nth-child(7) .trend-mini {
+        grid-column: 3;
+        width: 18px;
+        min-width: 18px;
+        margin: 0;
+        justify-self: center;
+    }
+
+    .page-transfers #transfersTable td:nth-child(7) .transfer-value {
+        grid-column: 2;
+        text-align: right;
+    }
+
+    .page-transfers #transfersTable td:nth-child(1),
+    .page-transfers #transfersTable td:nth-child(2) {
+        display: grid;
+        grid-template-columns: minmax(0, 45%) minmax(0, 1fr);
+        align-items: center;
+        text-align: right !important;
+    }
+
+    .page-transfers #transfersTable td:nth-child(1)::before,
+    .page-transfers #transfersTable td:nth-child(2)::before {
+        grid-column: 1;
+        text-align: left !important;
+    }
+
+    .page-transfers #transfersTable td:nth-child(2) a {
+        grid-column: 2;
+        text-align: right;
+    }
+
+    .page-transfers #transfersTable td:nth-child(7) {
+        direction: ltr;
+        column-gap: 0;
+    }
+
+    .page-transfers #transfersTable td:nth-child(3),
+    .page-transfers #transfersTable td:nth-child(4) {
+        display: grid;
+        grid-template-columns: minmax(0, 45%) minmax(0, 1fr);
+        align-items: center;
+        text-align: right !important;
+    }
+
+    .page-transfers #transfersTable td:nth-child(3)::before,
+    .page-transfers #transfersTable td:nth-child(4)::before {
+        grid-column: 1;
+        text-align: left !important;
+    }
+
+    .page-transfers #transfersTable td:nth-child(3),
+    .page-transfers #transfersTable td:nth-child(4) {
+        justify-items: stretch;
+    }
+
+    .page-transfers #transfersTable td:nth-child(3),
+    .page-transfers #transfersTable td:nth-child(4) {
+        padding-right: 8px !important;
+    }
+
+    .page-transfers #transfersTable .trend-up,
+    .page-transfers #transfersTable td:nth-child(8) span[style*="#27ae60"] {
+        color: #55d187 !important;
+    }
+
+    .page-transfers #transfersTable .trend-down,
+    .page-transfers #transfersTable td:nth-child(8) span[style*="#e74c3c"] {
+        color: #ff7181 !important;
+    }
+
+    .page-transfers #transfersTable .trend-eq,
+    .page-transfers #transfersTable td:nth-child(8) span[style*="#888"] {
+        color: #b9b8c7 !important;
+    }
+
+    .page-transfers #transfersTable tbody tr,
+    .page-transfers #transfersTable tbody tr:nth-child(even),
+    .page-transfers #transfersTable tbody tr:nth-child(odd),
+    .page-transfers #transfersTable tbody tr td {
+        background: var(--surface-raised) !important;
+    }
+
+    .page-user-overview .transfer-section,
+    .page-user-overview .transfer-section .tab-content,
+    .page-user-overview .transfer-section .rivals-table,
+    .page-user-overview .transfer-section .rivals-table tbody,
+    .page-user-overview .transfer-section .rivals-table tr,
+    .page-user-overview .transfer-section .rivals-table td {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+    }
+
+    .page-user-overview .transfer-section .rivals-table tr:nth-child(even),
+    .page-user-overview .transfer-section .rivals-table tr:nth-child(odd) {
+        background: var(--surface-raised) !important;
+    }
+
+    .page-user-overview .transfer-section .rivals-table td {
+        border-color: var(--border) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .page-news .news-date {
+        font-size: 0.9em !important;
+    }
+
+    .page-news .news-art-header {
+        font-size: 0.86em !important;
+    }
+
+    .page-news .news-list-li {
+        font-size: 0.82em !important;
+    }
+
+    .page-news .market-value {
+        display: inline-block;
+        white-space: nowrap;
+        font-size: 0.94em;
+    }
+}
+
+@media (max-width: 600px) {
+    .page-player-db .spielerdb-player-table {
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    .page-player-db #spielerdb-playerTable {
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    .page-player-db #spielerdb-playerTable th,
+    .page-player-db #spielerdb-playerTable td {
+        padding: 5px 3px;
+        font-size: 10px;
+        white-space: normal;
+        overflow: hidden;
+        text-overflow: clip;
+        vertical-align: middle;
+    }
+
+    .page-player-db #spielerdb-playerTable th {
+        font-size: 9px;
+        padding: 5px 2px;
+    }
+
+    .page-player-db #spielerdb-playerTable th:nth-child(1),
+    .page-player-db #spielerdb-playerTable td:nth-child(1),
+    .page-player-db #spielerdb-playerTable th:nth-child(3),
+    .page-player-db #spielerdb-playerTable td:nth-child(3) {
+        width: 8%;
+        text-align: center;
+    }
+
+    .page-player-db #spielerdb-playerTable th:nth-child(4),
+    .page-player-db #spielerdb-playerTable td:nth-child(4) {
+        width: 10%;
+        text-align: center;
+    }
+
+    .page-player-db #spielerdb-playerTable th:nth-child(5),
+    .page-player-db #spielerdb-playerTable td:nth-child(5) {
+        width: 21%;
+        white-space: nowrap;
+    }
+
+    .page-player-db #spielerdb-playerTable th:nth-child(6),
+    .page-player-db #spielerdb-playerTable td:nth-child(6) {
+        width: 9%;
+        text-align: center;
+    }
+
+    .page-player-db #spielerdb-playerTable th:nth-child(7),
+    .page-player-db #spielerdb-playerTable td:nth-child(7) {
+        width: 17%;
+    }
+
+    .page-player-db #spielerdb-playerTable td:nth-child(2) {
+        width: 27%;
+        font-size: 10px;
+        line-height: 1.15;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    .page-player-db #spielerdb-playerTable .club-logo,
+    .page-player-db #spielerdb-playerTable .pos-logo {
+        width: 24px;
+        height: 24px;
+        margin: 0;
+    }
+
+    .page-player-db #spielerdb-playerTable td:nth-child(4) > div > div:first-child {
+        font-size: 1.25rem;
+        line-height: 1;
+    }
+}
