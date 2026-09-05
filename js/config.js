@@ -16,6 +16,7 @@ const DATA_URLS = {
   news: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/News.json`,
   logos: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/logos/`,
   injuries: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/InjuriesDB.json`,
+  lineups: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/UserLineups.json`,
   // Points-DB liegt im Data-Repository (comunioFanApp) — vermeidet 404 auf comunioWebsite
   points: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/PointsDB.json`
   
