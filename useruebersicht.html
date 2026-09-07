@@ -477,21 +477,21 @@
           const playerDbEntry = playersData.playerDB?.find(item => String(item.id) === String(player.id));
           const clubId = playerDbEntry?.data?.verein || player.clubId;
           const position = playerDbEntry?.data?.position || player.position;
-          const isStarter = Boolean(pointEntry) && pointEntry.status !== 'SUBIN';
-          return { ...player, pointEntry, clubId, position, isStarter,
+          const hasMatchData = pointEntry && (pointEntry.einsatzzeit !== undefined || pointEntry.status || pointEntry.rating !== undefined || pointEntry.stats);
+          const hasPoints = pointEntry?.value !== undefined && pointEntry?.value !== null && pointEntry?.value !== '' && Number(pointEntry.value) !== 0;
+          return { ...player, pointEntry, clubId, position,
             points: pointEntry?.value ?? '—',
-            detailStatus: pointEntry?.status === 'SUBOUT' ? 'Startelf, ausgewechselt' : pointEntry?.status === 'SUBIN' ? 'Eingewechselt' : pointEntry ? 'Startelf' : (player.substitute ? 'Ersatzbank' : 'Keine Spieltagsdaten') };
+            detailStatus: player.substitute ? (pointEntry?.status === 'SUBIN' ? 'Eingewechselt' : 'Ersatzbank') : (pointEntry?.status === 'SUBOUT' ? 'Startelf, ausgewechselt' : hasMatchData || hasPoints ? 'Gespielt' : 'N/A') };
         }));
-        const starters = enriched.filter(player => player.isStarter);
-        const substitutes = enriched.filter(player => player.substitute && !player.isStarter);
-        const withoutPoints = enriched.filter(player => !player.pointEntry && !player.substitute);
+          const starters = enriched.filter(player => !player.substitute);
+          const substitutes = enriched.filter(player => player.substitute);
         const renderPlayer = (player, index, group = 'player') => {
           const clubName = clubsMap.get(player.clubId) || 'Verein unbekannt';
           const clubLogo = player.clubId ? `<img src="${DATA_URLS.logos}${getLogoFileName(player.clubId)}" class="lineup-club-logo" alt="${escapeHtml(clubName)}" title="${escapeHtml(clubName)}">` : '';
           const positionLogo = `<img src="logos/${getLineupPositionLogo(player.position)}" class="lineup-position-logo" alt="${escapeHtml(player.position || 'Position')}" title="${escapeHtml(player.position || 'Position')}">`;
           return `<tr class="lineup-player-row" data-detail-id="lineup-detail-${matchday}-${group}-${index}"><td><span class="lineup-player-name">${clubLogo}<a href="${getPlayerUrlWithParams(player.id)}">${escapeHtml(player.name)}</a></span></td><td>${positionLogo}</td><td>${escapeHtml(player.detailStatus)}</td><td>${escapeHtml(player.points)}</td><td>${formatLineupNumber(player.pointEntry?.einsatzzeit, ' Min.')}</td></tr><tr id="lineup-detail-${matchday}-${group}-${index}" class="lineup-detail-row"><td colspan="5">${renderLineupDetails(player)}</td></tr>`;
         };
-        return `<section class="lineup-card"><div class="lineup-card-header"><h2>Spieltag ${escapeHtml(matchday)}</h2><span>${escapeHtml(lineup.tactic || '—')}</span></div><div class="lineup-table-wrap"><table><thead><tr><th>Spieler</th><th>Pos.</th><th>Status</th><th>Punkte</th><th>Spielzeit</th></tr></thead><tbody>${starters.map((player, index) => renderPlayer(player, index, 'starter')).join('')}${withoutPoints.length ? `<tr class="lineup-substitute-divider"><th colspan="5">Noch nicht ausgewertet</th></tr>${withoutPoints.map((player, index) => renderPlayer(player, index, 'pending')).join('')}` : ''}${substitutes.length ? `<tr class="lineup-substitute-divider"><th colspan="5">Ersatzbank</th></tr>${substitutes.map((player, index) => renderPlayer(player, index, 'substitute')).join('')}` : ''}</tbody></table></div></section>`;
+        return `<section class="lineup-card"><div class="lineup-card-header"><h2>Spieltag ${escapeHtml(matchday)}</h2><span>${escapeHtml(lineup.tactic || '—')}</span></div><div class="lineup-table-wrap"><table><thead><tr><th>Spieler</th><th>Pos.</th><th>Status</th><th>Punkte</th><th>Spielzeit</th></tr></thead><tbody>${starters.map((player, index) => renderPlayer(player, index, 'starter')).join('')}${substitutes.length ? `<tr class="lineup-substitute-divider"><th colspan="5">Ersatzbank</th></tr>${substitutes.map((player, index) => renderPlayer(player, index, 'substitute')).join('')}` : ''}</tbody></table></div></section>`;
       }));
       container.innerHTML = cards.join('');
       container.querySelectorAll('.lineup-player-row').forEach(row => row.addEventListener('click', () => {
