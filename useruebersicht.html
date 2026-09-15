@@ -160,6 +160,7 @@
   <script src="js/config.js"></script>
   <script src="js/debugPanel.js"></script>
   <script src="js/utils.js"></script>
+  <script src="js/lineupPoints.js"></script>
   <script src="js/hamburgerMenu.js"></script>
   <script src="js/tabController.js"></script>
   <script src="js/smokeTest.js" type="module"></script>
@@ -422,31 +423,14 @@
       addDebug("=== loadPlayersForUser END ===");
     }
 
-    function getLineupPointsByPlayer(points, matchday) {
-      return (points || []).find(item => String(item.key) === String(matchday)) || null;
-    }
-
-    function formatLineupNumber(value, suffix = '') {
-      return value === null || value === undefined || value === '' ? '—' : `${value}${suffix}`;
+    function renderLineupDetailGroups(player) {
+      const groups = buildLineupDetailGroups(player);
+      if (!groups.length) return '<div class="lineup-detail-empty">Für diesen Spieltag liegen keine Detaildaten vor.</div>';
+      return groups.map(group => `<div class="lineup-detail-group"><div class="lineup-detail-group-title">${escapeHtml(group.title)}</div><div class="lineup-detail-grid">${group.items.map(item => `<div class="lineup-detail-item"><small>${escapeHtml(item.label)}</small><b class="${item.tone ? `tone-${item.tone}` : ''}">${escapeHtml(item.value)}</b></div>`).join('')}</div></div>`).join('');
     }
 
     function renderLineupDetails(player) {
-      let stats = player.pointEntry?.stats;
-      try { stats = typeof stats === 'string' ? JSON.parse(stats) : stats; } catch (error) { stats = null; }
-      const details = [
-        ['Marktwert', formatCurrencyEUR(player.quotedprice)],
-        ['Spielzeit', formatLineupNumber(player.pointEntry?.einsatzzeit, ' Min.')],
-        ['Bewertung', formatLineupNumber(player.pointEntry?.rating)],
-        ['Tore', formatLineupNumber(player.pointEntry?.tore)],
-        ['Assists', formatLineupNumber(player.pointEntry?.assists)],
-        ['xGoals', formatLineupNumber(player.pointEntry?.xgoals)],
-        ['Gelbe Karten', formatLineupNumber(player.pointEntry?.yellow)],
-        ['Rote Karten', formatLineupNumber(player.pointEntry?.red)],
-        ['Passquote', formatLineupNumber(stats?.passingRate, '%')],
-        ['Zweikampfquote', formatLineupNumber(stats?.duelRate, '%')],
-        ['Schüsse', formatLineupNumber(stats?.shots)]
-      ];
-      return `<div class="lineup-player-details"><strong>${escapeHtml(player.name)}</strong><span class="lineup-detail-status">${escapeHtml(player.detailStatus)}</span><div class="lineup-detail-grid">${details.map(([label, value]) => `<div><small>${label}</small><b>${escapeHtml(value)}</b></div>`).join('')}</div></div>`;
+      return `<div class="lineup-player-details"><strong>${escapeHtml(player.name)}</strong><span class="lineup-detail-status">${escapeHtml(player.statusText)}</span>${renderLineupDetailGroups(player)}</div>`;
     }
 
     function getLineupPositionLogo(position) {
@@ -470,29 +454,59 @@
 
       status.textContent = `${matchdays.length} Aufstellungen gefunden`;
       container.innerHTML = '<div class="lineup-loading">Aufstellungen und Spieltagspunkte werden geladen ...</div>';
-      const cards = await Promise.all(matchdays.map(async ([matchday, lineup]) => {
-        const players = lineup.players || [];
-        const enriched = await Promise.all(players.map(async player => {
-          const pointEntry = getLineupPointsByPlayer(await getPlayerSpieltagspunkte(player.id), matchday);
+
+      // Points-DB einmal laden (statt eines Abrufs pro Spieler) – getPointsDb() cached das Ergebnis.
+      let pointsDb = {};
+      try {
+        pointsDb = await getPointsDb();
+      } catch (error) {
+        addDebug('Spieltagspunkte konnten nicht geladen werden: ' + (error?.message || error));
+      }
+      if (!Object.keys(pointsDb).length) {
+        status.textContent = `${matchdays.length} Aufstellungen gefunden (Spieltagspunkte nicht verfügbar)`;
+      }
+
+      const cards = matchdays.map(([matchday, lineup]) => {
+        const players = Array.isArray(lineup.players) ? lineup.players : [];
+        const enriched = players.map(player => {
           const playerDbEntry = playersData.playerDB?.find(item => String(item.id) === String(player.id));
-          const clubId = playerDbEntry?.data?.verein || player.clubId;
-          const position = playerDbEntry?.data?.position || player.position;
-          const hasMatchData = pointEntry && (pointEntry.einsatzzeit !== undefined || pointEntry.status || pointEntry.rating !== undefined || pointEntry.stats);
-          const hasPoints = pointEntry?.value !== undefined && pointEntry?.value !== null && pointEntry?.value !== '' && Number(pointEntry.value) !== 0;
-          return { ...player, pointEntry, clubId, position,
-            points: pointEntry?.value ?? '—',
-            detailStatus: player.substitute ? (pointEntry?.status === 'SUBIN' ? 'Eingewechselt' : 'Ersatzbank') : (pointEntry?.status === 'SUBOUT' ? 'Startelf, ausgewechselt' : hasMatchData || hasPoints ? 'Gespielt' : 'N/A') };
-        }));
-          const starters = enriched.filter(player => !player.substitute);
-          const substitutes = enriched.filter(player => player.substitute);
+          const pointEntry = getLineupPointsByPlayer(getPointsEntriesForPlayer(pointsDb, player.id), matchday);
+          // Comunio-Spieltagspunkte (value). Nur falls die Points-DB keinen Wert hat,
+          // die in der Aufstellung gespeicherten Punkte als Fallback nutzen.
+          const pointsValue = toLineupNumber(pointEntry?.value) ?? toLineupNumber(player.points);
+          return {
+            ...player,
+            pointEntry,
+            clubId: playerDbEntry?.data?.verein || player.clubId,
+            position: playerDbEntry?.data?.position || player.position,
+            pointsValue,
+            pointsDetail: toLineupNumber(pointEntry?.points),
+            minutes: getLineupEinsatzzeit(pointEntry),
+            statusText: getLineupStatusText(player, pointEntry)
+          };
+        });
+        const starters = enriched.filter(player => !player.substitute);
+        const substitutes = enriched.filter(player => player.substitute);
+        const summary = buildLineupSummary(enriched);
         const renderPlayer = (player, index, group = 'player') => {
           const clubName = clubsMap.get(player.clubId) || 'Verein unbekannt';
           const clubLogo = player.clubId ? `<img src="${DATA_URLS.logos}${getLogoFileName(player.clubId)}" class="lineup-club-logo" alt="${escapeHtml(clubName)}" title="${escapeHtml(clubName)}">` : '';
           const positionLogo = `<img src="logos/${getLineupPositionLogo(player.position)}" class="lineup-position-logo" alt="${escapeHtml(player.position || 'Position')}" title="${escapeHtml(player.position || 'Position')}">`;
-          return `<tr class="lineup-player-row" data-detail-id="lineup-detail-${matchday}-${group}-${index}"><td><span class="lineup-player-name">${clubLogo}<a href="${getPlayerUrlWithParams(player.id)}">${escapeHtml(player.name)}</a></span></td><td>${positionLogo}</td><td>${escapeHtml(player.detailStatus)}</td><td>${escapeHtml(player.points)}</td><td>${formatLineupNumber(player.pointEntry?.einsatzzeit, ' Min.')}</td></tr><tr id="lineup-detail-${matchday}-${group}-${index}" class="lineup-detail-row"><td colspan="5">${renderLineupDetails(player)}</td></tr>`;
+          const pointsTone = player.pointsValue === null ? '' : (player.pointsValue < 0 ? 'negative' : (player.pointsValue >= 10 ? 'positive' : ''));
+          const rating = toLineupNumber(player.pointEntry?.rating);
+          const hasRating = rating !== null && rating > 0;
+          const ratingTone = hasRating ? (rating >= 7 ? 'positive' : (rating < 5 ? 'negative' : '')) : '';
+          const minutesText = player.minutes !== null && player.minutes > 0 ? `${player.minutes} Min.` : '—';
+          const detailId = `lineup-detail-${matchday}-${group}-${index}`;
+          return `<tr class="lineup-player-row" data-detail-id="${detailId}"><td><span class="lineup-player-name">${clubLogo}<a href="${getPlayerUrlWithParams(player.id)}">${escapeHtml(player.name)}</a></span></td><td>${positionLogo}</td><td class="lineup-status-cell">${escapeHtml(player.statusText)}</td><td class="lineup-points-cell${pointsTone ? ` tone-${pointsTone}` : ''}">${player.pointsValue === null ? '—' : player.pointsValue}</td><td class="lineup-note-col${ratingTone ? ` tone-${ratingTone}` : ''}">${escapeHtml(hasRating ? formatLineupRating(rating) : '—')}</td><td>${escapeHtml(minutesText)}</td></tr><tr id="${detailId}" class="lineup-detail-row"><td colspan="6">${renderLineupDetails(player)}</td></tr>`;
         };
-        return `<section class="lineup-card"><div class="lineup-card-header"><h2>Spieltag ${escapeHtml(matchday)}</h2><span>${escapeHtml(lineup.tactic || '—')}</span></div><div class="lineup-table-wrap"><table><thead><tr><th>Spieler</th><th>Pos.</th><th>Status</th><th>Punkte</th><th>Spielzeit</th></tr></thead><tbody>${starters.map((player, index) => renderPlayer(player, index, 'starter')).join('')}${substitutes.length ? `<tr class="lineup-substitute-divider"><th colspan="5">Ersatzbank</th></tr>${substitutes.map((player, index) => renderPlayer(player, index, 'substitute')).join('')}` : ''}</tbody></table></div></section>`;
-      }));
+        const summaryParts = [`Startelf: ${summary.starterPoints} Pkt.`];
+        if (summary.benchCount) summaryParts.push(`Ersatzbank: ${summary.benchPoints} Pkt.`);
+        if (summary.goals) summaryParts.push(summary.goals === 1 ? '1 Tor' : `${summary.goals} Tore`);
+        if (summary.assists) summaryParts.push(summary.assists === 1 ? '1 Vorlage' : `${summary.assists} Vorlagen`);
+        if (summary.withoutDataCount) summaryParts.push(`${summary.withoutDataCount}× ohne Daten`);
+        return `<section class="lineup-card"><div class="lineup-card-header"><div class="lineup-card-title"><h2>Spieltag ${escapeHtml(matchday)}</h2><div class="lineup-summary">${escapeHtml(summaryParts.join(' · '))}</div></div><span class="lineup-tactic">${escapeHtml(lineup.tactic || '—')}</span></div><div class="lineup-table-wrap"><table><thead><tr><th>Spieler</th><th>Pos.</th><th>Status</th><th>Pkt.</th><th class="lineup-note-col">Note</th><th>Spielzeit</th></tr></thead><tbody>${starters.map((player, index) => renderPlayer(player, index, 'starter')).join('')}${substitutes.length ? `<tr class="lineup-substitute-divider"><th colspan="6">Ersatzbank</th></tr>${substitutes.map((player, index) => renderPlayer(player, index, 'substitute')).join('')}` : ''}</tbody></table></div></section>`;
+      });
       container.innerHTML = cards.join('');
       container.querySelectorAll('.lineup-player-row').forEach(row => row.addEventListener('click', () => {
         const detail = document.getElementById(row.dataset.detailId);

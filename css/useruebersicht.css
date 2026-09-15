@@ -306,6 +306,22 @@ main.user-overview {
   color: var(--text);
 }
 
+.lineup-card-title {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.lineup-card-header .lineup-tactic {
+  white-space: nowrap;
+}
+
+.lineup-summary {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .lineup-card-header span {
   padding: 5px 9px;
   border-radius: 5px;
@@ -323,6 +339,34 @@ main.user-overview {
   width: 100%;
   min-width: 0;
   table-layout: fixed;
+}
+
+/* Spaltenbreiten (Spieler/Status dürfen breiter sein als Pkt./Note) */
+.lineup-card thead th:nth-child(1) {
+  width: 34%;
+}
+
+.lineup-card thead th:nth-child(2) {
+  width: 12%;
+}
+
+.lineup-card thead th:nth-child(3) {
+  width: 22%;
+}
+
+.lineup-card thead th:nth-child(4) {
+  width: 10%;
+  text-align: center;
+}
+
+.lineup-card thead th:nth-child(5) {
+  width: 10%;
+  text-align: center;
+}
+
+.lineup-card thead th:nth-child(6) {
+  width: 12%;
+  text-align: center;
 }
 
 .lineup-card th,
@@ -430,6 +474,53 @@ main.user-overview {
   margin-top: 2px;
 }
 
+/* Detailgruppen (Leistung, Offensive, Torwart, Saison ...) */
+.lineup-detail-group {
+  margin-top: 12px;
+}
+
+.lineup-detail-group-title {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lineup-detail-group .lineup-detail-grid {
+  margin-top: 8px;
+}
+
+.lineup-detail-empty {
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+/* Wertungen: positive/negative Hervorhebung */
+.lineup-card .tone-positive {
+  color: var(--success);
+}
+
+.lineup-card .tone-negative {
+  color: var(--danger);
+}
+
+.lineup-status-cell {
+  font-size: 0.85rem;
+}
+
+.lineup-points-cell {
+  text-align: center;
+  font-weight: 700;
+}
+
+.lineup-note-col {
+  text-align: center;
+  font-weight: 600;
+}
+
 .lineup-substitute-divider th {
   padding-top: 16px;
   background: var(--surface-raised) !important;
@@ -445,6 +536,25 @@ main.user-overview {
 
   .lineup-card {
     padding: 10px;
+  }
+
+  /* Auf kleinen Displays hat die Note keinen Platz mehr – Details zeigen sie weiterhin. */
+  .lineup-card .lineup-note-col {
+    display: none;
+  }
+
+  .lineup-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .lineup-card-header .lineup-tactic {
+    align-self: flex-start;
+  }
+
+  .lineup-detail-grid {
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
   }
 }
 

@@ -259,57 +259,67 @@ let pointsDbCache = null;
 let pointsDbPromise = null;
 
 /**
+ * Lädt die Points-DB (DATA_URLS.points) und cached sie (ein einziger Request).
+ * Format: { "<playerId>": [ { key, value, status, einsatzzeit, ... }, ... ] }
+ * Die Spieltagseinträge liegen flach vor (kein "stats"-Unterobjekt mehr).
+ * @returns {Promise<Object>} Points-DB (leeres Objekt bei Fehler)
+ */
+async function getPointsDb() {
+  if (pointsDbCache) return pointsDbCache;
+  if (!pointsDbPromise) pointsDbPromise = loadPointsDb();
+  try {
+    await pointsDbPromise;
+  } catch (err) {
+    addDebug('Fehler beim Laden der Points-DB: ' + (err.message || err), 'error');
+    pointsDbPromise = null;
+    return pointsDbCache || {};
+  }
+  return pointsDbCache || {};
+}
+
+/**
+ * Interner Ladevorgang inkl. Fallback-URL (falls config falsch war).
+ * @returns {Promise<Object>}
+ */
+async function loadPointsDb() {
+  let data = null;
+  try {
+    data = await fetchJSON(DATA_URLS.points);
+  } catch (errPrimary) {
+    addDebug('Primärer Points-URL-Load fehlgeschlagen: ' + (errPrimary.message || errPrimary), 'warn');
+    const fallbackUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/PointsDB.json`;
+    addDebug('Versuche Fallback-URL für Points-DB: ' + fallbackUrl, 'info');
+    data = await fetchJSON(fallbackUrl);
+  }
+  pointsDbCache = data || {};
+  return pointsDbCache;
+}
+
+/**
+ * Spieltagseinträge eines Spielers aus einer geladenen Points-DB.
+ * Lookup robust für number/string-IDs.
+ * @param {Object} db Ergebnis von getPointsDb()
+ * @param {string|number} playerId
+ * @returns {any[]} Einträge oder leeres Array
+ */
+function getPointsEntriesForPlayer(db, playerId) {
+  if (playerId === null || playerId === undefined || playerId === '') return [];
+  if (!db) return [];
+  const found = db[playerId] ?? db[String(playerId)] ?? db[Number(playerId)];
+  return Array.isArray(found) ? found : [];
+}
+
+/**
  * Liefert die Spieltagspunkte für einen Spieler aus der externen Points-DB (DATA_URLS.points).
  * Die Points-DB wird einmal geladen und dann gecached.
- * Erwartetes Format: JSON-Object mit playerId als Key und dem Wert (z.B. Array) wie früher.
  * @param {string|number} playerId
  * @returns {Promise<any[]>} Spieltagspunkte oder leeres Array bei Fehler/fehlen.
  */
 async function getPlayerSpieltagspunkte(playerId) {
   if (!playerId && playerId !== 0) return [];
-  // Hilfsfunktion: Lookup robust (number / string)
-  function lookup(db, id) {
-    if (!db) return undefined;
-    return db[id] ?? db[String(id)] ?? db[Number(id)];
-  }
-
-  try {
-    // Wenn bereits geladen oder im Ladevorgang, nutze das
-    if (pointsDbPromise) {
-      await pointsDbPromise;
-    }
-    if (pointsDbCache) {
-      return lookup(pointsDbCache, playerId) || [];
-    }
-
-    // Versuche PRIMARY URL aus config
-    pointsDbPromise = fetchJSON(DATA_URLS.points);
-    let data = null;
-    try {
-      data = await pointsDbPromise;
-    } catch (errPrimary) {
-      addDebug('Primärer Points-URL-Load fehlgeschlagen: ' + (errPrimary.message || errPrimary), 'warn');
-      // Fallback: konstruiere Raw-URL ins Data-Repo (falls config falsch war)
-      try {
-        const fallbackUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/PointsDB.json`;
-        addDebug('Versuche Fallback-URL für Points-DB: ' + fallbackUrl, 'info');
-        data = await fetchJSON(fallbackUrl);
-      } catch (errFallback) {
-        addDebug('Fallback-Load Points-DB ebenfalls fehlgeschlagen: ' + (errFallback.message || errFallback), 'error');
-        throw errFallback;
-      }
-    }
-
-    pointsDbCache = data || {};
-    const found = lookup(pointsDbCache, playerId);
-    return found || [];
-  } catch (err) {
-    addDebug('Fehler beim Laden der Points-DB: ' + (err.message || err), 'error');
-    return [];
-  } finally {
-      pointsDbPromise = null;
-    }
-  }
+  const db = await getPointsDb();
+  return getPointsEntriesForPlayer(db, playerId);
+}
 
   // Cache / Promise für Injuries-DB
   let injuriesDbCache = null;
