@@ -10,7 +10,7 @@
     padding: 10px 15px;
     border: 0;
     border-radius: 6px 6px 0 0;
-    background: #2c3e50;
+    background: rgba(138, 43, 226, 0.18);
     color: #fff;
     cursor: pointer;
     font: inherit;
@@ -66,12 +66,35 @@
 .toggle-label::before,
 #toggleFilterMenuBtn::before {
     content: '🔍';
+    display: inline-block;
+    font-size: inherit;     /* Override 11px from playerDb.css - prevents emoji rendering as a thin streak/strikethrough */
+    width: auto;            /* Override 16px from playerDb.css - let content determine natural width */
+    height: auto;           /* Allow natural height based on font-size */
+    color: inherit;         /* Use parent's text color for consistent emoji rendering */
+    transition: transform 0.3s ease;
 }
 
-.filter-toggle-icon,
-.toggle-label::after {
+.filter-toggle-icon {
     margin-left: auto;
     transition: transform 0.3s ease;
+}
+
+/* ::after on .toggle-label shows the toggle arrow (▼).
+   Separated from .filter-toggle-icon (a real element on index.html)
+   to avoid inherited properties from playerDb.css causing issues.
+   The arrow rotates -90deg when collapsed (not open), matching
+   the .filter-section.collapsed .filter-toggle-icon pattern in newsSite.css. */
+.toggle-label::after {
+    content: '▼';
+    display: inline-block;
+    margin-left: auto;
+    font-size: inherit;
+    color: inherit;
+    transition: transform 0.3s ease;
+}
+
+.page-player-db .toggle-label:not(.open)::after {
+    transform: rotate(-90deg);
 }
 
 .filter-section,
@@ -152,7 +175,7 @@
     padding: 10px 14px;
     border: 0;
     border-radius: 4px;
-    background: #2c3e50;
+    background: rgba(138, 43, 226, 0.18);
     color: #fff;
     cursor: pointer;
     font-weight: 600;
