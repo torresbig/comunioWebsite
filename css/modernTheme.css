@@ -804,7 +804,7 @@ tr:hover,
 .page-news .player-entry,
 .page-news .news-list-li strong,
 .page-news .news-list-li span {
-    color: #24364b !important;
+    color: #5382b8 !important;
 }
 
 .page-news .news-list-li:hover {
@@ -814,7 +814,7 @@ tr:hover,
 .page-news .elf-player-entry,
 .page-news .top11-container {
     background: #f4f7fa !important;
-    color: #24364b !important;
+    color: #5f8696 !important;
     border-color: #d7e0e8 !important;
 }
 

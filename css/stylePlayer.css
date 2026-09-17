@@ -302,7 +302,7 @@
       .market-month-avg {
           font-weight: 400;
           font-size: 13px;
-          color: #444;
+          color: #9c7bc0;
           display: flex;
           align-items: center;
           gap: 4px;
@@ -431,7 +431,7 @@
 
       .matchday-cell {
           font-weight: 600;
-          color: #2c3e50;
+          color: #5b87b3;
       }
 
       .points-cell {
