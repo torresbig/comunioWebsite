@@ -73,7 +73,7 @@ async function loadData() {
                     Players: ${playersData.length}
                     Users: ${usersData.length}
                                         PlayerToUser: ${playerToUserMap.length}
-                    Injuries: ${typeof injuriesData === 'object' && !Array.isArray(injuriesData) ? Object.keys(injuriesData).length : 0}`);
+                    Injuries: ${buildInjuriesMap(injuriesData).size}`);
         processData(clubsData, playersData, usersData, playerToUserMap, injuriesData);
         // newsList.lastUpdate beispiel: "31.10.2025 16:34"
         hideLoading();
@@ -109,14 +109,10 @@ function processData(clubsData, playersData, usersData, playerToUserMap, injurie
     addDebug(`Besitzerzuordnungen: ${ownersMap.size}`);
 
         // InjuriesDB in Map umwandeln (playerId -> status-Objekt)
-                window.injuriesMap = new Map();
-        // InjuriesDB ist ein Objekt {playerId: {status, grund, ...}}
-        if (injuriesData && typeof injuriesData === 'object' && !Array.isArray(injuriesData)) {
-            Object.entries(injuriesData).forEach(([playerId, statusData]) => {
-                if (statusData && statusData.status) {
-                    window.injuriesMap.set(String(playerId), statusData);
-                }
-            });
+        // Unterstützt das flache Format und { injuries: {...}, lastUpdate: ... }
+        // (Helper aus js/utils.js, das in playerDb.html vorher geladen wird)
+        window.injuriesMap = buildInjuriesMap(injuriesData);
+        if (window.injuriesMap.size > 0) {
             addDebug(`InjuriesDB verarbeitet: ${window.injuriesMap.size} Einträge`);
         } else {
             addDebug("InjuriesData ist kein Objekt oder leer!", "warn");

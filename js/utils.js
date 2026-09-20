@@ -131,7 +131,7 @@ function getStatusIndicator(status) {
     case 'REHA': return '🔄';
     case 'AUFBAUTRAINING': return '🏋️';
     case 'NICHT_IN_LIGA': return '❌';
-    case 'FUENFTE_GELBE_KARTE': return '🟨';
+    case 'FUENFTE_GELBE_KARTE': return '5x🟨';
     case 'GELBROTE_KARTE': return '🟨🟥';
     case 'ROTE_KARTE': return '🟥';
     case 'NICHT_IM_KADER': return '🚫';
@@ -326,8 +326,85 @@ async function getPlayerSpieltagspunkte(playerId) {
   let injuriesDbPromise = null;
 
   /**
+   * Ermittelt aus den Rohdaten der InjuriesDB das eigentliche Map-Objekt
+   * { "<playerId>": {status, grund, ...} }.
+   * Unterstützt beide bekannten Formate:
+   *   alt: { "<playerId>": {status, grund, ...} }
+   *   neu: { "injuries": { "<playerId>": {...} }, "lastUpdate": 1761234567890 }
+   * Ist "injuries" vorhanden, gewinnt dieser Zweig (auch mehrfach verschachtelt).
+   * @param {any} data Rohdaten aus DATA_URLS.injuries
+   * @returns {Object|null} Objekt mit playerId-Keys oder null (kein Objekt)
+   */
+  function extractInjuriesPayload(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+    let payload = data;
+    // Daten können künftig eine (oder mehrere) Ebene(n) tiefer unter "injuries" liegen
+    for (let depth = 0; depth < 3; depth++) {
+      const nested = payload.injuries;
+      if (!nested || typeof nested !== 'object' || Array.isArray(nested)) break;
+      payload = nested;
+    }
+    return payload;
+  }
+
+  /**
+   * Baut aus den Injuries-Rohdaten die Map (playerId -> status-Objekt).
+   * Metadaten wie "lastUpdate" besitzen kein "status" und werden übersprungen.
+   * @param {any} data Rohdaten aus DATA_URLS.injuries
+   * @returns {Map<string, Object>} Map mit Status-Objekten
+   */
+  function buildInjuriesMap(data) {
+    const map = new Map();
+    const payload = extractInjuriesPayload(data);
+    if (!payload) return map;
+    Object.entries(payload).forEach(([playerId, statusData]) => {
+      if (statusData && typeof statusData === 'object' && statusData.status) {
+        map.set(String(playerId), statusData);
+      }
+    });
+    return map;
+  }
+
+  /**
+   * Liest den optionalen Zeitstempel des Datenstands aus den Injuries-Rohdaten.
+   * @param {any} data Rohdaten aus DATA_URLS.injuries
+   * @returns {number|string|null} Zeitstempel oder null
+   */
+  function getInjuriesLastUpdate(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+    const candidates = [data.lastUpdate, data.updatedAt, data.meta && data.meta.lastUpdate];
+    for (const candidate of candidates) {
+      if (candidate !== null && candidate !== undefined && candidate !== '') return candidate;
+    }
+    return null;
+  }
+
+  /**
+   * Formatiert den optionalen "lastUpdate"-Zeitstempel der InjuriesDB lesbar.
+   * Akzeptiert Millisekunden-/Sekunden-Epochs sowie bereits lesbare Strings.
+   * @param {number|string|null|undefined} lastUpdate
+   * @returns {string} Lesbarer Zeitstempel oder '' (wenn nicht vorhanden)
+   */
+  function formatInjuriesLastUpdate(lastUpdate) {
+    if (lastUpdate === null || lastUpdate === undefined || lastUpdate === '') return '';
+    if (typeof lastUpdate === 'string') {
+      const numeric = Number(lastUpdate);
+      if (Number.isFinite(numeric)) return formatInjuriesLastUpdate(numeric);
+      return lastUpdate;
+    }
+    const num = Number(lastUpdate);
+    if (!Number.isFinite(num)) return String(lastUpdate);
+    // Sekunden-Epochs (10-stellig) auf Millisekunden hochrechnen
+    const ms = num < 1e11 ? num * 1000 : num;
+    return new Date(ms).toLocaleString('de-DE');
+  }
+
+  /**
    * Lädt die InjuriesDB und cached sie als Map (playerId -> status-Objekt).
-   * Speichert das Ergebnis in window.injuriesMap für globalen Zugriff.
+   * Unterstützt das alte flache Format {playerId: {...}} und das neue Format
+   * { injuries: {playerId: {...}}, lastUpdate: 1761... }.
+   * Speichert das Ergebnis in window.injuriesMap für globalen Zugriff,
+   * den Zeitstempel (falls vorhanden) in window.injuriesLastUpdate.
    * Gibt die Map zurück.
    */
   async function loadInjuriesMap() {
@@ -342,15 +419,20 @@ async function getPlayerSpieltagspunkte(playerId) {
       injuriesDbPromise = fetchJSON(DATA_URLS.injuries);
       const data = await injuriesDbPromise;
     
-      injuriesDbCache = new Map();
-      // InjuriesDB ist ein Objekt {playerId: {status, grund, ...}}
-      if (data && typeof data === 'object' && !Array.isArray(data)) {
-        Object.entries(data).forEach(([playerId, statusData]) => {
-          if (statusData && statusData.status) {
-            injuriesDbCache.set(String(playerId), statusData);
-          }
-        });
-        addDebug(`InjuriesDB geladen: ${injuriesDbCache.size} Einträge`);
+      // Optionaler Datenstand (z.B. { injuries: {...}, lastUpdate: 1761... })
+      const lastUpdate = getInjuriesLastUpdate(data);
+      if (lastUpdate !== null) {
+        window.injuriesLastUpdate = lastUpdate;
+      }
+    
+      // InjuriesDB ist ein Objekt {playerId: {status, grund, ...}} — ggf. eine
+      // Ebene tiefer unter "injuries". Metadaten werden über "status" gefiltert.
+      injuriesDbCache = buildInjuriesMap(data);
+      if (extractInjuriesPayload(data)) {
+        const stand = formatInjuriesLastUpdate(lastUpdate);
+        addDebug(`InjuriesDB geladen: ${injuriesDbCache.size} Einträge${stand ? ` (Stand: ${stand})` : ''}`);
+      } else {
+        addDebug("InjuriesData ist kein Objekt oder leer!", "warn");
       }
     
       window.injuriesMap = injuriesDbCache;
