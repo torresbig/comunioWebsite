@@ -108,8 +108,9 @@ function processData(clubsData, playersData, usersData, playerToUserMap, injurie
 
     addDebug(`Besitzerzuordnungen: ${ownersMap.size}`);
 
-        // InjuriesDB in Map umwandeln (playerId -> status-Objekt)
-        // Unterstützt das flache Format und { injuries: {...}, lastUpdate: ... }
+        // InjuriesDB in Map umwandeln (comunioPlayerId -> Status-Objekt)
+        // Aktuelles Format: { lastUpdate, injuriedAndBannedPlayer: {...}, history: {...} }
+        // Es wird nur "injuriedAndBannedPlayer" verwendet (history folgt später).
         // (Helper aus js/utils.js, das in playerDb.html vorher geladen wird)
         window.injuriesMap = buildInjuriesMap(injuriesData);
         if (window.injuriesMap.size > 0) {
@@ -191,9 +192,10 @@ function applyFilters() {
             if (clubName !== clubFilter) return false;
         }
         if (positionFilter && player.position !== positionFilter) return false;
-        // Status aus injuriesMap statt aus player.data
-        const injuryStatus = window.injuriesMap.get(String(player.id));
-        const statusValue = injuryStatus?.status || '';
+        // Status aus injuriesMap (Key: comunioPlayerId) statt aus player.data
+        // Kein Eintrag in der InjuriesDB = aktiv (wie in der Status-Spalte)
+        const injuryStatus = getInjuryStatusEntry(player.id);
+        const statusValue = injuryStatus?.status || 'AKTIV';
         if (statusFilter && !statusValue.includes(statusFilter)) return false;
         const owner = ownersMap.get(player.id) || 'Kein Besitzer';
         if (ownerFilter === "Kein Besitzer" && owner !== 'Kein Besitzer') return false;

@@ -87,6 +87,50 @@ function getClubName(clubId) {
 }
 
 
+/**
+ * Rendert eine SPIELERSTATUS-News (Statuswechsel).
+ * Der Text der NewsDB kann den Spielernamen weglassen
+ * (z.B. "Statuswechsel:  (33296) ist wieder AKTIV") – dann wird der Name über
+ * die Spielerdatenbank (DATA_URLS.players) nachgeladen.
+ * Ausgabe: farbiger Punkt (grün = aktiv), Spielername als Link und der Status.
+ * @param {Object} news News-Eintrag aus der NewsDB
+ * @returns {Promise<string>} HTML-Text der News
+ */
+async function renderSpielerstatusNews(news) {
+    const parsed = parseSpielerstatusNewsText(news.text);
+    if (!parsed) {
+        // Einige Einträge der NewsDB haben (noch) keinen Text, aber eine playerId.
+        // Dann wenigstens den Spieler mit Namen und Link anzeigen.
+        if (news.playerId) {
+            addDebug('[renderNews] SPIELERSTATUS ohne parsbaren Text: ' + (news.text || '(leer)'));
+            const fallbackName = await getPlayerNameById(news.playerId) || `Spieler ${news.playerId}`;
+            return `⚪ ${linkPlayer(news.playerId, fallbackName)} – Statuswechsel`;
+        }
+        addDebug('[renderNews] SPIELERSTATUS Regex match failed: ' + news.text);
+        return news.text || '';
+    }
+
+    const playerId = parsed.playerId || news.playerId;
+    let playerName = parsed.playerName;
+    if (!playerName) {
+        playerName = await getPlayerNameById(playerId);
+    }
+    if (!playerName) playerName = `Spieler ${playerId}`;
+
+    // Punktfarbe: grün = wieder aktiv, gelb = Aufbautraining/Reha,
+    // ❌ = nicht im Kader/Liga, rot = verletzt/gesperrt
+    const dot = parsed.status === 'AKTIV'
+        ? '🟢'
+        : (parsed.status === 'AUFBAUTRAINING' || parsed.status === 'REHA') ? '🟡'
+        : (parsed.status === 'NICHT_IN_LIGA' || parsed.status === 'NICHT_IM_KADER') ? '❌'
+        : '🔴';
+
+    let statusDisplay = `<b>${parsed.status.replace(/_/g, ' ')}</b>`;
+    if (parsed.statusDetail) statusDisplay += ` (${parsed.statusDetail})`;
+
+    return `${dot} ${linkPlayer(playerId, playerName)} ist ${parsed.changeWord} ${statusDisplay}`;
+}
+
 async function renderNews(newsList, loadMore = false) {
     try {
         const newsArtOrder = [
@@ -227,26 +271,7 @@ async function renderNews(newsList, loadMore = false) {
                         }
                         else if (art === 'SPIELERSTATUS') {
                             try {
-                                const regex = /Statuswechsel:\s(.+?)\s\(\d+\)\sist\s(wieder|jetzt)\s([A-Z_]+)(?:\s\((.+)\))?/i;
-                                const match = regex.exec(news.text);
-                                if (match) {
-                                    const playerName = match[1];
-                                    const status = match[3];
-                                    const statusDetail = match[4] || '';
-                                    let statusDisplay = `<b>${status.replace(/_/g, ' ')}</b>`;
-                                    if (statusDetail) statusDisplay += ` (${statusDetail})`;
-
-                                    if (news.text.includes('AKTIV')) {
-                                        text = `🟢 ${linkPlayer(news.playerId, playerName)} ist ${match[2]} ${statusDisplay}`;
-                                    } else if (news.text.includes('NICHT_IN_LIGA')) {
-                                        text = `❌ ${linkPlayer(news.playerId, playerName)} ist ${match[2]} ${statusDisplay}`;
-                                    } else {
-                                        text = `🔴 ${linkPlayer(news.playerId, playerName)} ist ${match[2]} ${statusDisplay}`;
-                                    }
-                                } else {
-                                    addDebug('[renderNews] SPIELERSTATUS Regex match failed');
-                                    text = news.text;
-                                }
+                                text = await renderSpielerstatusNews(news);
                             } catch (e) {
                                 addDebug('[renderNews] SPIELERSTATUS Fehler: ' + e.message);
                                 text = news.text;

@@ -30,8 +30,8 @@ function renderTable(players) {
         // const positionHtml = `<span title="${nebenpositionenTooltip}">${player.position || "Unbekannt"}</span>`;
 
 
-        // Status aus injuriesMap statt aus player.data
-        const injuryStatus = window.injuriesMap?.get(String(player.id));
+        // Status aus injuriesMap (Key: comunioPlayerId) statt aus player.data
+        const injuryStatus = getInjuryStatusEntry(player.id);
         const status = injuryStatus?.status || 'AKTIV';
         let statusClass = "";
         if (status.includes("AKTIV")) statusClass = "status-aktiv";
@@ -57,7 +57,7 @@ function renderTable(players) {
         <td data-sort="${clubName}">${logoHtml}</td>
                     <td data-sort="${playerName}">${playerNameHtml}</td>
                     <td data-sort="${position}">${positionHtml}</td>
-                    <td data-sort="${status}" class="${statusClass}"><div style="display:flex;flex-direction:column;align-items:center"><div>${getStatusIndicator(status)}</div></td>
+                    <td data-sort="${status}" class="${statusClass}"><div style="display:flex;flex-direction:column;align-items:center" title="${buildInjuryStatusTooltip(injuryStatus, status).replace(/"/g, '&quot;')}"><div>${getStatusIndicator(status)}</div></div></td>
                     <td data-sort="${marketValueSort}">${marketValue}</td>
                     <td data-sort="${points}">${points}</td>
                     <td data-sort="${owner}">${owner}</td>

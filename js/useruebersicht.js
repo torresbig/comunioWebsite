@@ -43,8 +43,11 @@ async function loadData() {
             fetchJSON(DATA_URLS.users),
             fetchJSON(DATA_URLS.playerToUser),
             fetchJSON(DATA_URLS.news),
-            fetchJSON(DATA_URLS.lineups)
+            fetchJSON(DATA_URLS.lineups),
+            // InjuriesDB (Key: comunioPlayerId) für die Status-Spalte; history wird noch nicht genutzt
+            loadInjuriesMap()
         ]);
+        addDebug(`InjuriesMap geladen: ${window.injuriesMap?.size || 0} Einträge`);
 
         // ClubsMap aufbauen
         clubsData.forEach(club => {
@@ -414,7 +417,9 @@ function renderTable(players) {
         const nebenpositionenTooltip = nebenpositionen.length > 0 ? "Hauptposition: " + hauptposition + " | Nebenposition: " + nebenpositionen.join(", ") : "";
         const posLogoFile = getLogoPositionFilename(position);
         const positionHtml = `<img src="logos/${posLogoFile}" class="pos-logo" alt="${position}" title="${nebenpositionenTooltip || position}">`;
-        const status = player.data?.status?.status || 'AKTIV';
+        // Status aus der InjuriesDB (Key: comunioPlayerId); player.data.status gibt es nicht mehr
+        const injuryStatusEntry = getInjuryStatusEntry(player.id);
+        const status = (injuryStatusEntry && injuryStatusEntry.status) ? injuryStatusEntry.status : 'AKTIV';
 
         let statusClass = "";
         if (status.includes("AKTIV")) statusClass = "status-aktiv";
@@ -439,7 +444,7 @@ function renderTable(players) {
         <td data-sort="${clubName}">${logoHtml}</td>
         <td data-sort="${player.name}">${playerNameHtml}</td>
         <td data-sort="${status}" class="${statusClass}">
-  <span title="${getStatusDisplayName(status)}">${getStatusIndicator(status)}</span>
+  <span title="${buildInjuryStatusTooltip(injuryStatusEntry, status)}">${getStatusIndicator(status)}</span>
 </td>
         <td data-sort="${String(positionSortValue).padStart(3, '0')}_${position}">${positionHtml}</td>
         <td data-sort="${marketValueSort}">${marketValue}</td>

@@ -168,12 +168,9 @@ function displayRivals(player, allPlayers) {
         <th>Marktwert</th><th>Realwert</th><th>Punkte</th><th>Besitzer</th>
     </tr></thead><tbody>`;
     rivals.forEach(rival => {
-        const statusData = (window.injuriesMap && window.injuriesMap.get(String(rival.id))) || {};
-        const statusParts = [getStatusDisplayName(statusData.status)];
-        if (statusData.grund) statusParts.push(statusData.grund);
-        if (statusData.seit) statusParts.push('seit ' + statusData.seit);
-        if (statusData.bis && statusData.bis !== 'unbekannt' && statusData.bis !== '') statusParts.push('bis ' + statusData.bis);
-        const status = statusData.status || 'AKTIV';
+        const statusData = getInjuryStatusEntry(rival.id);
+        const status = (statusData && statusData.status) ? statusData.status : 'AKTIV';
+        const statusTooltip = buildInjuryStatusTooltip(statusData, status);
         const ownerName = globalOwnersMap.get(rival.id) || 'Computer';
         const ranking = getLigainsiderRankingObj(rival);
         const ligRank = ranking?.rang || '-';
@@ -186,7 +183,7 @@ function displayRivals(player, allPlayers) {
             : '';
         html += `<tr data-player-id="${rival.id}">
             <td class="player-cell" data-sort="${rival.name}"><div class="player-name-cell">${clubLogo}<a href="${getPlayerUrlWithParams(rival.id)}" class="player-link" title="Zum Spieler">${rival.name}</a></div><div class="player-id-cell">(${rival.id})</div></td>
-            <td data-sort="${status}"><div class="rival-status" title="${statusParts.join(' | ') || status}"><div>${getStatusIndicator(status)}</div><small>${status}</small></div></td>
+            <td data-sort="${status}"><div class="rival-status" title="${statusTooltip}"><div>${getStatusIndicator(status)}</div><small>${status}</small></div></td>
             <td class="ligainsider-ranking" data-sort="${ligRank === '-' ? Number.MAX_SAFE_INTEGER : ligRank}">${ligRank}</td>
             <td data-sort="${marketValue}">${formatCompactCurrency(marketValue)} ${unicodeTrend(getPlayerValueTrend(rival))}</td>
             <td data-sort="${realValue}">${formatCompactCurrency(realValue)}</td>

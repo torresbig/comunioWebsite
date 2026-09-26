@@ -20,6 +20,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+/**
+ * Normalisiert die Rohdaten der Transfermarkt-Liste zu einem Array.
+ *
+ * Die Datenquelle (TransfermarktListe.json) liefert inzwischen ein Objekt
+ *   { "transfermarktMap": { "<playerID>": { ...eintrag... } }, "playerOnMarketCounter": n }
+ * statt wie früher ein direktes Array. Beide Formate werden unterstützt.
+ *
+ * @param {*} json Geparste JSON-Antwort des Endpunkts
+ * @returns {Array<Object>} Liste der Transfermarkt-Einträge
+ */
+function normalizeTransfermarktData(json) {
+    if (Array.isArray(json)) return json; // Alt-Format: direktes Array
+
+    if (json && typeof json === 'object') {
+        // Neues Format: Map mit playerID als Key
+        if (json.transfermarktMap && typeof json.transfermarktMap === 'object') {
+            addDebug("Transfermarkt-Daten im Map-Format (transfermarktMap) erkannt");
+            return Object.values(json.transfermarktMap);
+        }
+
+        // Fallback: erstes Objekt, dessen Werte wie Transfermarkt-Einträge aussehen
+        const container = Object.values(json).find(value =>
+            value && typeof value === 'object' && !Array.isArray(value) &&
+            Object.values(value).some(entry => entry && typeof entry === 'object' && 'playerID' in entry)
+        );
+        if (container) {
+            addDebug("Transfermarkt-Daten im Map-Format (Fallback) erkannt");
+            return Object.values(container);
+        }
+    }
+
+    throw new Error("Unerwartetes Datenformat der Transfermarkt-Liste");
+}
+
 async function loadTransferMarktData() {
     try {
         showLoading();
@@ -27,15 +61,16 @@ async function loadTransferMarktData() {
         const response = await fetch(DATA_URLS.transfermarkt);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const data = await response.json();
-                addDebug(`${data.length} Einträge geladen`);
+        const json = await response.json();
+        const data = normalizeTransfermarktData(json);
+        addDebug(`${data.length} Einträge geladen`);
 
-                ownersMap = window.globalOwnersMap || new Map();
-                originalData = data; // Rohdaten merken
-                renderTable(sortedData());
+        ownersMap = window.globalOwnersMap || new Map();
+        originalData = data; // Rohdaten merken
+        renderTable(sortedData());
 
-                hideLoading();
-                showContent();
+        hideLoading();
+        showContent();
 
         // Sortier-Events nur einmal nach dem Laden setzen!
         initSortEvents();
@@ -100,7 +135,7 @@ function renderTable(data) {
         playerInfo.appendChild(playerId);
         playerCell.appendChild(playerInfo);
 
-        // Status (aus injuriesMap oder item.status)
+        // Status (aus injuriesMap, Key: comunioPlayerId, oder item.status)
         const statusCell = document.createElement('td');
         statusCell.className = 'status-logo';
         const statusWrapper = document.createElement('div');
@@ -108,10 +143,9 @@ function renderTable(data) {
         statusWrapper.style.flexDirection = 'column';
         statusWrapper.style.alignItems = 'center';
 
-        const injuryStatusData = window.injuriesMap?.get(String(item.playerID)) 
-                              || window.injuriesMap?.get(Number(item.playerID)) || {};
+        const injuryStatusData = getInjuryStatusEntry(item.playerID);
         let statusValue = injuryStatusData?.status || item.status || null;
-        if (!statusValue || statusValue.toLowerCase() === 'unbekannt' || statusValue === '' || statusValue === null || statusValue === undefined) {
+        if (!statusValue || String(statusValue).toLowerCase() === 'unbekannt' || statusValue === '') {
             statusValue = 'AKTIV';
         }
 
@@ -119,6 +153,8 @@ function renderTable(data) {
         statusIcon.textContent = getStatusIndicator(statusValue) || '❓';
         const statusText = document.createElement('small');
         statusText.textContent = getStatusDisplayName(statusValue) || 'Aktiv';
+        // Hover-Tooltip mit den Details aus der InjuriesDB (wie auf player.html)
+        statusWrapper.title = buildInjuryStatusTooltip(injuryStatusData, statusValue);
         statusWrapper.appendChild(statusIcon);
         statusWrapper.appendChild(statusText);
         statusCell.appendChild(statusWrapper);
@@ -220,8 +256,8 @@ function sortedData(arr = null) {
             case 1: return cmpStr(a.playerName, b.playerName);
             
             case 2: { // Status: Ausfälle/Verletzte zusammenfassen, Aktive ans Ende
-                const injuryA = window.injuriesMap?.get(String(a.playerID)) || window.injuriesMap?.get(Number(a.playerID));
-                const injuryB = window.injuriesMap?.get(String(b.playerID)) || window.injuriesMap?.get(Number(b.playerID));
+                const injuryA = getInjuryStatusEntry(a.playerID);
+                const injuryB = getInjuryStatusEntry(b.playerID);
                 
                 const statusA = (injuryA?.status || a.status || 'AKTIV').trim().toUpperCase();
                 const statusB = (injuryB?.status || b.status || 'AKTIV').trim().toUpperCase();
