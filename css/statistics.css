@@ -201,7 +201,20 @@
 
   .total {
       font-weight: bold;
-      background-color: #f0f7ff;
+      background-color: transparent;
+  }
+
+  /* Klickbare User in der Tabelle (Link zur Userübersicht) */
+  .user-table a.user-name {
+      color: #7fd1c5;
+      font-weight: 600;
+      text-decoration: none;
+  }
+
+  .user-table a.user-name:hover,
+  .user-table a.user-name:focus-visible {
+      color: #b5fffb;
+      text-decoration: underline;
   }
 
     /* Neu: Zentrierung für Transfer- und Punktespalten */

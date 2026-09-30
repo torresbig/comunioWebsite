@@ -127,6 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 userStats[user.user.id] = {
                     id: user.user.id,
                     name: user.user.name,
+                    firstName: user.user.firstName || (user.user.name || '').split(' ')[0],
                     loginName: user.user.loginName,
                     kontostand: user.guthaben || 0,
                     teamwert: user.teamValue || 0,
@@ -200,9 +201,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ? `Erwarteter Kontostand: ${formatCurrency(user.expectedKontostand)}`
                     : '';
                 const row = document.createElement('tr');
+                const userUrl = getUseruebersichtUrl(user.firstName || user.name);
+                const userLink = user.name
+                    ? `<a class="user-name" href="${userUrl}">${user.name}</a>`
+                    : `Unbekannt (${user.id})`;
                 row.innerHTML = `
-                                    <td>${user.name} <small>(${user.loginName || user.id})</small></td>
-                                    <td class="currency"${tooltip ? ` title="${tooltip}"` : ''}>${formatCurrency(user.kontostand)}</td>
+                                    <td>${userLink} <small>(${user.loginName || user.id})</small></td>
+                                    <td class="currency${user.kontostand < 0 ? ' negative' : ''}"${tooltip ? ` title="${tooltip}"` : ''}>${formatCurrency(user.kontostand)}</td>
                                     <td class="currency">${formatCurrency(user.teamwert)}</td>
                                     <td class="currency">${formatCurrency(user.gesamtwert)}</td>
                                     <td class="text-center">${user.transfers}</td>
