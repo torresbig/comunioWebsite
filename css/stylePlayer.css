@@ -1,3 +1,14 @@
+      /* Globales box-sizing – entspricht siteHeader.css/newsSite.css der
+         anderen Seiten (die player.html NICHT laedt). modernTheme.css setzt
+         .container auf width:100%/min(100%,1240px) zusaetzlich zu padding;
+         ohne border-box wird das Padding auf die Breite addiert und die
+         Seite scrollt auf Handys horizontal (war "zu breit"). */
+      *,
+      *::before,
+      *::after {
+          box-sizing: border-box;
+      }
+
       body {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

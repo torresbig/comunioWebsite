@@ -22,4 +22,13 @@
 .market-graph-container {
     width: 98%;
     max-width: 680px;
+    min-width: 0;
+}
+
+/* Der Canvas hat per Attribut eine Breite von 600px. Bis Chart.js ihn auf
+   die Containerbreite skaliert (oder falls das Chart nicht geladen wird),
+   darf er den Container nicht sprengen und die Seite verbreitern. */
+.market-graph-container canvas {
+    max-width: 100%;
+    height: auto;
 }
