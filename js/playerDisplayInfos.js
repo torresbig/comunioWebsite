@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadOwnersData();
     await loadInjuriesMap();
+    await loadNotInLigaMap();
     initTabs('#tabBar');
 
 
@@ -90,9 +91,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         let player = allPlayers.find(p => String(p.id) === String(playerId));
         if (!player) player = allPlayers.find(p => parseInt(p.id) === parseInt(playerId));
+        // Spieler, die nicht mehr in der Spielerdatenbank stehen (NotInLigaDB)
+        if (!player) player = getNotInLigaEntry(playerId);
 
         if (!player) {
-            const errorMsg = `Spieler mit ID ${playerId} nicht gefunden!`;
+            const errorMsg = `Spieler mit ID ${playerId} nicht gefunden! (auch nicht in der NotInLigaDB)`;
             if (errorMessageEl) {
                 errorMessageEl.textContent = errorMsg;
                 errorMessageEl.style.display = 'block';
@@ -130,7 +133,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         safeSet('playerNameLink', 'textContent', player.name);
-        safeSet('playerId', 'textContent', `ID: ${player.id}`);
+        const playerFlags = [];
+        if (player.notInLiga) playerFlags.push('Nicht in Liga');
+        if (player.retired) playerFlags.push('Karriere beendet');
+        if (player.unknown) playerFlags.push('Unbekannter Spieler');
+        safeSet('playerId', 'textContent', `ID: ${player.id}` + (playerFlags.length ? ' | ' + playerFlags.join(' | ') : ''));
 
         const playerNameLinkEl = document.getElementById('playerNameLink');
         if (player.data && player.data.transfermarktDoDe && player.data.transfermarktDoDe.link) {
@@ -164,8 +171,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Status-Eintrag aus der InjuriesDB (Key: comunioPlayerId).
                 // Hinweis: Der gecachte Eintrag wird nur gelesen, nicht verändert;
                 // der Aktiv-Fallback liegt in statusValue.
-                const injuryStatusObj = getInjuryStatusEntry(player.id);
-                const statusData = injuryStatusObj || {};
+                const statusEntryObj = getPlayerStatusEntry(player.id, { unknown: player.unknown === true });
+                const statusData = statusEntryObj || {};
                 // Fallback auf AKTIV, falls kein Status vorhanden/leer/unbekannt
                 const statusValue = (statusData.status && statusData.status !== 'unbekannt') ? statusData.status : 'AKTIV';
                 const statusIndicator = document.getElementById('statusIndicator');
@@ -177,7 +184,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     // Tooltip aus den Feldern der aktuellen InjuriesDB
                     // (reason, sinceString, statusChangeString, lastNewsText)
-                    statusTooltip = buildInjuryStatusTooltip(statusData, statusValue);
+                    statusTooltip = statusData.notInLiga
+                        ? buildNotInLigaTooltip(statusData)
+                        : buildInjuryStatusTooltip(statusData, statusValue);
                     statusIndicator.title = statusTooltip;
                 } else {
                     addDebug('Element fehlt: statusIndicator', 'error');
@@ -257,7 +266,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         setupAccordion();
 
-        displayRivals(player, allPlayers);
+        displayRivals(player, getMergedPlayerPool(allPlayers));
         displayMarketValue(player);
         renderPointsTableResponsive(player, allPlayersResponse.lastProcessedMatchday);
 

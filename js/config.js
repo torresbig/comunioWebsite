@@ -18,8 +18,10 @@ const DATA_URLS = {
   injuries: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/InjuriesDB.json`,
   lineups: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/UserLineups.json`,
   // Points-DB liegt im Data-Repository (comunioFanApp) — vermeidet 404 auf comunioWebsite
-  points: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/PointsDB.json`
-  
+  points: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/PointsDB.json`,
+  // Spieler, die nicht (mehr) in der Liga-/Spielerdatenbank stehen, aber weiterhin
+  // Usern zugeordnet sein koennen (NotInLigaDB.json; enthaelt u.a. data.retired).
+  notInLiga: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/NotInLigaDB.json`
 };
 
 // Für den Produktivbetrieb auf GitHub Pages die URLs so definieren:

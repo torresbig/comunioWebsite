@@ -58,14 +58,6 @@
         <div id="error" class="error" style="display: none;">
             <p id="errorMessage">Fehler beim Laden der Daten.</p>
         </div>
-        <div id="updateInfo" class="update-info" style="display: none;">
-            <span id="updateText"></span>
-        </div>
-        <div id="stats" class="stats" style="display: none;">
-            <span id="statsText"></span>
-            <button id="refreshButton" class="refresh-button">🔄 Daten neu laden</button>
-        </div>
-
         <!-- Floating Debug Button and Panel -->
         <button id="floatingDebugBtn" title="Debug"><span style="pointer-events:none;">🐞</span></button>
         <div id="floatingDebugPanel">
@@ -78,6 +70,12 @@
 
 
         <div id="content" style="display: none;">
+            <div class="db-stats-bar" id="dbStatsBar">
+                <span class="db-stat" title="Angezeigte Spieler (bei aktivem Filter: angezeigt / gesamt)"><span class="db-stat-label">Spieler</span><b id="dbStatPlayers">–</b></span>
+                <span class="db-stat" title="Summe der Marktwerte der angezeigten Spieler"><span class="db-stat-label">Wert</span><b id="dbStatValue">–</b></span>
+                <span class="db-stat" title="Angezeigte Spieler mit Status ungleich Aktiv (verletzt, gesperrt, nicht in Liga ...)"><span class="db-stat-label">Nicht aktiv</span><b id="dbStatNotActive">–</b></span>
+                <span class="db-stat" title="Summe der Saisonpunkte der angezeigten Spieler"><span class="db-stat-label">Punkte</span><b id="dbStatPoints">–</b></span>
+            </div>
             <div class="toggle-label" id="filterLabel">Filter</div>
             <div class="toggle-content" id="filterContentWrapper">
                 <div class="toggle-inner">
@@ -123,11 +121,11 @@
                             </select>
                         </div>
                         <div class="checkbox-group">
-                            <input type="checkbox" id="hideNonLeague" checked>
-                            <label for="hideNonLeague">Nicht-in-Liga-Spieler ausblenden</label>
+                            <input type="checkbox" id="showNonLeague">
+                            <label for="showNonLeague">Nicht-in-Liga-Spieler anzeigen <span id="showNonLeagueCount"></span></label>
                         </div>
                     </div>
-                    <div style="text-align: center; margin: 15px 0;">
+                    <div class="filter-actions">
                         <button type="button" class="reset-button" id="resetFilters">Filter zurücksetzen</button>
                     </div>
                 </div>

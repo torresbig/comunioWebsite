@@ -20,6 +20,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
     });
 
+    // Spieler, die nicht mehr in der Liga stehen (NotInLigaDB), mitladen:
+    // nur so stimmen auch bei ihnen Wert/Trend.
+    await loadNotInLigaMap();
+
     // --- Transfernews laden
     const newsResp = await fetch(DATA_URLS.news);
     const newsJson = await newsResp.json();
@@ -89,7 +93,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     filtered.forEach(t => {
             const transferValue = Number(t.value) || 0;
-            const currentPlayer = playerDb[t.playerId] || {};
+            const notInLigaPlayer = getNotInLigaEntry(t.playerId);
+            const currentPlayer = playerDb[t.playerId] || (notInLigaPlayer ? {
+                value: notInLigaPlayer.data?.wert || 0,
+                lastValue: notInLigaPlayer.data?.lastWert,
+                notInLiga: true
+            } : {});
             const currentRawValue = Number(currentPlayer.value);
             const currentValue = Number.isFinite(currentRawValue) ? currentRawValue : transferValue;
             let dealHtml = "";
@@ -125,7 +134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <td data-label="Käufer">${t.buyer}</td>
                 <td data-label="Preis">${formatCurrency(price)}</td>
                 <td data-label="Marktwert (Transfer)">${formatCurrency(transferValue)}</td>
-                <td data-label="Aktueller Wert"><span class="transfer-value">${formatCurrency(currentValue)}</span>${unicodeTrend(getValueTrend(currentValue, currentPlayer.lastValue))}</td>
+                <td data-label="Aktueller Wert"><span class="transfer-value">${formatCurrency(currentValue)}</span>${unicodeTrend(getValueTrend(currentValue, currentPlayer.lastValue))}${currentPlayer.notInLiga ? ' ' + getStatusIndicator('NICHT_IN_LIGA') : ''}</td>
                 <td data-label="Deal" style="text-align:center">${dealHtml}</td>
             `;
             tableBody.appendChild(tr);

@@ -58,9 +58,9 @@ function applyAllFilters() {
         
         // 3. Status ungleich aktiv (injuriesMap, Key: comunioPlayerId)
         if (isNotStatusAktiv) {
-            const injuryStatusData = getInjuryStatusEntry(item.playerID);
+            const statusData = getPlayerStatusEntry(item.playerID);
 
-            let statusValue = injuryStatusData?.status || item.status || null;
+            let statusValue = statusData?.status || item.status || null;
             if (!statusValue || String(statusValue).toLowerCase() === 'unbekannt' || statusValue === '') {
                 statusValue = 'AKTIV';
             }

@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         addDebug("Besitzerdaten geladen, lade InjuriesMap...");
         await loadInjuriesMap();
+        await loadNotInLigaMap();
         addDebug(`InjuriesMap geladen: ${window.injuriesMap?.size || 0} Einträge`);
 
         addDebug("Besitzerdaten geladen, lade Transfermarkt-Daten...");
@@ -143,8 +144,9 @@ function renderTable(data) {
         statusWrapper.style.flexDirection = 'column';
         statusWrapper.style.alignItems = 'center';
 
-        const injuryStatusData = getInjuryStatusEntry(item.playerID);
-        let statusValue = injuryStatusData?.status || item.status || null;
+        // Status zentral aus utils: NotInLigaDB -> NICHT_IN_LIGA, sonst InjuriesDB
+        const statusData = getPlayerStatusEntry(item.playerID);
+        let statusValue = statusData?.status || item.status || null;
         if (!statusValue || String(statusValue).toLowerCase() === 'unbekannt' || statusValue === '') {
             statusValue = 'AKTIV';
         }
@@ -154,7 +156,9 @@ function renderTable(data) {
         const statusText = document.createElement('small');
         statusText.textContent = getStatusDisplayName(statusValue) || 'Aktiv';
         // Hover-Tooltip mit den Details aus der InjuriesDB (wie auf player.html)
-        statusWrapper.title = buildInjuryStatusTooltip(injuryStatusData, statusValue);
+        statusWrapper.title = (statusData && statusData.notInLiga)
+            ? buildNotInLigaTooltip(statusData)
+            : buildInjuryStatusTooltip(statusData, statusValue);
         statusWrapper.appendChild(statusIcon);
         statusWrapper.appendChild(statusText);
         statusCell.appendChild(statusWrapper);
@@ -256,8 +260,8 @@ function sortedData(arr = null) {
             case 1: return cmpStr(a.playerName, b.playerName);
             
             case 2: { // Status: Ausfälle/Verletzte zusammenfassen, Aktive ans Ende
-                const injuryA = getInjuryStatusEntry(a.playerID);
-                const injuryB = getInjuryStatusEntry(b.playerID);
+                const injuryA = getPlayerStatusEntry(a.playerID);
+                const injuryB = getPlayerStatusEntry(b.playerID);
                 
                 const statusA = (injuryA?.status || a.status || 'AKTIV').trim().toUpperCase();
                 const statusB = (injuryB?.status || b.status || 'AKTIV').trim().toUpperCase();

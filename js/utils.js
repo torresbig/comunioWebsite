@@ -151,7 +151,8 @@ function getStatusDisplayName(status) {
     'GELBROTE_KARTE': 'Gelbrote Karte',
     'FUENFTE_GELBE_KARTE': '5. gelbe Karte',
     'NICHT_IN_LIGA': 'Nicht in Liga',
-    'GESPERRT': 'Gesperrt'
+    'GESPERRT': 'Gesperrt',
+    'UNBEKANNT': 'Unbekannt'
   };
   return statusMap[status] || status || 'Unbekannt';
 }
@@ -431,7 +432,13 @@ async function getPlayerSpieltagspunkte(playerId) {
     if (playerId === null || playerId === undefined || playerId === '') return '';
     const players = await getPlayerDb();
     const entry = players.find(p => String(p.id) === String(playerId));
-    return entry?.name || '';
+    if (entry?.name) return entry.name;
+
+    // Fallback: Spieler steht nur noch in der NotInLigaDB
+    if (!window.notInLigaMap && typeof loadNotInLigaMap === 'function') {
+      try { await loadNotInLigaMap(); } catch (err) { /* wird intern geloggt */ }
+    }
+    return getNotInLigaEntry(playerId)?.name || '';
   }
 
   // Cache / Promise für Injuries-DB
@@ -681,3 +688,216 @@ async function getPlayerSpieltagspunkte(playerId) {
       injuriesDbPromise = null;
     }
   }
+
+// ---------------------------------------------------------------------------
+// NotInLigaDB: Spieler, die nicht (mehr) in der Spielerdatenbank stehen, aber
+// weiterhin Usern zugeordnet sein koennen. Sie verlieren dadurch nicht ihren
+// Besitzer und werden mit dem Status NICHT_IN_LIGA angezeigt.
+// Rohdaten-Format: { lastUpdate, db: { id: { data, name, id } } }
+// ---------------------------------------------------------------------------
+
+// Cache / Promise fuer die NotInLiga-DB
+let notInLigaCache = null;
+let notInLigaPromise = null;
+
+/**
+ * Normalisiert einen Eintrag der NotInLigaDB auf die Struktur der
+ * Spielerdatenbank ({ id, name, data }) und ergaenzt die Flags
+ * notInLiga / retired / unknownRetired.
+ * @param {Object} rawEntry Eintrag aus NotInLigaDB.db
+ * @param {string} [fallbackId] Objekt-Key, falls entry.id fehlt
+ * @returns {Object} Eintrag im Format der Spielerdatenbank
+ */
+function normalizeNotInLigaEntry(rawEntry, fallbackId) {
+  const entry = (rawEntry && typeof rawEntry === 'object') ? rawEntry : {};
+  const data = (entry.data && typeof entry.data === 'object' && !Array.isArray(entry.data)) ? entry.data : {};
+  const id = (entry.id !== undefined && entry.id !== null && entry.id !== '') ? String(entry.id) : String(fallbackId || '');
+  return {
+    id,
+    name: entry.name || ('Spieler ' + id),
+    data,
+    notInLiga: true,
+    retired: data.retired === true,
+    unknownRetired: !('retired' in data)
+  };
+}
+
+/**
+ * Baut aus den Rohdaten der NotInLigaDB die Map (comunioPlayerId -> Eintrag).
+ * Unterstuetzt zusaetzlich ein flaches Format { id: {...} }.
+ * @param {any} data Rohdaten aus DATA_URLS.notInLiga
+ * @returns {Map<string, Object>} Map im Format der Spielerdatenbank
+ */
+function buildNotInLigaMap(data) {
+  const map = new Map();
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return map;
+  const payload = (data.db && typeof data.db === 'object' && !Array.isArray(data.db)) ? data.db : data;
+  Object.entries(payload).forEach(([playerId, rawEntry]) => {
+    if (!rawEntry || typeof rawEntry !== 'object' || Array.isArray(rawEntry)) return;
+    const entry = normalizeNotInLigaEntry(rawEntry, playerId);
+    if (!entry.id) return;
+    map.set(entry.id, entry);
+  });
+  return map;
+}
+
+/**
+ * Laedt die NotInLigaDB einmalig und cached sie als Map
+ * (comunioPlayerId -> Eintrag). Speichert zusaetzlich window.notInLigaMap,
+ * window.notInLigaRawData und window.notInLigaLastUpdate.
+ * @returns {Promise<Map<string, Object>>} Map (leer bei Fehler)
+ */
+async function loadNotInLigaMap() {
+  try {
+    if (notInLigaPromise) await notInLigaPromise;
+
+    if (notInLigaCache) {
+      window.notInLigaMap = notInLigaCache;
+      return notInLigaCache;
+    }
+
+    notInLigaPromise = fetchJSON(DATA_URLS.notInLiga);
+    const data = await notInLigaPromise;
+
+    // Rohdaten global verfuegbar machen (z.B. fuer den Datenstand)
+    window.notInLigaRawData = data;
+    if (data && data.lastUpdate) window.notInLigaLastUpdate = data.lastUpdate;
+
+    notInLigaCache = buildNotInLigaMap(data);
+    if (notInLigaCache.size > 0) {
+      const stand = (data && data.lastUpdate) ? (' (Stand: ' + data.lastUpdate + ')') : '';
+      addDebug('NotInLigaDB geladen: ' + notInLigaCache.size + ' Spieler' + stand);
+    } else {
+      addDebug('NotInLigaDB enthaelt keine Eintraege oder ist leer!', 'warn');
+    }
+
+    window.notInLigaMap = notInLigaCache;
+    return notInLigaCache;
+  } catch (err) {
+    addDebug('Fehler beim Laden der NotInLiga-DB: ' + (err.message || err), 'error');
+    window.notInLigaMap = new Map();
+    return window.notInLigaMap;
+  } finally {
+    notInLigaPromise = null;
+  }
+}
+
+/**
+ * Liefert den NotInLiga-Eintrag (Format der Spielerdatenbank) zu einer ID.
+ * Lookup robust fuer String- und Number-IDs.
+ * @param {string|number} playerId comunioPlayerId
+ * @returns {Object|null} Eintrag oder null
+ */
+function getNotInLigaEntry(playerId) {
+  if (playerId === null || playerId === undefined || playerId === '') return null;
+  const map = window.notInLigaMap;
+  if (!map || typeof map.get !== 'function') return null;
+  return map.get(String(playerId)) || map.get(Number(playerId)) || null;
+}
+
+/**
+ * Prueft, ob ein Spieler in der NotInLigaDB steht (nicht mehr in der Liga).
+ * @param {string|number} playerId
+ * @returns {boolean}
+ */
+function isNotInLigaPlayer(playerId) {
+  return getNotInLigaEntry(playerId) !== null;
+}
+
+/**
+ * Alle Spieler der NotInLigaDB als Array (Format der Spielerdatenbank).
+ * @returns {Array<Object>} Array (leer, wenn die DB nicht geladen ist)
+ */
+function getNotInLigaPlayers() {
+  const map = window.notInLigaMap;
+  if (!map || typeof map.values !== 'function') return [];
+  return Array.from(map.values());
+}
+
+/**
+ * Tooltip-Text fuer einen Nicht-in-Liga-Spieler.
+ * @param {Object|null} entry Status- oder NotInLiga-Eintrag
+ * @returns {string} Tooltip-Text
+ */
+function buildNotInLigaTooltip(entry) {
+  const parts = [getStatusDisplayName('NICHT_IN_LIGA')];
+  if (entry && entry.retired) parts.push('Karriere beendet');
+  else if (entry && entry.unknownRetired) parts.push('Noch kein retired-Flag in der Datenbank');
+  if (window.notInLigaLastUpdate) parts.push('Stand: ' + window.notInLigaLastUpdate);
+  return parts.join(' | ');
+}
+
+/**
+ * Status-Eintrag eines Spielers - zentrale Quelle fuer alle Status-Spalten.
+ * Reihenfolge: NotInLigaDB (NICHT_IN_LIGA) vor InjuriesDB (Fallback: aktiv).
+ * @param {string|number} playerId comunioPlayerId
+ * @param {{unknown?: boolean}} [options] options.unknown = Spieler fehlt in allen Datenbanken
+ * @returns {Object|null} Status-Eintrag oder null (= aktiv)
+ */
+function getPlayerStatusEntry(playerId, options = {}) {
+  if (options && options.unknown) {
+    return { status: 'UNBEKANNT', unknown: true, reason: 'Spieler ist in keiner Datenbank vorhanden' };
+  }
+  const notInLigaEntry = getNotInLigaEntry(playerId);
+  if (notInLigaEntry) {
+    return {
+      status: 'NICHT_IN_LIGA',
+      notInLiga: true,
+      retired: notInLigaEntry.retired === true,
+      unknownRetired: notInLigaEntry.unknownRetired === true,
+      reason: notInLigaEntry.retired ? 'Karriere beendet' : 'Nicht mehr in der Liga',
+      sinceString: window.notInLigaLastUpdate || ''
+    };
+  }
+  return getInjuryStatusEntry(playerId);
+}
+
+/**
+ * Statuswert eines Spielers ('NICHT_IN_LIGA', 'VERLETZT', ... oder 'AKTIV').
+ * @param {string|number} playerId
+ * @param {{unknown?: boolean}} [options]
+ * @returns {string}
+ */
+function getPlayerStatus(playerId, options = {}) {
+  const entry = getPlayerStatusEntry(playerId, options);
+  return (entry && entry.status) ? entry.status : 'AKTIV';
+}
+
+/**
+ * CSS-Klasse fuer einen Statuswert (Sammelstelle fuer alle Seiten).
+ * @param {string} status Statuswert
+ * @returns {string} z.B. 'status-nichtliga' oder '' (kein Status)
+ */
+function getStatusClass(status) {
+  const value = String(status || '').toUpperCase();
+  if (!value) return '';
+  if (value.includes('NICHT_IN_LIGA') || value.includes('NICHT_IM_KADER')) return 'status-nichtliga';
+  if (value.includes('AKTIV')) return 'status-aktiv';
+  if (value.includes('VERLETZT')) return 'status-verletzt';
+  if (value.includes('AUFBAU') || value.includes('REHA')) return 'status-reha';
+  if (value.includes('ROTE_KARTE') || value.includes('GELBROTE_KARTE') || value.includes('FUENFTE_GELBE_KARTE') || value.includes('GESPERRT')) return 'status-gesperrt';
+  return '';
+}
+
+/**
+ * Merged Spielerdatenbank und NotInLigaDB zu einem Pool (ohne Duplikate).
+ * Eintraege der Spielerdatenbank haben Vorrang.
+ * @param {Array<Object>} playerDb Array aus DATA_URLS.players (Feld playerDB)
+ * @returns {Array<Object>} gemergter Pool (NotInLiga-Eintraege mit notInLiga: true)
+ */
+function getMergedPlayerPool(playerDb) {
+  const pool = [];
+  const seen = new Set();
+  const addPlayers = (players) => {
+    (Array.isArray(players) ? players : []).forEach(player => {
+      if (!player || player.id === undefined || player.id === null) return;
+      const id = String(player.id);
+      if (seen.has(id)) return;
+      seen.add(id);
+      pool.push(player);
+    });
+  };
+  addPlayers(playerDb);
+  addPlayers(getNotInLigaPlayers());
+  return pool;
+}

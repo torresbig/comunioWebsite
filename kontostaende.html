@@ -153,6 +153,9 @@
         const playersData = await playersRes.json();
         const playerToUserMap = await mapRes.json();
 
+        // NotInLigaDB laden (Mannschaftswerte der Spieler ohne Liga-Eintrag)
+        await loadNotInLigaMap();
+
         addDebug(`Daten geladen: Nutzer (${usersData.length}), Spieler (${playersData.length})`);
         buildTable(usersData, playersData, playerToUserMap);
       } catch (err) {
@@ -169,7 +172,8 @@
     function buildTable(users, playersData, playerToUserMap) {
       addDebug("Baue Tabelle...");
 
-      const spielerArray = playersData.playerDB || [];
+      // Liga-Spieler + NotInLigaDB (diese Spieler gehoeren weiterhin zum Team)
+      const spielerArray = getMergedPlayerPool(playersData.playerDB || []);
 
       // Unbedingt zuerst Map erstellen
       const playerToUserMapObj = {};

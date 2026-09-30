@@ -14,7 +14,10 @@ function renderTable(players) {
             }
         });
         const clubId = player.data?.verein || "0";
-        const clubName = clubsMap.get(clubId) || 'UNBEKANNT';
+        // Spieler aus der NotInLigaDB haben keinen Verein (verein "0")
+        const clubName = player.notInLiga
+            ? 'Nicht in Liga'
+            : (clubsMap.get(clubId) || 'UNBEKANNT');
         const logoFile = getLogoFileName(clubId);
         const logoHtml = `<img src="logos/${logoFile}" class="club-logo" alt="${clubName}" title="${clubName}">`;
         const playerName = player.name || "Unbekannt";
@@ -31,17 +34,13 @@ function renderTable(players) {
 
 
         // Status aus injuriesMap (Key: comunioPlayerId) statt aus player.data
-        const injuryStatus = getInjuryStatusEntry(player.id);
-        const status = injuryStatus?.status || 'AKTIV';
-        let statusClass = "";
-        if (status.includes("AKTIV")) statusClass = "status-aktiv";
-        else if (status.includes("VERLETZT")) statusClass = "status-verletzt";
-        else if (status.includes("AUFBAU")) statusClass = "status-reha";
-        else if (status.includes("ROTE_KARTE")) statusClass = "status-gesperrt";
-        else if (status.includes("GELBROTE_KARTE")) statusClass = "status-gesperrt";
-        else if (status.includes("FUENFTE_GELBE_KARTE")) statusClass = "status-gesperrt";
-        else if (status.includes("NICHT_IN_LIGA")) statusClass = "status-nichtliga";
-        else if (status.includes("NICHT_IM_KADER")) statusClass = "status-nichtliga";
+        // Status zentral aus utils: NotInLigaDB -> NICHT_IN_LIGA, sonst InjuriesDB
+        const statusEntry = getPlayerStatusEntry(player.id, { unknown: player.unknown === true });
+        const status = (statusEntry && statusEntry.status) ? statusEntry.status : 'AKTIV';
+        const statusClass = getStatusClass(status);
+        const statusTooltip = (statusEntry && statusEntry.notInLiga)
+            ? buildNotInLigaTooltip(statusEntry)
+            : buildInjuryStatusTooltip(statusEntry, status);
         let marketValue = 'Unbekannt';
         let marketValueSort = 0;
         if (player.data?.wert) {
@@ -57,7 +56,7 @@ function renderTable(players) {
         <td data-sort="${clubName}">${logoHtml}</td>
                     <td data-sort="${playerName}">${playerNameHtml}</td>
                     <td data-sort="${position}">${positionHtml}</td>
-                    <td data-sort="${status}" class="${statusClass}"><div style="display:flex;flex-direction:column;align-items:center" title="${buildInjuryStatusTooltip(injuryStatus, status).replace(/"/g, '&quot;')}"><div>${getStatusIndicator(status)}</div></div></td>
+                    <td data-sort="${status}" class="${statusClass}"><div style="display:flex;flex-direction:column;align-items:center" title="${statusTooltip.replace(/"/g, '&quot;')}"><div>${getStatusIndicator(status)}</div></div></td>
                     <td data-sort="${marketValueSort}">${marketValue}</td>
                     <td data-sort="${points}">${points}</td>
                     <td data-sort="${owner}">${owner}</td>

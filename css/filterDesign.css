@@ -199,3 +199,101 @@
         padding: 12px;
     }
 }
+
+
+/* ===== Kompakte Kennzahlen ueber dem Filter (Spielerdatenbank) ===== */
+.page-player-db .db-stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 14px;
+    margin: 0 0 6px;
+    padding: 6px 10px;
+    background: var(--surface, #f8f9fa);
+    border: 1px solid var(--border, #ddd);
+    border-radius: 6px;
+    color: var(--text, #2c3e50);
+    font-size: 0.72em;
+    line-height: 1.3;
+}
+
+.page-player-db .db-stat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.page-player-db .db-stat-label {
+    color: var(--text-muted, #6b7a8c);
+}
+
+.page-player-db .db-stat b {
+    font-weight: 600;
+}
+
+/* ===== Kompakter Filter: weniger Abstaende zwischen Feldern und zum Rand ===== */
+.page-player-db #filterContentWrapper {
+    padding: 10px;
+}
+
+.page-player-db .toggle-inner {
+    padding: 0;
+}
+
+.page-player-db .filters {
+    padding: 10px;
+    gap: 10px;
+}
+
+.page-player-db .filters .filter-group {
+    margin-bottom: 0;
+}
+
+/* Volle Breite, damit die Anzeige-Option garantiert in einer Zeile bleibt */
+.page-player-db .checkbox-group {
+    grid-column: 1 / -1;
+    margin-top: 0;
+    gap: 8px;
+}
+
+.page-player-db .checkbox-group input {
+    margin-right: 0;
+}
+
+.page-player-db .checkbox-group label {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.page-player-db .filter-actions {
+    margin: 10px 0 0;
+    text-align: center;
+}
+
+.page-player-db .filter-actions #resetFilters {
+    margin-top: 0;
+    width: auto;
+    padding: 8px 14px;
+}
+
+@media (max-width: 767px) {
+    .page-player-db .db-stats-bar {
+        gap: 2px 10px;
+        padding: 5px 8px;
+        font-size: 0.68em;
+    }
+
+    .page-player-db #filterContentWrapper {
+        padding: 8px;
+    }
+
+    .page-player-db .filters {
+        padding: 8px;
+        gap: 8px;
+    }
+
+    .page-player-db .filter-actions {
+        margin-top: 8px;
+    }
+}

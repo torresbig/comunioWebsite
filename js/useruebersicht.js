@@ -44,10 +44,14 @@ async function loadData() {
             fetchJSON(DATA_URLS.playerToUser),
             fetchJSON(DATA_URLS.news),
             fetchJSON(DATA_URLS.lineups),
+            // NotInLigaDB: Spieler, die nicht mehr in der Spielerdatenbank stehen,
+            // aber weiterhin Usern zugeordnet sind (Status: NICHT_IN_LIGA)
+            loadNotInLigaMap(),
             // InjuriesDB (Key: comunioPlayerId) für die Status-Spalte; history wird noch nicht genutzt
             loadInjuriesMap()
         ]);
         addDebug(`InjuriesMap geladen: ${window.injuriesMap?.size || 0} Einträge`);
+        addDebug(`NotInLigaMap geladen: ${window.notInLigaMap?.size || 0} Spieler`);
 
         // ClubsMap aufbauen
         clubsData.forEach(club => {
@@ -193,18 +197,118 @@ function getPlayerUrlWithParams(playerId) {
 
 
 // Spieler für ausgewählten User laden und Tabelle rendern
+// --- Spieler-Lookup ueber beide Datenbanken (Liga + NotInLigaDB) -------------
+
+/**
+ * Index der Liga-Spieler (comunioPlayerId -> Eintrag der Spielerdatenbank).
+ * @returns {Map<string, Object>}
+ */
+function buildPlayerIndex() {
+    const index = new Map();
+    (playersData?.playerDB || []).forEach(player => {
+        if (!player || player.id === undefined || player.id === null) return;
+        index.set(String(player.id), player);
+    });
+    return index;
+}
+
+/**
+ * Sucht einen Spieler in der Spielerdatenbank und - falls er dort nicht mehr
+ * steht - in der NotInLigaDB (Eintraege dort haben notInLiga: true).
+ * @param {string|number} playerId
+ * @returns {Object|null}
+ */
+function findPlayerById(playerId) {
+    if (playerId === null || playerId === undefined || playerId === '') return null;
+    const id = String(playerId);
+    const fromDb = (playersData?.playerDB || []).find(p => String(p.id) === id);
+    return fromDb || getNotInLigaEntry(id) || null;
+}
+
+/**
+ * Sucht den Spielernamen zu einer ID in den Transfer-/Statusnews. Letzte
+ * Rettung fuer IDs, die in keiner Datenbank mehr stehen.
+ * @param {string|number} playerId
+ * @returns {string} Name oder '' (wenn nicht gefunden)
+ */
+function findPlayerNameInNews(playerId) {
+    const id = String(playerId);
+    const days = newsData?.newsDB || [];
+    for (const day of days) {
+        for (const item of (day.news || [])) {
+            if (String(item.playerId) !== id) continue;
+            if (item.art === 'TRANSFER') {
+                try {
+                    const transfer = JSON.parse(item.text);
+                    if (transfer?.playerName) return transfer.playerName;
+                } catch (err) { /* ungueltiges JSON ignorieren */ }
+            }
+            const parsed = (typeof parseSpielerstatusNewsText === 'function')
+                ? parseSpielerstatusNewsText(item.text)
+                : null;
+            if (parsed?.playerName) return parsed.playerName;
+        }
+    }
+    return '';
+}
+
+/**
+ * Fallback fuer IDs, die nur noch in der PlayerToUserMap stehen (weder
+ * Spielerdatenbank noch NotInLigaDB) -> Status UNBEKANNT.
+ * @param {string|number} playerId
+ * @returns {Object} Spielerobjekt im Format der Spielerdatenbank
+ */
+function buildUnknownPlayer(playerId) {
+    const name = findPlayerNameInNews(playerId);
+    return {
+        id: String(playerId),
+        name: name || ('Spieler ' + playerId),
+        data: {},
+        unknown: true
+    };
+}
+
+/**
+ * Alle Spieler eines Users. Basis ist die PlayerToUserMap (nicht die
+ * Spielerdatenbank), damit Spieler, die nicht mehr in der Liga sind,
+ * weiterhin angezeigt werden.
+ * @param {string|number} userId
+ * @returns {Array<Object>}
+ */
+function getPlayersForUser(userId) {
+    const map = Object.assign({}, ...p2uData);
+    const index = buildPlayerIndex();
+    const players = [];
+    let notInLigaCount = 0;
+    let unknownCount = 0;
+    Object.keys(map).forEach(playerId => {
+        if (String(map[playerId]) !== String(userId)) return;
+        let player = index.get(String(playerId)) || getNotInLigaEntry(playerId);
+        if (player) {
+            if (player.notInLiga) notInLigaCount++;
+        } else {
+            player = buildUnknownPlayer(playerId);
+            unknownCount++;
+        }
+        players.push(player);
+    });
+    addDebug(`Players for user ${userId}: ${players.length} (${notInLigaCount} nicht in Liga, ${unknownCount} unbekannt)`);
+    return players;
+}
 function loadPlayersForUser(userId) {
     addDebug("=== loadPlayersForUser START ===");
     // Render user info card for selected user (if available)
     try { renderUserInfo(userId); } catch (err) { addDebug && addDebug('renderUserInfo error: ' + err.message); }
-    const map = Object.assign({}, ...p2uData);
-    let list = (playersData.playerDB || []).filter(p => map[p.id] == userId);
+    // Basis ist bewusst die PlayerToUserMap und nicht die Spielerdatenbank:
+    // sonst fehlen Spieler, die nicht mehr in der Liga stehen (NotInLigaDB).
+    let list = getPlayersForUser(userId);
 
     addDebug(`Found ${list.length} players for user ${userId}`);
 
     // Debug positions before sorting
     list.forEach(p => {
-        addDebug(`Player ${p.name}: Position = ${p.data?.position}`);
+        const hint = p.notInLiga ? ' (nicht in Liga)' : (p.unknown ? ' (unbekannt)' : '');
+        addDebug(`Player ${p.name}: Position = ${p.data?.position}${hint}`);
     });
 
     // Hilfsfunktion für Positionssortierung
@@ -304,7 +408,7 @@ async function renderLineups(userId) {
     const cards = matchdays.map(([matchday, lineup]) => {
         const players = Array.isArray(lineup.players) ? lineup.players : [];
         const enriched = players.map(player => {
-            const playerDbEntry = playersData.playerDB?.find(item => String(item.id) === String(player.id));
+            const playerDbEntry = findPlayerById(player.id);
             const pointEntry = getLineupPointsByPlayer(getPointsEntriesForPlayer(pointsDb, player.id), matchday);
             // Comunio-Spieltagspunkte (value). Nur falls die Points-DB keinen Wert hat,
             // die in der Aufstellung gespeicherten Punkte als Fallback nutzen.
@@ -366,13 +470,22 @@ function initOverviewTabs() {
 // Spielerdetails füllen
 function fillPlayerDetails(player) {
     const details = document.getElementById('detailText');
+    const statusEntry = getPlayerStatusEntry(player.id, { unknown: player.unknown === true });
+    const status = (statusEntry && statusEntry.status) ? statusEntry.status : 'AKTIV';
+    const clubName = player.notInLiga
+        ? 'Nicht in Liga'
+        : (player.unknown ? 'Unbekannt' : (clubsMap.get(player.data?.verein) || '-'));
+    const hints = [];
+    if (player.notInLiga) hints.push('nicht in Liga');
+    if (player.retired) hints.push('Karriere beendet');
+    if (player.unknown) hints.push('keine Daten in der Datenbank');
     details.innerHTML = `
       <strong>${player.name}</strong><br>
       ID: ${player.id}<br>
-      Verein: ${player.data?.verein || "-"}<br>
+      Verein: ${escapeHtml(clubName)}<br>
       Marktwert: €${player.data?.wert?.toLocaleString('de-DE') || "-"} ${unicodeTrend(getPlayerValueTrend(player))}<br>
       Punkte: ${player.data?.punkte || "0"}<br>
-      Status: ${player.data?.comunioStatus?.status || "-"}
+      Status: ${escapeHtml(getStatusDisplayName(status))} ${getStatusIndicator(status)}${hints.length ? `<br><small>Hinweis: ${escapeHtml(hints.join(', '))}</small>` : ''}
     `;
 }
 
@@ -398,7 +511,11 @@ function renderTable(players) {
 
 
         const clubId = player.data?.verein || "0";
-        const clubName = clubsMap.get(clubId) || 'UNBEKANNT';
+        // Nicht-in-Liga-Spieler haben verein "0"; die Vereinsdatenbank liefert dazu
+        // "UNBEKANNT", daher hier einen sprechenden Wert anzeigen.
+        const clubName = player.notInLiga
+            ? 'Nicht in Liga'
+            : (player.unknown ? 'Unbekannt' : (clubsMap.get(clubId) || 'UNBEKANNT'));
         const logoFile = getLogoFileName(clubId);
         const logoHtml = `<img src="logos/${logoFile}" class="club-logo" alt="${clubName}" title="${clubName}">`;
         const playerNameHtml = `<a href="${getPlayerUrlWithParams(player.id)}" title="${player.name} (ID: ${player.id})" target="_self">${player.name}</a>`;
@@ -417,16 +534,13 @@ function renderTable(players) {
         const nebenpositionenTooltip = nebenpositionen.length > 0 ? "Hauptposition: " + hauptposition + " | Nebenposition: " + nebenpositionen.join(", ") : "";
         const posLogoFile = getLogoPositionFilename(position);
         const positionHtml = `<img src="logos/${posLogoFile}" class="pos-logo" alt="${position}" title="${nebenpositionenTooltip || position}">`;
-        // Status aus der InjuriesDB (Key: comunioPlayerId); player.data.status gibt es nicht mehr
-        const injuryStatusEntry = getInjuryStatusEntry(player.id);
-        const status = (injuryStatusEntry && injuryStatusEntry.status) ? injuryStatusEntry.status : 'AKTIV';
-
-        let statusClass = "";
-        if (status.includes("AKTIV")) statusClass = "status-aktiv";
-        else if (status.includes("VERLETZT")) statusClass = "status-verletzt";
-        else if (status.includes("AUFBAU")) statusClass = "status-reha";
-        else if (status.includes("ROTE_KARTE") || status.includes("GELBROTE_KARTE") || status.includes("FUENFTE_GELBE_KARTE")) statusClass = "status-gesperrt";
-        else if (status.includes("NICHT_IN_LIGA") || status.includes("NICHT_IM_KADER")) statusClass = "status-nichtliga";
+        // Status zentral aus utils: NotInLigaDB -> NICHT_IN_LIGA, sonst InjuriesDB
+        const statusEntry = getPlayerStatusEntry(player.id, { unknown: player.unknown === true });
+        const status = (statusEntry && statusEntry.status) ? statusEntry.status : 'AKTIV';
+        const statusClass = getStatusClass(status);
+        const statusTooltip = (statusEntry && statusEntry.notInLiga)
+            ? buildNotInLigaTooltip(statusEntry)
+            : buildInjuryStatusTooltip(statusEntry, status);
 
         let marketValue = 'Unbekannt';
         let marketValueSort = 0;
@@ -444,7 +558,7 @@ function renderTable(players) {
         <td data-sort="${clubName}">${logoHtml}</td>
         <td data-sort="${player.name}">${playerNameHtml}</td>
         <td data-sort="${status}" class="${statusClass}">
-  <span title="${buildInjuryStatusTooltip(injuryStatusEntry, status)}">${getStatusIndicator(status)}</span>
+  <span title="${escapeHtml(statusTooltip)}">${getStatusIndicator(status)}</span>
 </td>
         <td data-sort="${String(positionSortValue).padStart(3, '0')}_${position}">${positionHtml}</td>
         <td data-sort="${marketValueSort}">${marketValue}</td>
@@ -471,7 +585,7 @@ function renderTransfers(userId) {
                     const isMySale = t.sellerId && t.sellerId == userId;
 
                     if (isMyPurchase || isMySale) {
-                        const playerObj = playersData.playerDB.find(p => p.id === item.playerId);
+                        const playerObj = findPlayerById(item.playerId);
                         addDebug(`Transfer found: ${playerObj?.name || t.playerName || 'Unknown'} (ID: ${item.playerId})`);
                         entries.push({
                             playerId: item.playerId,
@@ -523,11 +637,11 @@ function fillTransferTable(selector, list) {
             const tr = document.createElement('tr');
 
             // Try to find player in database
-            const player = e.playerId ? playersData.playerDB.find(p => p.id === e.playerId) : null;
+            const player = e.playerId ? findPlayerById(e.playerId) : null;
             const displayName = player?.name || e.playerName || 'Unbekannt';
 
             // Create cell content
-            const playerCell = player ?
+            const playerCell = e.playerId ?
                 `<a href="${getPlayerUrlWithParams(e.playerId)}" target="_self">${displayName}</a>` :
                 displayName;
 
