@@ -56,10 +56,9 @@ function createPointsDetailGroups(entry) {
     addGroup('Einsatz', appearance);
 
     const performance = [];
-    const value = pointsNumber(entry.value);
-    const detailPoints = pointsNumber(entry.points);
-    if (value !== null) performance.push({ label: 'Spieltagspunkte (Comunio)', value: String(value) });
-    if (detailPoints !== null && detailPoints !== value) performance.push({ label: 'Punkte (Spieldetails)', value: String(detailPoints) });
+    // Comunio-Spieltagspunkte (früher "value", jetzt "points").
+    const points = pointsNumber(entry.points);
+    if (points !== null) performance.push({ label: 'Spieltagspunkte (Comunio)', value: String(points) });
     const rating = pointsRating(entry.rating);
     if (rating !== null) performance.push({ label: 'Note', value: rating });
     addGroup('Leistung', performance);
@@ -176,12 +175,17 @@ async function renderPointsTableResponsive(player, lastProcessedMatchday) {
     const pointsByMatchday = new Map(matchdayPoints
         .filter(entry => entry && entry.key !== null && entry.key !== undefined)
         .map(entry => [String(entry.key), entry]));
-    const processedThrough = Math.min(34, Math.max(0, Math.floor(Number(lastProcessedMatchday) || 0)));
+    let processedThrough = Math.min(34, Math.max(0, Math.floor(Number(lastProcessedMatchday) || 0)));
+    // Fallback: lastProcessedMatchday steht jetzt auch im Root der Points-DB.
+    if (!processedThrough) {
+        const pointsDb = await getPointsDb();
+        processedThrough = Math.min(34, Math.max(0, Math.floor(Number(getPointsLastProcessedMatchday(pointsDb)) || 0)));
+    }
 
     const renderMatchday = matchday => {
         const entry = pointsByMatchday.get(String(matchday));
-        // Comunio-Spieltagspunkte (value), sonst Punkte aus den Spieldetails
-        const points = entry ? (pointsNumber(entry.value) ?? pointsNumber(entry.points)) : null;
+        // Comunio-Spieltagspunkte (früher "value", jetzt "points")
+        const points = entry ? pointsNumber(entry.points) : null;
         const playtime = pointsPlaytime(entry);
         const minutes = playtime !== null ? `${playtime} Min.` : '—';
         const goals = pointsNumber(entry?.tore);

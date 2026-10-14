@@ -334,7 +334,7 @@ let pointsDbPromise = null;
 
 /**
  * Lädt die Points-DB (DATA_URLS.points) und cached sie (ein einziger Request).
- * Format: { "<playerId>": [ { key, value, status, einsatzzeit, ... }, ... ] }
+ * Format: { lastProcessedMatchday, pointsMap: { "<playerId>": { "<spieltag>": { key, points, status, ... } } } }
  * Die Spieltagseinträge liegen flach vor (kein "stats"-Unterobjekt mehr).
  * @returns {Promise<Object>} Points-DB (leeres Objekt bei Fehler)
  */
@@ -378,9 +378,28 @@ async function loadPointsDb() {
  */
 function getPointsEntriesForPlayer(db, playerId) {
   if (playerId === null || playerId === undefined || playerId === '') return [];
-  if (!db) return [];
-  const found = db[playerId] ?? db[String(playerId)] ?? db[Number(playerId)];
-  return Array.isArray(found) ? found : [];
+  if (!db || typeof db !== 'object') return [];
+  // Neues Format: Spieler hängen unter db.pointsMap; der Spieltags-Key steht eine
+  // Ebene höher (Key der Spieltags-Map des Spielers) und wird hier in den Eintrag übernommen.
+  const pointsMap = db.pointsMap && typeof db.pointsMap === 'object' ? db.pointsMap : db;
+  const found = pointsMap[playerId] ?? pointsMap[String(playerId)] ?? pointsMap[Number(playerId)];
+  // Kompatibilität zum alten Format: Array von Einträgen mit eigenem "key".
+  if (Array.isArray(found)) return found;
+  if (!found || typeof found !== 'object') return [];
+  return Object.entries(found)
+    .filter(([, entry]) => entry && typeof entry === 'object')
+    .map(([matchday, entry]) => (entry.key === null || entry.key === undefined ? { ...entry, key: matchday } : entry));
+}
+
+/**
+ * Liefert lastProcessedMatchday aus dem Root der Points-DB (neues Format).
+ * @param {Object} db Ergebnis von getPointsDb()
+ * @returns {number|null} Spieltagsnummer oder null (kein Wert)
+ */
+function getPointsLastProcessedMatchday(db) {
+  const raw = db && typeof db === 'object' ? db.lastProcessedMatchday : null;
+  if (raw === null || raw === undefined || raw === '' || isNaN(Number(raw))) return null;
+  return Number(raw);
 }
 
 /**

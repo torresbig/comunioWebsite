@@ -1,15 +1,18 @@
 // Helfer und Render-Bausteine für die Spieltagspunkte in der Aufstellungsansicht.
 //
-// Datenquelle: PointsDB.json (DATA_URLS.points), Aufbau je Spieltagseintrag (alles flach,
+// Datenquelle: PointsDB.json (DATA_URLS.points). Root: { lastProcessedMatchday,
+// pointsMap: { "<playerId>": { "<spieltag>": entry } } } – der Spieltags-Key steht
+// eine Ebene höher (Map-Key) und wird in getPointsEntriesForPlayer() in den Eintrag übernommen.
+// Aufbau je Spieltagseintrag (alles flach,
 // kein "stats"-Unterobjekt mehr):
-//   key, value (Comunio-Spieltagspunkte), points (Punkte aus den Spieldetails), status
+//   key, points (Comunio-Spieltagspunkte, früher "value"), status
 //   (FULL|SUBOUT|SUBIN|NONE), active, einsatzzeit, subIn, subOut, rating, xgoals, tore,
 //   goalAssists, gelbekarten, gelbrotekarten, rotekarten, totalPenalties, pensMissed,
 //   pensSaved, cleanSheet, ownGoals, manOfTheMatchAmount, notenDurchschnitt,
 //   punkteDurchschnitt sowie ESPN-Werte (Saison!): appearances, subIns, totalShots,
 //   shotsOnTarget, offsides, saves, shotsFaced, goalsConceded, foulsCommitted, foulsSuffered
 //
-// Wichtig: Alle Felder können fehlen oder null sein. Bei value/points ist 0 (auch negativ)
+// Wichtig: Alle Felder können fehlen oder null sein. Bei points ist 0 (auch negativ)
 // ein gültiger Wert, bei Zähl-Statistiken bedeutet 0 dagegen "kein Wert".
 // Achtung: subIn/subOut sind Minuten, subIns ist dagegen ein ESPN-Saisonwert.
 
@@ -128,10 +131,10 @@ function getLineupStatusText(player, entry) {
       break;
   }
 
-  // Kein (vollständiger) Eintrag: aus active/value/einsatzzeit ableiten
+  // Kein (vollständiger) Eintrag: aus active/points/einsatzzeit ableiten
   const active = toLineupNumber(entry?.active) === 1;
-  const value = toLineupNumber(entry?.value);
-  const played = active || (value !== null && value !== 0) || (minutes !== null && minutes > 0);
+  const points = toLineupNumber(entry?.points);
+  const played = active || (points !== null && points !== 0) || (minutes !== null && minutes > 0);
   if (isSubstitute) return played ? 'Ersatzbank, gespielt' : 'Ersatzbank';
   return played ? 'Gespielt (ohne Details)' : 'Keine Daten';
 }
@@ -160,12 +163,9 @@ function buildLineupDetailGroups(player) {
 
   // ===== Leistung =====
   const performance = [];
-  const value = toLineupNumber(entry?.value);
-  const detailPoints = toLineupNumber(entry?.points);
-  if (value !== null) performance.push({ label: 'Punkte (Comunio)', value: String(value) });
-  if (detailPoints !== null && (value === null || detailPoints !== value)) {
-    performance.push({ label: 'Punkte (Spieldetails)', value: String(detailPoints) });
-  }
+  // Comunio-Spieltagspunkte (früher "value", jetzt "points").
+  const points = toLineupNumber(entry?.points);
+  if (points !== null) performance.push({ label: 'Punkte (Comunio)', value: String(points) });
   const rating = toLineupNumber(entry?.rating);
   if (rating !== null && rating > 0) {
     performance.push({ label: 'Note', value: formatLineupRating(rating), tone: rating >= 7 ? 'positive' : (rating < 5 ? 'negative' : '') });

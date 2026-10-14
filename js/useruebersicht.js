@@ -410,9 +410,9 @@ async function renderLineups(userId) {
         const enriched = players.map(player => {
             const playerDbEntry = findPlayerById(player.id);
             const pointEntry = getLineupPointsByPlayer(getPointsEntriesForPlayer(pointsDb, player.id), matchday);
-            // Comunio-Spieltagspunkte (value). Nur falls die Points-DB keinen Wert hat,
-            // die in der Aufstellung gespeicherten Punkte als Fallback nutzen.
-            const pointsValue = toLineupNumber(pointEntry?.value) ?? toLineupNumber(player.points);
+            // Comunio-Spieltagspunkte (points, früher "value"). Nur falls die Points-DB
+            // keinen Wert hat, die in der Aufstellung gespeicherten Punkte als Fallback nutzen.
+            const pointsValue = toLineupNumber(pointEntry?.points) ?? toLineupNumber(player.points);
             return {
                 ...player,
                 pointEntry,
