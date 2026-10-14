@@ -167,8 +167,11 @@ async function renderPointsTableResponsive(player, lastProcessedMatchday) {
     const container = document.getElementById('pointsHistory');
     if (!container) return;
     const isMobile = window.matchMedia('(max-width: 600px)').matches;
-    const matchdayPoints = await getPlayerSpieltagspunkte(player && player.id);
     const pointsHistory = player.data?.historicalPoints || [];
+    window.dispatchEvent(new CustomEvent('playerHistoricalPointsReady', {
+        detail: { pointsHistory }
+    }));
+    const matchdayPoints = await getPlayerSpieltagspunkte(player && player.id);
     const currentSeason = new Date().getFullYear();
     let html = `<h3>Punkte & Spielzeiten - Aktuelle Saison (${currentSeason})</h3>`;
     html += '<div class="points-matchday-list">';
@@ -211,14 +214,6 @@ async function renderPointsTableResponsive(player, lastProcessedMatchday) {
     if (!processedThrough) html += '<p class="points-matchday-empty">Für diese Saison liegen noch keine abgeschlossenen Spieltage vor.</p>';
     html += '</div>';
 
-    if (pointsHistory.length > 0) {
-        html += '<h3>Historische Saisons</h3><table class="points-table"><thead><tr><th>Saison</th><th>Punkte</th></tr></thead><tbody>';
-        pointsHistory.forEach(season => {
-            const [year, points] = Object.entries(season)[0];
-            html += `<tr><td>${escapePointsHtml(year)}</td><td>${escapePointsHtml(points)}</td></tr>`;
-        });
-        html += '</tbody></table>';
-    }
     container.innerHTML = html;
 
     container.querySelectorAll('.points-matchday-card-button').forEach(button => {

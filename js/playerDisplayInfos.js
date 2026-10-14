@@ -140,8 +140,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         safeSet('playerId', 'textContent', `ID: ${player.id}` + (playerFlags.length ? ' | ' + playerFlags.join(' | ') : ''));
 
         const playerNameLinkEl = document.getElementById('playerNameLink');
-        if (player.data && player.data.transfermarktDoDe && player.data.transfermarktDoDe.link) {
-            safeSet('playerNameLink', 'href', player.data.transfermarktDoDe.link);
+        // Prio 1: Ligainsider-Link, wenn vorhanden – sonst Transfermarkt-Link
+        const ligainsiderLink = player.data && player.data.ligainsider && player.data.ligainsider.playerLink;
+        const transfermarktLink = player.data && player.data.transfermarktDoDe && player.data.transfermarktDoDe.link;
+        const playerProfileLink = ligainsiderLink || transfermarktLink;
+        if (playerProfileLink) {
+            safeSet('playerNameLink', 'href', playerProfileLink);
         } else {
             safeSet('playerNameLink', 'href', "#");
             if (playerNameLinkEl) {

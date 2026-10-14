@@ -132,6 +132,50 @@ main.user-overview {
     border-bottom-color: var(--accent) !important;
 }
 
+.injury-history-list {
+    display: grid;
+    gap: 12px;
+    margin: 12px 0 24px;
+}
+
+.injury-history-card {
+    padding: 14px 16px;
+    border: 1px solid var(--border-strong);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--surface-raised);
+    color: var(--text);
+}
+
+.injury-history-heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 16px;
+    margin-bottom: 8px;
+}
+
+.injury-history-heading span,
+.injury-history-detail {
+    color: var(--text-muted);
+}
+
+.injury-history-details p {
+    margin: 5px 0;
+}
+
+.injury-history-link,
+.injury-history-link:visited {
+    color: #8fe3d5 !important;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.injury-history-link:hover,
+.injury-history-link:focus-visible {
+    color: #c0fff4 !important;
+}
+
 .info-row,
 .stat-card-footer,
 .stat-entry,

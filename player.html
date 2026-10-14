@@ -162,13 +162,13 @@
                     <div class="attributes" id="attributesList"></div>
                 </div>
             </div>
-            <!-- Tabs: Rivalen, Marktwerte, Punkte, Transfers -->
+            <!-- Tabs: Rivalen, Marktwerte, Punkte, History -->
             <div class="tabs" id="tabBar">
                 <button class="tab-button" data-tab="rivals">Rivalen</button>
                 <button class="tab-button" data-tab="market">Marktwerte<span id="marketTabTrend"
                         class="trend-arrow"></span></button>
                 <button class="tab-button" data-tab="points">Spieltaginfos</button>
-                <button class="tab-button" data-tab="transfers">Transfers</button>
+                <button class="tab-button" data-tab="transfers">History</button>
             </div>
 
             <div id="rivals" class="tab-content">
@@ -197,32 +197,57 @@
                 <div id="pointsHistory"></div>
             </div>
 
-            <!-- Neuer Transfers-Tab -->
             <div id="transfers" class="tab-content">
-                <h3>Transfers</h3>
-                <div class="table-container">
-                    <table id="transfersTable" class="table-container">
+                <div id="transfersSection" class="history-section" style="display:none;">
+                    <h3>Transfers</h3>
+                    <div class="table-container">
+                        <table id="transfersTable" class="table-container">
 
-                        <thead>
-                            <tr>
-                                <th>Datum</th>
-                                <th>Verkäufer</th>
-                                <th>Käufer</th>
-                                <th>Preis (€)</th>
-                                <th>Wert bei Kauf (€)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Wird per JS gefüllt -->
-                        </tbody>
-                    </table>
+                            <thead>
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Verkäufer</th>
+                                    <th>Käufer</th>
+                                    <th>Preis (€)</th>
+                                    <th>Wert bei Kauf (€)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Wird per JS gefüllt -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="transfersError" style="display:none; padding:10px 0; color:#666;">
+                        Transferdaten konnten nicht geladen werden.
+                    </div>
                 </div>
-                <!-- Optional: Hinweistexte -->
-                <div id="transfersEmpty" style="display:none; padding:10px 0; color:#666;">
-                    Keine Transfers für diesen Spieler gefunden.
+                <div id="injuryHistorySection" class="history-section" style="display:none;">
+                    <h3>Verletzungshistorie</h3>
+                    <div id="injuryHistoryList" class="injury-history-list"></div>
+                    <div id="injuryHistoryError" style="display:none; padding:10px 0; color:#666;">
+                        Verletzungshistorie konnte nicht geladen werden.
+                    </div>
+                </div>
+                <div id="historicalSeasonsSection" class="history-section" style="display:none;">
+                    <h3>Historische Saisons</h3>
+                    <div class="table-container">
+                        <table id="historicalSeasonsTable" class="points-table">
+                            <thead>
+                                <tr>
+                                    <th>Saison</th>
+                                    <th>Punkte</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Wird per JS gefüllt -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="historyEmpty" style="display:none; padding:10px 0; color:#666;">
+                    Keine History-Daten für diesen Spieler vorhanden.
                 </div>
             </div>
-            <!-- Ende Transfers-Tab -->
         </div>
     </div>
     <div id="tm-link-btn">Transfermarkt-Link eintragen</div>
@@ -248,7 +273,7 @@
     <script src="js/playerMarktwerte.js"></script>
     <script src="js/hamburgerMenu.js"></script>
     <script src="js/debugPanel.js"></script>
-    <script src="js/playerTransfers.js"></script>
+    <script src="js/playerHistoryTab.js"></script>
     <script>
 
 
