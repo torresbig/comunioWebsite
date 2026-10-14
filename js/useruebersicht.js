@@ -467,31 +467,293 @@ function initOverviewTabs() {
     }));
 }
 
-// Spielerdetails füllen
-function fillPlayerDetails(player) {
-    const details = document.getElementById('detailText');
+// ─── Spieler-Details-Karte (Team-Tab) ────────────────────────────────────────
+
+let selectedDetailPlayerId = null;
+
+/** Alter aus "13.07.1993" -> "33 Jahre" (oder null). */
+function calcPlayerAge(birthday) {
+    if (!birthday || birthday === 'N/A') return null;
+    try {
+        const birthDate = new Date(birthday.split('.').reverse().join('-'));
+        if (isNaN(birthDate.getTime())) return null;
+        const diff = Date.now() - birthDate.getTime();
+        const years = Math.abs(new Date(diff).getUTCFullYear() - 1970);
+        return years > 0 ? `${years} Jahre` : null;
+    } catch (err) {
+        return null;
+    }
+}
+
+/** Marktwert formatiert kompakt ("2,82 Mio. €" / "750 Tsd. €"). */
+function fmtEuroShort(value) {
+    const amount = toLineupNumber(value);
+    if (amount === null) return '—';
+    if (amount >= 1000000) return (amount / 1000000).toFixed(2).replace('.', ',').replace(/,?0+$/, '') + ' Mio. €';
+    if (amount >= 1000) return Math.round(amount / 1000).toLocaleString('de-DE') + ' Tsd. €';
+    return amount.toLocaleString('de-DE') + ' €';
+}
+
+/** Kachel für die Kennzahlen-Grids; gibt '' aus, wenn kein Wert vorliegt. */
+function pdTile(label, valueHtml, tone) {
+    if (valueHtml === null || valueHtml === undefined || valueHtml === '' || valueHtml === '—') return '';
+    return `<div class="pd-tile${tone ? ` tone-${tone}` : ''}"><small>${escapeHtml(label)}</small><b>${valueHtml}</b></div>`;
+}
+
+/** Gruppe mit Titel und Grid aus Kachel-HTML; '' wenn keine Kacheln vorhanden. */
+function pdGroup(title, tilesHtml) {
+    if (!tilesHtml) return '';
+    return `<div class="pd-group"><div class="pd-group-title">${escapeHtml(title)}</div><div class="pd-grid">${tilesHtml}</div></div>`;
+}
+
+/**
+ * Saison-Zusammenfassung aus den Spieltagseinträgen der Points-DB.
+ * @param {Array<Object>} entries Einträge von getPointsEntriesForPlayer()
+ * @returns {Object|null} Summen oder null (keine Daten)
+ */
+function buildPlayerSeasonSummary(entries) {
+    if (!Array.isArray(entries) || !entries.length) return null;
+    const sorted = entries.slice().sort((a, b) => (Number(a.key) || 0) - (Number(b.key) || 0));
+    const summary = { games: 0, total: 0, minutes: 0, goals: 0, assists: 0, rated: 0, ratedSum: 0, entries: sorted };
+    sorted.forEach(entry => {
+        const points = toLineupNumber(entry.points);
+        if (points !== null) summary.total += points;
+        const minutes = getLineupEinsatzzeit(entry);
+        if (minutes !== null) summary.minutes += minutes;
+        const goals = toLineupNumber(entry.tore);
+        if (goals !== null && goals > 0) summary.goals += goals;
+        const assists = toLineupNumber(entry.goalAssists);
+        if (assists !== null && assists > 0) summary.assists += assists;
+        if (entry.status && entry.status !== 'NONE') summary.games += 1;
+        const rating = toLineupNumber(entry.rating);
+        if (rating !== null && rating > 0) {
+            summary.rated += 1;
+            summary.ratedSum += rating;
+        }
+    });
+    return summary;
+}
+
+/** Status-Details (Grund/Seit) als Hinweis-Box – nur bei Nicht-Aktiv-Status. */
+function buildStatusDetailHtml(statusEntry, status) {
+    if (!statusEntry || status === 'AKTIV' || status === 'UNBEKANNT') return '';
+    const rows = [];
+    if (statusEntry.reason) rows.push(['Grund', statusEntry.reason]);
+    const since = statusEntry.sinceString || statusEntry.statusChangeString;
+    if (since) rows.push(['Seit', since]);
+    if (!rows.length) return '';
+    return `<div class="pd-notice">${rows.map(([label, value]) => `<div><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}</div>`).join('')}</div>`;
+}
+
+/**
+ * Sammelt alle Daten für die Details-Karte (Status, Verein, Marktwert, Saison).
+ * Lädt zusätzlich die (gecachte) Points-DB für die Saison-Kennzahlen.
+ * @param {Object} player Spielerobjekt
+ * @returns {Promise<Object|null>} Modell fürs Rendering oder null (Klick war veraltet)
+ */
+async function buildPlayerDetailModel(player) {
+    const data = player.data || {};
+    const sd = data.spielerDaten || {};
+    const stats = data.stats || {};
+
+    // ── Status ──
     const statusEntry = getPlayerStatusEntry(player.id, { unknown: player.unknown === true });
     const status = (statusEntry && statusEntry.status) ? statusEntry.status : 'AKTIV';
+    const statusTooltip = (statusEntry && statusEntry.notInLiga)
+        ? buildNotInLigaTooltip(statusEntry)
+        : buildInjuryStatusTooltip(statusEntry, status);
+
+    // ── Verein & Position ──
+    const clubId = data.verein || '0';
     const clubName = player.notInLiga
         ? 'Nicht in Liga'
-        : (player.unknown ? 'Unbekannt' : (clubsMap.get(player.data?.verein) || '-'));
+        : (player.unknown ? 'Unbekannt' : (clubsMap.get(clubId) || 'UNBEKANNT'));
+    const clubLogo = `<img class="pd-club-logo" src="logos/${getLogoFileName(clubId)}" alt="${escapeHtml(clubName)}" title="${escapeHtml(clubName)}">`;
+    const position = data.position || '';
+    const nebenpositionen = Array.isArray(sd.nebenpositionen) ? sd.nebenpositionen : [];
+    const positionTooltip = sd.hauptposition
+        ? (nebenpositionen.length ? `Hauptposition: ${sd.hauptposition} | Nebenpositionen: ${nebenpositionen.join(', ')}` : sd.hauptposition)
+        : position;
+    const positionBadge = position
+        ? `<span class="pd-position" title="${escapeHtml(positionTooltip)}"><img src="logos/${getLogoPositionFilename(position)}" alt="${escapeHtml(position)}">${escapeHtml(position)}</span>`
+        : '';
+
+    // ── Points-DB (gecacht) für Saison-Kennzahlen ──
+    let pointsDb = {};
+    try {
+        pointsDb = await getPointsDb();
+    } catch (error) {
+        addDebug('Spieltagspunkte konnten nicht geladen werden: ' + (error?.message || error));
+    }
+    // Klick kam währenddessen auf einen anderen Spieler -> nicht überschreiben
+    if (selectedDetailPlayerId !== String(player.id)) return null;
+
+    const seasonEntries = getPointsEntriesForPlayer(pointsDb, player.id);
+    const season = buildPlayerSeasonSummary(seasonEntries);
+    const avgRating = (season && season.rated)
+        ? (season.ratedSum / season.rated).toFixed(1).replace('.', ',')
+        : (stats.notenDurchschnitt || null);
+
+    return { player, statusEntry, status, statusTooltip, clubName, clubLogo, positionBadge, seasonEntries, season, avgRating };
+}
+
+// Spielerdetails füllen (Kopf sofort, Kennzahlen nach dem Laden der Points-DB)
+async function fillPlayerDetails(player) {
+    selectedDetailPlayerId = String(player.id);
+    await renderPlayerDetailBody(player);
+    if (selectedDetailPlayerId === String(player.id)) addDebug(`Details geladen: ${player.name}`);
+}
+
+/** Letzte Spieltage als kompakte Chips (Punkte farblich hervorgehoben). */
+function buildLastMatchdaysHtml(entries, count = 5) {
+    if (!Array.isArray(entries) || !entries.length) return '';
+    const chips = entries.slice(-count).reverse().map(entry => {
+        const points = toLineupNumber(entry.points);
+        const tone = points === null ? '' : (points < 0 ? 'negative' : (points >= 10 ? 'positive' : ''));
+        const minutes = getLineupEinsatzzeit(entry);
+        const title = `Spieltag ${entry.key}${minutes !== null ? ` | ${minutes} Min.` : ''}`;
+        return `<div class="pd-md${tone ? ` tone-${tone}` : ''}" title="${escapeHtml(title)}">ST ${escapeHtml(String(entry.key))}<b>${points === null ? '—' : points}</b></div>`;
+    });
+    return `<div class="pd-group"><div class="pd-group-title">Letzte Spieltage</div><div class="pd-md-row">${chips.join('')}</div></div>`;
+}
+
+/** Saisonverlauf (historicalPoints) als Mini-Balken. */
+function buildHistoricalPointsHtml(historicalPoints) {
+    if (!Array.isArray(historicalPoints) || historicalPoints.length < 2) return '';
+    const rows = [];
+    historicalPoints.forEach(item => {
+        if (!item || typeof item !== 'object') return;
+        Object.entries(item).forEach(([year, rawValue]) => {
+            const value = toLineupNumber(rawValue);
+            if (value === null) return;
+            rows.push({ year, value });
+        });
+    });
+    if (rows.length < 2) return '';
+    const maxAbs = Math.max(...rows.map(row => Math.abs(row.value)), 1);
+    const bars = rows.map(row => {
+        const width = Math.max(4, Math.round(Math.abs(row.value) / maxAbs * 100));
+        const negative = row.value < 0 ? ' negative' : '';
+        return `<div class="pd-hist-row${negative}"><span>${escapeHtml(row.year)}</span><div class="pd-hist-bar"><i style="width:${width}%"></i></div><b>${row.value}</b></div>`;
+    });
+    return `<div class="pd-group"><div class="pd-group-title">Vergangene Saisons (Punkte)</div><div class="pd-hist">${bars.join('')}</div></div>`;
+}
+
+/** Externe Profile (Ligainsider/Transfermarkt/com-analytics) als Link-Buttons. */
+function buildExternalLinksHtml(player) {
+    const links = [];
+    const ligainsider = player.data?.ligainsider?.playerLink;
+    const transfermarkt = player.data?.transfermarktDoDe?.link;
+    const comAnalytics = player.data?.comAnalystics?.link;
+    if (ligainsider) links.push(['Ligainsider', ligainsider]);
+    if (transfermarkt) links.push(['Transfermarkt', transfermarkt]);
+    if (comAnalytics) links.push(['com-analytics', comAnalytics]);
+    if (!links.length) return '';
+    const buttons = links.map(([label, url]) => `<a class="pd-link-btn" href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(label)} ↗</a>`).join('');
+    return `<div class="pd-group"><div class="pd-group-title">Externe Profile</div><div class="pd-links">${buttons}</div></div>`;
+}
+
+/**
+ * Rendert die Details-Karte (Kopf + Kennzahlen-Gruppen) anhand des Modells
+ * aus buildPlayerDetailModel().
+ * @param {Object} player Spielerobjekt
+ */
+async function renderPlayerDetailBody(player) {
+    const card = document.getElementById('playerDetails');
+    if (!card) return;
+    const model = await buildPlayerDetailModel(player);
+    if (!model) return; // Klick war veraltet (anderer Spieler ausgewählt)
+    const { statusEntry, status, statusTooltip, clubName, clubLogo, positionBadge, seasonEntries, season, avgRating } = model;
+    const data = player.data || {};
+    const sd = data.spielerDaten || {};
+    const stats = data.stats || {};
+    const statusClass = getStatusClass(status);
+
+    // ── Marktwert inkl. Trend und Delta ──
+    const wert = toLineupNumber(data.wert);
+    const lastWert = toLineupNumber(data.lastWert);
+    const wertDelta = wert !== null && lastWert !== null ? wert - lastWert : null;
+    const wertDeltaHtml = wertDelta
+        ? ` <span class="pd-delta ${wertDelta > 0 ? 'tone-positive' : 'tone-negative'}">(${wertDelta > 0 ? '+' : '−'}${fmtEuroShort(Math.abs(wertDelta))})</span>`
+        : '';
+
+    // ── Hinweise (Nicht-in-Liga / Karriereende / unbekannt) ──
     const hints = [];
-    if (player.notInLiga) hints.push('nicht in Liga');
+    if (player.notInLiga) hints.push('Nicht mehr in der Liga');
     if (player.retired) hints.push('Karriere beendet');
-    if (player.unknown) hints.push('keine Daten in der Datenbank');
-    details.innerHTML = `
-      <strong>${player.name}</strong><br>
-      ID: ${player.id}<br>
-      Verein: ${escapeHtml(clubName)}<br>
-      Marktwert: €${player.data?.wert?.toLocaleString('de-DE') || "-"} ${unicodeTrend(getPlayerValueTrend(player))}<br>
-      Punkte: ${player.data?.punkte || "0"}<br>
-      Status: ${escapeHtml(getStatusDisplayName(status))} ${getStatusIndicator(status)}${hints.length ? `<br><small>Hinweis: ${escapeHtml(hints.join(', '))}</small>` : ''}
-    `;
+    if (player.unknown) hints.push('Keine Daten in der Datenbank vorhanden');
+    const hintsHtml = hints.length ? `<div class="pd-notice">${escapeHtml(hints.join(' · '))}</div>` : '';
+
+    // ── Gruppe: Saison (Points-DB + Fallback Spielerdatenbank) ──
+    const seasonTiles = [
+        pdTile('Punkte', season ? String(season.total) : (toLineupNumber(data.punkte) !== null ? String(data.punkte) : null), season && season.total > 0 ? 'tone-positive' : ''),
+        pdTile('Ø-Punkte', stats.punkteDurchschnitt || (season && season.games ? (season.total / season.games).toFixed(1).replace('.', ',') : null)),
+        pdTile('Ø-Note', avgRating),
+        pdTile('Spiele', season ? String(season.games) : (toLineupNumber(stats.playedGames) !== null ? String(stats.playedGames) : null)),
+        pdTile('Tore', season ? String(season.goals) : (toLineupNumber(stats.tore) !== null ? String(stats.tore) : null)),
+        pdTile('Vorlagen', season ? String(season.assists) : null),
+        pdTile('Spielzeit', season && season.minutes ? `${season.minutes} Min.` : null),
+        pdTile('11 des Tages', toLineupNumber(data.elfDesSpieltages) ? `${data.elfDesSpieltages} ×` : null),
+        pdTile('Ligainsider-Rang', toLineupNumber(data.attribute?.ligainsiderRanking?.rang) ? `#${data.attribute.ligainsiderRanking.rang}` : null),
+        pdTile('Letzter Spieltag', toLineupNumber(data.lastPoints) !== null ? `${data.lastPoints} Pkt.` : null)
+    ].join('');
+
+    // ── Gruppe: Marktwerte ──
+    const marketTiles = [
+        pdTile('Marktwert', `${fmtEuroShort(wert)} ${unicodeTrend(getPlayerValueTrend(player))}${wertDeltaHtml}`),
+        pdTile('Vorheriger Wert', wertDelta !== null ? fmtEuroShort(lastWert) : null),
+        pdTile('Realer Wert', toLineupNumber(data.realWert) !== null ? fmtEuroShort(data.realWert) : null),
+        pdTile('Transfermarkt', toLineupNumber(data.transfermarktDoDe?.marktwert) !== null ? fmtEuroShort(data.transfermarktDoDe.marktwert) : null)
+    ].join('');
+
+    // ── Gruppe: Stammdaten ──
+    const hauptposition = sd.hauptposition || data.position || null;
+    const nebenpositionen = Array.isArray(sd.nebenpositionen) ? sd.nebenpositionen : [];
+    const hauptpositionValue = hauptposition
+        ? (nebenpositionen.length ? `${escapeHtml(hauptposition)} (${escapeHtml(nebenpositionen.join(', '))})` : escapeHtml(hauptposition))
+        : null;
+    const infoTiles = [
+        pdTile('Hauptposition', hauptpositionValue),
+        pdTile('Nationalität', sd.nationalitaet ? escapeHtml(sd.nationalitaet) : null),
+        pdTile('Alter', calcPlayerAge(sd.geburtstag)),
+        pdTile('Geburtstag', sd.geburtstag ? escapeHtml(sd.geburtstag) : null),
+        pdTile('Größe', sd.groesse ? `${escapeHtml(sd.groesse)} m` : null),
+        pdTile('Trikot-Nr.', toLineupNumber(sd.trikotNummer) !== null ? String(sd.trikotNummer) : null),
+        pdTile('Fuß', sd.fuss ? escapeHtml(sd.fuss) : null),
+        pdTile('Länderspiele', toLineupNumber(sd.laenderspiele) !== null ? String(sd.laenderspiele) : null),
+        pdTile('Datenstand', data.lastUpdate ? escapeHtml(data.lastUpdate) : null)
+    ].join('');
+
+    card.innerHTML = `
+      <div class="pd-header">
+        <div class="pd-header-main">
+          ${clubLogo}
+          <div class="pd-name-block">
+            <a class="pd-name" href="${getPlayerUrlWithParams(player.id)}">${escapeHtml(player.name)}</a>
+            <div class="pd-sub">${escapeHtml(clubName)} · ID ${escapeHtml(String(player.id))}</div>
+          </div>
+        </div>
+        <div class="pd-badges">
+          ${positionBadge}
+          <span class="pd-status ${statusClass}" title="${escapeHtml(statusTooltip)}">${getStatusIndicator(status)} ${escapeHtml(getStatusDisplayName(status))}</span>
+        </div>
+      </div>
+      ${hintsHtml}
+      ${buildStatusDetailHtml(statusEntry, status)}
+      ${pdGroup('Saison', seasonTiles)}
+      ${buildLastMatchdaysHtml(seasonEntries)}
+      ${pdGroup('Marktwert', marketTiles)}
+      ${pdGroup('Stammdaten', infoTiles)}
+      ${buildHistoricalPointsHtml(data.historicalPoints)}
+      ${buildExternalLinksHtml(player)}
+      <div class="pd-footer"><a class="pd-link-btn pd-link-primary" href="${getPlayerUrlWithParams(player.id)}">Alle Details & Statistiken anzeigen →</a></div>`;
 }
 
 function clearDetails() {
-    const details = document.getElementById('detailText');
-    details.innerHTML = 'Bitte Spieler auswählen';
+    const card = document.getElementById('playerDetails');
+    if (!card) return;
+    selectedDetailPlayerId = null;
+    card.innerHTML = '<div class="pd-empty">Klicke auf einen Spieler in der Tabelle, um alle Details und Statistiken zu sehen.</div>';
 }
 
 // Spieler-Tabelle rendern (aus generatePlayerTable.js)
