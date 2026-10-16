@@ -17,6 +17,10 @@ const DATA_URLS = {
   logos: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/logos/`,
   injuries: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/InjuriesDB.json`,
   lineups: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/UserLineups.json`,
+    possibleLineups: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/PossibleFormatin.json`,
+  // Club-Mapping (comunioId -> Vereinsname) als Fallback zur Vereinsdatenbank
+  clubMapping: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/EspnClubMapping.json`,
+
   // Points-DB liegt im Data-Repository (comunioFanApp) — vermeidet 404 auf comunioWebsite
   points: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/PointsDB.json`,
   // Spieler, die nicht (mehr) in der Liga-/Spielerdatenbank stehen, aber weiterhin
@@ -30,6 +34,7 @@ const WEBSITE_URLS = {
   playerDbUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/playerDb.html`,
   kontostaendeUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/kontostaende.html`,
   useruebersichtUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/useruebersicht.html`,
+  aufstellungUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/voraussichtlicheAufstellung.html`,
   transfersUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/transfers.html`,
   transferMarktUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/tranfermarktComunio.html`,
   indexUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/index.html`
@@ -49,6 +54,7 @@ const ACTIVE_WEBSITE_URLS = isHtmlPreview
       statistikUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/statistik.html`,
       transfermarktUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/tranfermarktComunio.html`,
       useruebersichtUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/useruebersicht.html`,
+      aufstellungUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/voraussichtlicheAufstellung.html`,
       transfersUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/transfers.html`,
       indexUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/index.html`
     }

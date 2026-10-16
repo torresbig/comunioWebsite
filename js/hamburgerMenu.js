@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const linkPlayerDb = document.getElementById('linkPlayerDb');
   const linkTransferuebersicht = document.getElementById('linkTransferuebersicht')
   const linkStatistik = document.getElementById('linkStatistik');
+  const linkAufstellung = document.getElementById('linkAufstellung');
   if (linkIndex) {
     linkIndex.href = getLokalOderGitURL(WEBSITE_URLS.indexUrl, "index.html");
   }
@@ -40,11 +41,16 @@ document.addEventListener('DOMContentLoaded', function () {
     linkStatistik.href = getLokalOderGitURL(WEBSITE_URLS.statistikUrl, "statistik.html");
   }
 
+  if (linkAufstellung) {
+    linkAufstellung.href = getLokalOderGitURL(WEBSITE_URLS.aufstellungUrl, "voraussichtlicheAufstellung.html");
+  }
+
   const currentPage = window.location.pathname.split('/').pop() || 'index.html';
   const pageLinks = {
     'index.html': linkIndex,
     'playerDb.html': linkPlayerDb,
     'statistik.html': linkStatistik,
+    'voraussichtlicheAufstellung.html': linkAufstellung,
     'transfermarktComunio.html': linkTransfermarktComunio,
     'transfers.html': linkTransferuebersicht,
     'useruebersicht.html': linkUseruebersicht

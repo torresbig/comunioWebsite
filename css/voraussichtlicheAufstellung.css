@@ -1,0 +1,553 @@
+/**
+ * Styles für die Seite "Voraussichtliche Aufstellungen"
+ * (voraussichtlicheAufstellung.html)
+ * Farbvariablen kommen aus css/modernTheme.css
+ */
+
+body.page-possible-lineup {
+  margin: 0;
+  padding: 0;
+  background: var(--page-bg) !important;
+  color: var(--text) !important;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+.page-possible-lineup .container {
+  padding: 16px 20px 40px;
+  box-sizing: border-box;
+}
+
+.page-possible-lineup .loading,
+.page-possible-lineup .error {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-align: center;
+}
+
+.page-possible-lineup .error {
+  border-left: 4px solid var(--danger);
+}
+
+/* ── Spieltags-Chips ──────────────────────────────────────────────────────── */
+.page-possible-lineup .matchday-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.page-possible-lineup .matchday-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.page-possible-lineup .matchday-chip b {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+/* ── User-Statistik (Balken) ──────────────────────────────────────────────── */
+.page-possible-lineup .owner-stats {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.page-possible-lineup .owner-stats-title {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--accent);
+  padding-bottom: 8px;
+}
+
+.page-possible-lineup .owner-stats-list {
+  display: grid;
+  gap: 8px;
+}
+
+.page-possible-lineup .owner-stat-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 160px) minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.page-possible-lineup .owner-stat-row:hover,
+.page-possible-lineup .owner-stat-row:focus-visible {
+  background: var(--accent-soft);
+  outline: none;
+}
+
+.page-possible-lineup .owner-stat-row.active {
+  background: var(--accent-soft);
+}
+
+.page-possible-lineup .owner-stat-name {
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-possible-lineup .owner-stat-track {
+  height: 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.page-possible-lineup .owner-stat-fill {
+  height: 100%;
+  min-width: 4px;
+  background: linear-gradient(90deg, var(--accent) 0%, #a85be9 100%);
+  border-radius: 999px;
+  transition: width 220ms ease;
+}
+
+.page-possible-lineup .owner-stat-count {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.page-possible-lineup .owner-stats-hint {
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.page-possible-lineup .owner-stats-empty {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+/* ── Filter ───────────────────────────────────────────────────────────────── */
+.page-possible-lineup .filter-section {
+  margin: 0 0 6px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.page-possible-lineup .filter-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 15px;
+  background: var(--accent-soft);
+  color: var(--text);
+  border: 0;
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.page-possible-lineup .filter-label .filter-toggle-icon {
+  margin-left: auto;
+}
+
+.page-possible-lineup .filter-label:not(.open) .filter-toggle-icon {
+  transform: rotate(-90deg);
+}
+
+.page-possible-lineup .filter-content {
+  padding: 14px;
+}
+
+.page-possible-lineup .filter-label:not(.open) + .filter-content {
+  display: none;
+}
+
+.page-possible-lineup .filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.page-possible-lineup .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.page-possible-lineup .filter-group label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.page-possible-lineup .filter-group input[type="text"],
+.page-possible-lineup .filter-group select {
+  padding: 9px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+}
+
+.page-possible-lineup .filter-group-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-possible-lineup .filter-group-checkbox label {
+  color: var(--text);
+}
+
+.page-possible-lineup .filter-actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.page-possible-lineup .reset-button {
+  width: 100%;
+  padding: 9px 12px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.page-possible-lineup .reset-button:hover,
+.page-possible-lineup .reset-button:focus-visible {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.page-possible-lineup .filter-result-info {
+  margin: 8px 2px 14px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+/* ── Vereins-Sektionen ────────────────────────────────────────────────────── */
+.page-possible-lineup .lineup-club-list {
+  display: grid;
+  gap: 18px;
+}
+
+.page-possible-lineup .lineup-club-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.page-possible-lineup .lineup-club-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+}
+
+.page-possible-lineup .lineup-club-header img.lineup-club-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.page-possible-lineup .lineup-club-name {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.page-possible-lineup .lineup-club-count {
+  margin-left: auto;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.page-possible-lineup .lineup-club-body {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.page-possible-lineup .lineup-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  font-size: 14px;
+}
+
+.page-possible-lineup .lineup-table th,
+.page-possible-lineup .lineup-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+  color: var(--text);
+}
+
+.page-possible-lineup .lineup-table th {
+  background: var(--surface-raised);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.page-possible-lineup .lineup-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.page-possible-lineup .lineup-table td.col-pos {
+  width: 46px;
+}
+
+.page-possible-lineup .lineup-table .pos-logo {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.page-possible-lineup .lineup-table .club-logo {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.page-possible-lineup .lineup-player-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.page-possible-lineup .lineup-table a {
+  color: #d09aff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.page-possible-lineup .lineup-table a:hover,
+.page-possible-lineup .lineup-table a:focus-visible {
+  color: #ba8eec;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.page-possible-lineup .lineup-table a.owner-link {
+  color: #72d7d5;
+}
+
+.page-possible-lineup .lineup-table a.owner-link:hover,
+.page-possible-lineup .lineup-table a.owner-link:focus-visible {
+  color: #b5fffb;
+}
+
+.page-possible-lineup .ligainsider-link {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  text-decoration: none !important;
+}
+
+/* Status */
+.page-possible-lineup .lineup-table td.status-cell {
+  text-align: center;
+  font-size: 1.1rem;
+  white-space: nowrap;
+}
+
+/* Note-Farbcodierung (LigaInsider: niedrig = besser) */
+.page-possible-lineup .note-badge {
+  display: inline-block;
+  min-width: 42px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.page-possible-lineup .note-good {
+  background: rgba(85, 209, 135, 0.18);
+  color: var(--success);
+}
+
+.page-possible-lineup .note-mid {
+  background: rgba(255, 200, 80, 0.16);
+  color: #e8c268;
+}
+
+.page-possible-lineup .note-bad {
+  background: rgba(255, 113, 129, 0.16);
+  color: var(--danger);
+}
+
+/* Marktwert / Punkte */
+.page-possible-lineup .market-value,
+.page-possible-lineup .points-cell {
+  white-space: nowrap;
+}
+
+.page-possible-lineup .points-cell {
+  font-weight: 700;
+}
+
+/* Letzte Einsätze */
+.page-possible-lineup .recent-form {
+  display: inline-flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.page-possible-lineup .form-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 5px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.page-possible-lineup .form-START {
+  background: rgba(85, 209, 135, 0.2);
+  color: var(--success);
+}
+
+.page-possible-lineup .form-SUBIN {
+  background: rgba(120, 170, 255, 0.2);
+  color: #8fb4ff;
+}
+
+.page-possible-lineup .form-BANK {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+}
+
+.page-possible-lineup .form-NOTINTEAM {
+  background: rgba(255, 113, 129, 0.18);
+  color: var(--danger);
+}
+
+.page-possible-lineup .form-NONE {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+
+.page-possible-lineup .lineup-empty {
+  padding: 30px;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+}
+
+/* ── Mobile: Tabellen zu Karten ───────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .page-possible-lineup .container {
+    padding: 12px;
+  }
+
+  .page-possible-lineup .lineup-club-body {
+    overflow-x: visible;
+  }
+
+  .page-possible-lineup .lineup-table,
+  .page-possible-lineup .lineup-table tbody,
+  .page-possible-lineup .lineup-table tr,
+  .page-possible-lineup .lineup-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .page-possible-lineup .lineup-table thead {
+    display: none;
+  }
+
+  .page-possible-lineup .lineup-table {
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    padding: 0 10px;
+    background: transparent;
+  }
+
+  .page-possible-lineup .lineup-table tr {
+    padding: 10px 12px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .page-possible-lineup .lineup-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    border: 0;
+    text-align: right;
+  }
+
+  .page-possible-lineup .lineup-table td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    text-align: left;
+  }
+
+  .page-possible-lineup .lineup-table td.col-pos {
+    width: auto;
+  }
+
+  .page-possible-lineup .lineup-table td.status-cell {
+    text-align: right;
+  }
+
+  .page-possible-lineup .lineup-player-cell {
+    justify-content: flex-end;
+  }
+}
+
+
+}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <title>⚽ Comunio Ultraz - Voraussichtliche Aufstellungen</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/debugPanel.css">
+  <link rel="stylesheet" href="css/siteHeader.css?v=20260832">
+  <link rel="stylesheet" href="css/styleMenueHamburger.css">
+  <link rel="stylesheet" href="css/trend.css">
+  <link rel="stylesheet" href="css/tabelStyle.css">
+  <link rel="stylesheet" href="css/filterDesign.css?v=20260930">
+  <link rel="stylesheet" href="css/pageBackground.css">
+  <link rel="stylesheet" href="css/voraussichtlicheAufstellung.css">
+  <link rel="stylesheet" href="css/modernTheme.css">
+</head>
+
+<body class="page-possible-lineup">
+
+  <!-- Floating Debug Button and Panel -->
+  <button id="floatingDebugBtn" title="Debug"><span style="pointer-events:none;">🐞</span></button>
+  <div id="floatingDebugPanel">
+    <div id="floatingDebugPanelHeader">
+      Debug-Informationen
+      <button id="floatingDebugPanelClose" title="Schließen">×</button>
+    </div>
+    <div id="floatingDebugContent"></div>
+  </div>
+
+  <!-- Hamburger-Menü -->
+  <div class="hamburger-menu">
+    <button class="hamburger-button" id="hamburgerButton">
+      <div class="hamburger-line"></div>
+      <div class="hamburger-line"></div>
+      <div class="hamburger-line"></div>
+    </button>
+    <div class="hamburger-dropdown" id="hamburgerDropdown">
+      <a href="#" class="menu-item" id="linkIndex">📰 News</a>
+      <a href="#" class="menu-item" id="linkPlayerDb">📋 Spielerdatenbank</a>
+      <a href="#" class="menu-item" id="linkStatistik">📊 Statistik</a>
+      <a href="#" class="menu-item" id="linkAufstellung">⚽ Aufstellungen</a>
+      <a href="#" class="menu-item" id="linkTransfermarktComunio">📑 Transfermarkt (Comunio)</a>
+      <a href="#" class="menu-item" id="linkTransferuebersicht">🔄 Transferübersicht</a>
+      <a href="#" class="menu-item" id="linkUseruebersicht">👤 Userübersicht</a>
+      <a href="https://www.instagram.com/comuniofanapp/." class="menu-item" target="_blank">📸 Instagram:
+        ComunioFanApp</a>
+      <div class="menu-item menu-tarn" id="menuTarnItem" style="font-size:0.95em; color:#888; cursor:pointer;">
+        erstellt von comunioFanApp</div>
+    </div>
+  </div>
+
+  <!-- ===== NAVBAR HEADER ===== -->
+  <div class="site-header">
+    <div class="site-header-inner">
+      <div class="site-header-center">
+        <h1 class="site-header-title">Voraussichtliche Aufstellungen</h1>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div id="loading" class="loading">
+      <p>📡 Lade voraussichtliche Aufstellungen...</p>
+    </div>
+    <div id="error" class="error" style="display: none;">
+      <p id="errorMessage">Fehler beim Laden der Daten.</p>
+    </div>
+
+    <div id="content" style="display: none;">
+
+      <div class="matchday-bar">
+        <span class="matchday-chip">📅 Spieltag <b id="statMatchday">–</b></span>
+        <span class="matchday-chip">🕒 Stand: <b id="statLastUpdate">–</b></span>
+      </div>
+
+      <section class="owner-stats" id="ownerStats">
+        <h2 class="owner-stats-title">👥 Spieler pro User in den voraussichtlichen Aufstellungen</h2>
+        <div id="ownerStatsList" class="owner-stats-list"></div>
+        <div class="owner-stats-hint">Klick auf einen User filtert die Aufstellungen.</div>
+      </section>
+
+      <div class="filter-section">
+        <div class="filter-label" id="filterLabel">
+          <span>🔍 Filter</span>
+          <span class="filter-toggle-icon">▼</span>
+        </div>
+        <div class="filter-content" id="filterContentWrapper">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label for="searchInput">🔎 Suche (Spieler / Owner):</label>
+              <input type="text" id="searchInput" placeholder="Name eingeben...">
+            </div>
+            <div class="filter-group">
+              <label for="clubSelect">🏟️ Verein:</label>
+              <select id="clubSelect">
+                <option value="">Alle Vereine</option>
+              </select>
+            </div>
+            <div class="filter-group filter-group-checkbox">
+              <input type="checkbox" id="onlyOutInput">
+              <label for="onlyOutInput">Nur Ausfälle (Status ≠ Aktiv)</label>
+            </div>
+            <div class="filter-actions">
+              <button type="button" class="reset-button" id="resetFilters">Filter zurücksetzen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="filterResultInfo" class="filter-result-info"></div>
+
+      <div id="lineupList" class="lineup-club-list"></div>
+
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/debugPanel.js"></script>
+  <script src="js/hamburgerMenu.js"></script>
+  <script src="js/voraussichtlicheAufstellung.js"></script>
+</body>
+
+</html>
