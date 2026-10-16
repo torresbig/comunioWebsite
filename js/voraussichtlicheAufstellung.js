@@ -530,6 +530,7 @@ function renderPlayerRow(player) {
   row.innerHTML = `
     <td class="col-pos" data-label="Pos.">
       <img src="logos/${getLogoPositionFilename(player.position)}" class="pos-logo"
+           width="16" height="16"
            alt="${escapeHtml(player.position)}" title="${escapeHtml(player.position)}">
     </td>
     <td data-label="Spieler">
