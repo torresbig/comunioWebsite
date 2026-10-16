@@ -144,6 +144,184 @@ body.page-possible-lineup {
   color: var(--text-muted);
 }
 
+/* ── Vereins-Logo-Navigation ──────────────────────────────────────────────── */
+.page-possible-lineup .club-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.page-possible-lineup .club-nav-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 4px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.page-possible-lineup .club-nav-item img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.page-possible-lineup .club-nav-item:hover,
+.page-possible-lineup .club-nav-item:focus-visible {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+/* Kurzes Aufblitzen der Vereinskarten nach dem Springen */
+.page-possible-lineup .lineup-club-card.club-nav-flash {
+  animation: clubFlash 1.6s ease;
+}
+
+@keyframes clubFlash {
+  0%, 60% { box-shadow: 0 0 0 3px var(--accent); }
+  100% { box-shadow: var(--shadow); }
+}
+
+/* ── Auswahlanzeige (Spieler ausgewählt) ──────────────────────────────────── */
+.page-possible-lineup .selection-info {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.page-possible-lineup .sel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.page-possible-lineup .sel-owner {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.page-possible-lineup .sel-owner a {
+  color: #72d7d5;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.page-possible-lineup .sel-owner a:hover {
+  text-decoration: underline;
+}
+
+.page-possible-lineup .sel-close {
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.page-possible-lineup .sel-close:hover,
+.page-possible-lineup .sel-close:focus-visible {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.page-possible-lineup .sel-body {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.page-possible-lineup .sel-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.page-possible-lineup .sel-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.page-possible-lineup .sel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.page-possible-lineup .sel-chip a {
+  color: #d09aff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.page-possible-lineup .sel-chip a:hover {
+  color: #ba8eec;
+  text-decoration: underline;
+}
+
+.page-possible-lineup .sel-chip-warning {
+  border-color: rgba(255, 113, 129, 0.5);
+  background: rgba(255, 113, 129, 0.12);
+}
+
+.page-possible-lineup .sel-status {
+  font-style: normal;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.page-possible-lineup .sel-none {
+  font-size: 0.82rem;
+  color: var(--success);
+}
+
+/* Ausgewählte Spielerzeile */
+.page-possible-lineup .lineup-table tr.selected,
+.page-possible-lineup .lineup-table tr.selected td {
+  background: var(--accent-soft) !important;
+}
+
+.page-possible-lineup .lineup-table tr {
+  cursor: pointer;
+}
+
+.page-possible-lineup .lineup-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
 /* ── Filter ───────────────────────────────────────────────────────────────── */
 .page-possible-lineup .filter-section {
   margin: 0 0 6px;

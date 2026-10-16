@@ -16,7 +16,9 @@ let clubsMap = new Map();        // clubId -> Vereinsname (Vereinsdatenbank)
 let fallbackClubMap = new Map(); // clubId -> Vereinsname (EspnClubMapping)
 let playersMap = new Map();      // comunioPlayerId -> Spielerdatenbank-Eintrag
 let ownerToUserMap = new Map();  // comunioPlayerId -> { userId, name, isComputer }
+let ownerPlayersIndex = new Map(); // Owner-Name -> [{playerId, name, status, ...}]
 let enrichedClubs = [];          // Render-Daten (pro Verein sortierte Spielerliste)
+let selectedPlayerId = null;     // Angeklickte Spielerzeile (comunioPlayerId)
 
 const currentFilter = { search: '', club: '', owner: '', onlyOut: false };
 
@@ -89,6 +91,9 @@ async function loadData() {
   buildOwnerToUserMap(usersData, playerToUserMap);
   addDebug(`Owner-Zuordnungen: ${ownerToUserMap.size}`);
 
+  // Index: Owner-Name -> alle Spieler dieses Users (für die Auswahlanzeige)
+  buildOwnerPlayersIndex();
+
   enrichedClubs = buildEnrichedClubs();
   addDebug(`Vereine mit Aufstellung: ${enrichedClubs.length}`);
 }
@@ -149,6 +154,27 @@ function buildOwnerToUserMap(usersData, playerToUserMap) {
 }
 
 /* ── Daten-Anreicherung ───────────────────────────────────────────────────── */
+
+/**
+ * Baut den Index ownerPlayersIndex: Owner-Name -> alle Spieler dieses Users
+ * (inkl. aktuellem Status) für die kompakte Auswahlanzeige.
+ */
+function buildOwnerPlayersIndex() {
+  ownerPlayersIndex = new Map();
+  ownerToUserMap.forEach((owner, playerId) => {
+    const dbEntry = playersMap.get(playerId);
+    const statusEntry = getPlayerStatusEntry(playerId);
+    const status = (statusEntry && statusEntry.status) ? statusEntry.status : 'AKTIV';
+    const list = ownerPlayersIndex.get(owner.name) || [];
+    list.push({
+      playerId,
+      name: dbEntry?.name || `Spieler ${playerId}`,
+      status,
+      statusTooltip: buildInjuryStatusTooltip(statusEntry, status)
+    });
+    ownerPlayersIndex.set(owner.name, list);
+  });
+}
 
 /**
  * Erzeugt die Render-Daten: pro Verein die Spieler mit allen Zusatzinfos,
@@ -386,6 +412,94 @@ function renderOwnerStats() {
   updateOwnerStatsActive();
 }
 
+/**
+ * Kompakte Auswahlanzeige: gewählter Spieler + Owner + dessen Spieler,
+ * die (laut Status) nicht spielen.
+ */
+function updateSelectionInfo() {
+  const box = document.getElementById('selectionInfo');
+  if (!box) return;
+
+  if (!selectedPlayerId) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+
+  // Gewählter Spieler in den Render-Daten suchen
+  let selected = null;
+  enrichedClubs.forEach(club => {
+    club.players.forEach(player => {
+      if (player.comunioPlayerId === selectedPlayerId) selected = player;
+    });
+  });
+  if (!selected) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    selectedPlayerId = null;
+    return;
+  }
+
+  const owner = selected.owner;
+  const ownerName = owner ? owner.name : 'Computer';
+  const squad = owner ? (ownerPlayersIndex.get(ownerName) || []) : [];
+
+  // Alle Spieler in den voraussichtlichen Aufstellungen (für den Vergleich)
+  const lineupIds = new Set();
+  enrichedClubs.forEach(club => club.players.forEach(player => lineupIds.add(player.comunioPlayerId)));
+
+  // Spieler dieses Users, die nicht spielen:
+  //  a) nicht in der voraussichtlichen Aufstellung, oder
+  //  b) in der Aufstellung, aber Status ungleich aktiv
+  const unavailable = squad
+    .filter(player => !lineupIds.has(player.playerId) || player.status !== 'AKTIV')
+    .map(player => ({
+      ...player,
+      inLineup: lineupIds.has(player.playerId)
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+
+  const ownerHtml = (owner && !owner.isComputer && owner.firstName)
+    ? `<a href="${getUseruebersichtUrl(owner.firstName)}" class="owner-link">${escapeHtml(ownerName)}</a>`
+    : escapeHtml(ownerName);
+
+  const unavailableHtml = unavailable.length
+    ? unavailable.map(player => {
+        const hint = player.inLineup
+          ? `Steht in der Aufstellung, aber Status: ${player.statusTooltip}`
+          : `${player.statusTooltip} – nicht in der voraussichtlichen Aufstellung`;
+        return `
+        <span class="sel-chip${player.inLineup ? ' sel-chip-warning' : ''}" title="${escapeHtml(hint)}">
+          <a href="${getPlayerUrl(player.playerId)}">${escapeHtml(player.name)}</a>
+          <i class="sel-status">${getStatusIndicator(player.status)}</i>
+        </span>`;
+      }).join('')
+    : '<span class="sel-none">Alle Spieler dieses Users stehen in der Aufstellung und sind aktiv.</span>';
+
+  const closeBtn = '<button type="button" class="sel-close" title="Auswahl aufheben">×</button>';
+
+  box.innerHTML = `
+    <div class="sel-head">
+      <b>${escapeHtml(selected.playerName)}</b>
+      <span class="sel-owner">Owner: ${ownerHtml}</span>
+      ${closeBtn}
+    </div>
+    <div class="sel-body">
+      <span class="sel-label">Nicht spielend (${unavailable.length}):</span>
+      <span class="sel-chips">${unavailableHtml}</span>
+    </div>`;
+
+  box.style.display = '';
+  const closeBtnEl = box.querySelector('.sel-close');
+  if (closeBtnEl) {
+    closeBtnEl.addEventListener('click', () => {
+      selectedPlayerId = null;
+      document.querySelectorAll('#lineupList tr.selected').forEach(r => r.classList.remove('selected'));
+      updateSelectionInfo();
+    });
+  }
+}
+
 /** Hebt die aktive Owner-Auswahl in der Balken-Statistik hervor. */
 function updateOwnerStatsActive() {
   const list = document.getElementById('ownerStatsList');
@@ -431,9 +545,11 @@ function render() {
     .filter(club => club.players.length > 0);
 
   updateResultInfo(filtered);
+  renderClubNav(filtered);
 
   if (!filtered.length) {
     container.innerHTML = '<div class="lineup-empty">Keine Spieler für die aktuellen Filter gefunden.</div>';
+    updateSelectionInfo();
     return;
   }
 
@@ -441,7 +557,42 @@ function render() {
     container.appendChild(renderClubCard(club));
   });
 
+  updateSelectionInfo();
   updateOwnerStatsActive();
+}
+
+/**
+ * Baut die Logo-Reihe über den Vereinskarten. Klick springt zur Sektion.
+ * @param {Array} clubs Angezeigte Vereine (gefiltert)
+ */
+function renderClubNav(clubs) {
+  const nav = document.getElementById('clubNav');
+  if (!nav) return;
+  nav.innerHTML = '';
+  nav.style.display = clubs.length ? '' : 'none';
+
+  clubs.forEach(club => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'club-nav-item';
+    button.title = `${club.clubName} – zu den Spielern springen`;
+    button.setAttribute('data-club-id', club.clubId);
+    button.innerHTML = `<img src="logos/${getLogoFileName(club.clubId)}" alt="${escapeHtml(club.clubName)}">`;
+    button.addEventListener('click', () => scrollToClub(club.clubId));
+    nav.appendChild(button);
+  });
+}
+
+/** Scrollt smooth zur Vereins-Sektion und blitzt sie kurz auf. */
+function scrollToClub(clubId) {
+  const card = document.querySelector(`.lineup-club-card[data-club-id="${CSS.escape(String(clubId))}"]`);
+  if (!card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  card.classList.remove('club-nav-flash');
+  // Reflow erzwingen, damit die Animation bei erneutem Klick neu startet
+  void card.offsetWidth;
+  card.classList.add('club-nav-flash');
+  window.setTimeout(() => card.classList.remove('club-nav-flash'), 1800);
 }
 
 /** Wendet die aktiven Filter auf eine Spielerliste an. */
@@ -516,6 +667,15 @@ function renderClubCard(club) {
 function renderPlayerRow(player) {
   const row = document.createElement('tr');
   row.setAttribute('data-player-id', player.comunioPlayerId);
+  if (selectedPlayerId === player.comunioPlayerId) row.classList.add('selected');
+  // Klick auf die Zeile (außerhalb von Links) wählt den Spieler aus
+  row.addEventListener('click', event => {
+    if (event.target.closest('a') || event.target.closest('.ligainsider-link')) return;
+    selectedPlayerId = selectedPlayerId === player.comunioPlayerId ? null : player.comunioPlayerId;
+    document.querySelectorAll('#lineupList tr.selected').forEach(r => r.classList.remove('selected'));
+    if (selectedPlayerId) row.classList.add('selected');
+    updateSelectionInfo();
+  });
 
   const playerUrl = getPlayerUrl(player.comunioPlayerId);
   const playerLinkHtml = `<a href="${playerUrl}" title="${escapeHtml(player.playerName)} (ID: ${player.comunioPlayerId})">${escapeHtml(player.playerName)}</a>`;
