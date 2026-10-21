@@ -348,14 +348,25 @@ function loadPlayersForUser(userId) {
 
     // Rendere die sortierte Liste und erzwinge die Positionssortierung
     renderTable(sortedList);
+    // Token gegen veraltete Laeufe bei schnellem Userwechsel
+    const renderToken = ++playerTableRenderToken;
     // Warte einen kurzen Moment und sortiere dann nochmal explizit nach Position
     setTimeout(() => {
+        // Abbruch falls inzwischen ein neuer User geladen wurde
+        if (renderToken !== playerTableRenderToken) return;
         const playerTable = document.getElementById('playerTable');
         if (playerTable) {
+            playerTable.removeAttribute('data-sort-column');
             sortTable(playerTable, 3); // Position ist Spalte 3 (0-basiert)
         }
+        // Beim Seitenaufruf (und bei jedem Userwechsel) immer den ersten Spieler anzeigen
+        if (sortedList.length > 0) {
+            selectPlayerRow(sortedList[0]);
+            fillPlayerDetails(sortedList[0]);
+        } else {
+            clearDetails();
+        }
     }, 100);
-    clearDetails();
 
     renderTransfers(userId);
     renderLineups(userId);
@@ -470,6 +481,11 @@ function initOverviewTabs() {
 // ─── Spieler-Details-Karte (Team-Tab) ────────────────────────────────────────
 
 let selectedDetailPlayerId = null;
+
+// Aktuell angezeigte Spieler (ID -> Spielerobjekt) fuer die automatische Auswahl.
+let currentPlayersById = new Map();
+// Token gegen veraltete Render-/Sortierlaeufe (z. B. schneller Userwechsel).
+let playerTableRenderToken = 0;
 
 /** Alter aus "13.07.1993" -> "33 Jahre" (oder null). */
 function calcPlayerAge(birthday) {
@@ -754,6 +770,13 @@ function clearDetails() {
     if (!card) return;
     selectedDetailPlayerId = null;
     card.innerHTML = '<div class="pd-empty">Klicke auf einen Spieler in der Tabelle, um alle Details und Statistiken zu sehen.</div>';
+}
+
+/** Markiert die Tabellenzeile des gegebenen Spielers als ausgewaehlt. */
+function selectPlayerRow(player) {
+    document.querySelectorAll('#playerTable tr').forEach(r => r.classList.remove('selected'));
+    const row = document.querySelector('#playerTable tr[data-player-id="' + String(player.id) + '"]');
+    if (row) row.classList.add('selected');
 }
 
 // Spieler-Tabelle rendern (aus generatePlayerTable.js)

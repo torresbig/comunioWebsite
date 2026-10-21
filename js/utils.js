@@ -33,13 +33,22 @@ function toggleNewsList() {
   }
 }
 
+/**
+ * Waehlt die passende URL: auf GitHub Pages die absolute Website-URL,
+ * lokal (bzw. bei file://) den lokalen relativen Pfad.
+ * @param {string} websiteUrl Absolute GitHub-Pages-URL aus WEBSITE_URLS
+ * @param {string} lokalUrl Relativer lokaler Pfad
+ * @returns {string} Die zur aktuellen Umgebung passende URL
+ */
 function getLokalOderGitURL(websiteUrl, lokalUrl) {
   const currentUrl = window.location.href;
-  if (currentUrl.includes('https://${GITHUB_USER}.github.io/')) {
-    return websiteUrl;
-  } else {
-    return lokalUrl;
-  }
+  // GITHUB_USER wird in js/config.js als globale Konstante definiert.
+  // Der typeof-Check verhindert einen ReferenceError, falls config.js fehlt.
+  const githubUser = (typeof GITHUB_USER !== 'undefined') ? GITHUB_USER : null;
+  const isGitHubPages = githubUser
+    ? currentUrl.includes('https://' + githubUser + '.github.io/')
+    : currentUrl.includes('.github.io/');
+  return isGitHubPages ? websiteUrl : lokalUrl;
 }
 
 function getPlayerUrl(playerId) {

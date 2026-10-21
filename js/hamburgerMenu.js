@@ -1,81 +1,80 @@
 document.addEventListener('DOMContentLoaded', function () {
   const hamburgerButton = document.getElementById('hamburgerButton');
   const hamburgerDropdown = document.getElementById('hamburgerDropdown');
-  const menuTarnItem = document.getElementById('menuTarnItem');
 
   hamburgerButton.addEventListener('click', function (e) {
     e.stopPropagation();
     this.classList.toggle('active');
     hamburgerDropdown.classList.toggle('show');
-  });  // ← schließt addEventListener(click)
+  });
 
-  // Menü-Links dynamisch zuweisen
-  const linkIndex = document.getElementById('linkIndex');
-  const linkTransfermarktComunio = document.getElementById('linkTransfermarktComunio');
-  const linkUseruebersicht = document.getElementById('linkUseruebersicht');
-  const linkPlayerDb = document.getElementById('linkPlayerDb');
-  const linkTransferuebersicht = document.getElementById('linkTransferuebersicht')
-  const linkStatistik = document.getElementById('linkStatistik');
-  const linkAufstellung = document.getElementById('linkAufstellung');
-  if (linkIndex) {
-    linkIndex.href = getLokalOderGitURL(WEBSITE_URLS.indexUrl, "index.html");
-  }
+  // Zentrale Konfiguration aus js/config.js
+  // Hinweis: `const` in einem klassischen Script erzeugt eine globale
+  // lexikalische Bindung – sie ist NICHT als window.-Eigenschaft verfügbar.
+  // Deshalb wird zuerst der direkte Bezeichner geprüft, danach window.
+  const menuConfig = (typeof HAMBURGER_MENU_CONFIG !== 'undefined')
+    ? HAMBURGER_MENU_CONFIG
+    : (window.HAMBURGER_MENU_CONFIG || {});
+  const menuItems = menuConfig.items || [];
+  const tarnItemConfig = menuConfig.tarnItem || {};
 
-  if (linkTransfermarktComunio) {
-    linkTransfermarktComunio.href = getLokalOderGitURL(WEBSITE_URLS.transferMarktUrl, "transfermarktComunio.html");
-  }
+  // ---- Menü-HTML vollständig aus der Konfiguration generieren ----
+  // Damit müssen die Links nicht in jeder HTML-Datei gehardcoded sein.
+  let menuHTML = '';
 
-  if (linkUseruebersicht) {
-    linkUseruebersicht.href = getLokalOderGitURL(WEBSITE_URLS.useruebersichtUrl, "useruebersicht.html");
-  }
+  menuItems.forEach(function (item) {
+    var href = item.href || '#';
+    if (item.activePage) {
+      // Interne Seite: zur Laufzeit lokal oder GitHub-Pages-URL auflösen
+      href = getLokalOderGitURL(item.href, item.activePage);
+    }
+    var targetAttr = item.target ? ' target="' + item.target + '"' : '';
+    var idAttr = item.id ? ' id="' + item.id + '"' : '';
+    menuHTML += '<a href="' + href + '" class="menu-item"' + idAttr + targetAttr + '>' + item.label + '</a>\n';
+  });
 
-  if (linkTransferuebersicht) {
-    linkTransferuebersicht.href = getLokalOderGitURL(WEBSITE_URLS.transfersUrl, "transfers.html");
-  }
+  // Versteckten "Tarn"-Link hinzufügen
+  var tarnId = tarnItemConfig.id || 'menuTarnItem';
+  var tarnLabel = tarnItemConfig.label || 'erstellt von comunioFanApp';
+  menuHTML += '<div class="menu-item menu-tarn" id="' + tarnId + '" style="font-size:0.95em; color:#888; cursor:pointer;">\n    ' + tarnLabel + '</div>';
 
-  if (linkPlayerDb) {
-    linkPlayerDb.href = getLokalOderGitURL(WEBSITE_URLS.playerDbUrl, "playerDb.html");
-  }
+  hamburgerDropdown.innerHTML = menuHTML;
 
-  if (linkStatistik) {
-    linkStatistik.href = getLokalOderGitURL(WEBSITE_URLS.statistikUrl, "statistik.html");
-  }
+  // Event-Listener für aktive Seite und Tarn-Link müssen nach dem DOM-Inject gesetzt werden
+  var menuTarnItem = document.getElementById(tarnId);
 
-  if (linkAufstellung) {
-    linkAufstellung.href = getLokalOderGitURL(WEBSITE_URLS.aufstellungUrl, "voraussichtlicheAufstellung.html");
-  }
+  // ---- Aktive Seite markieren ----
+  var currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  menuItems.forEach(function (item) {
+    if (item.activePage && item.activePage === currentPage) {
+      var link = document.getElementById(item.id);
+      if (link) {
+        link.classList.add('active');
+        link.setAttribute('aria-current', 'page');
+      }
+    }
+  });
 
-  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-  const pageLinks = {
-    'index.html': linkIndex,
-    'playerDb.html': linkPlayerDb,
-    'statistik.html': linkStatistik,
-    'voraussichtlicheAufstellung.html': linkAufstellung,
-    'transfermarktComunio.html': linkTransfermarktComunio,
-    'transfers.html': linkTransferuebersicht,
-    'useruebersicht.html': linkUseruebersicht
-  };
-  if (pageLinks[currentPage]) {
-    pageLinks[currentPage].classList.add('active');
-    pageLinks[currentPage].setAttribute('aria-current', 'page');
-  }
-
-
-  // Geheimer Link-Mechanismus für 5 Klicks
-  let tarnClick = 0, tarnTimeout = null;
-  // Geheimer Link-Mechanismus für 5 Klicks
+  // ---- Versteckter "Tarn"-Link: nach X Klicks springt er zur Ziele-URL ----
+  var tarnClick = 0;
+  var tarnTimeout = null;
   if (menuTarnItem) {
-    let tarnClick = 0, tarnTimeout = null;
+    var tarnHref = getLokalOderGitURL(tarnItemConfig.href, tarnItemConfig.localPath);
+    var tarnClicks = tarnItemConfig.clicksToActivate || 5;
+    var tarnTimeoutMs = tarnItemConfig.timeoutMs || 3000;
+
     menuTarnItem.addEventListener('click', function (e) {
       tarnClick++;
       if (tarnTimeout) clearTimeout(tarnTimeout);
-      tarnTimeout = setTimeout(() => { tarnClick = 0; }, 3000);
-      if (tarnClick === 5) {
-        window.location.href = getLokalOderGitURL(WEBSITE_URLS.kontostaendeUrl, "statistik.html?showStats=true");
+      tarnTimeout = setTimeout(function () { tarnClick = 0; }, tarnTimeoutMs);
+
+      if (tarnClick === tarnClicks) {
+        window.location.href = tarnHref;
       }
     });
   }
 
+  // Dropdown schließen, wenn außerhalb geklickt wird
   document.addEventListener('click', function (e) {
     if (!e.target.closest('.hamburger-menu')) {
       hamburgerButton.classList.remove('active');
@@ -83,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // Dropdown auch per Escape schließen
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       hamburgerButton.classList.remove('active');
@@ -90,4 +90,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });  // ← schließt addEventListener(keydown)
 
-});  // ← schließt DOMContentLoaded
+});
+

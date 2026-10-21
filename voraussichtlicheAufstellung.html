@@ -36,17 +36,7 @@
       <div class="hamburger-line"></div>
     </button>
     <div class="hamburger-dropdown" id="hamburgerDropdown">
-      <a href="#" class="menu-item" id="linkIndex">📰 News</a>
-      <a href="#" class="menu-item" id="linkPlayerDb">📋 Spielerdatenbank</a>
-      <a href="#" class="menu-item" id="linkStatistik">📊 Statistik</a>
-      <a href="#" class="menu-item" id="linkAufstellung">⚽ Aufstellungen</a>
-      <a href="#" class="menu-item" id="linkTransfermarktComunio">📑 Transfermarkt (Comunio)</a>
-      <a href="#" class="menu-item" id="linkTransferuebersicht">🔄 Transferübersicht</a>
-      <a href="#" class="menu-item" id="linkUseruebersicht">👤 Userübersicht</a>
-      <a href="https://www.instagram.com/comuniofanapp/." class="menu-item" target="_blank">📸 Instagram:
-        ComunioFanApp</a>
-      <div class="menu-item menu-tarn" id="menuTarnItem" style="font-size:0.95em; color:#888; cursor:pointer;">
-        erstellt von comunioFanApp</div>
+        <!-- Menü wird durch js/hamburgerMenu.js aus js/config.js (HAMBURGER_MENU_CONFIG) dynamisch generiert -->
     </div>
   </div>
 
@@ -74,40 +64,14 @@
         <span class="matchday-chip">📅 Spieltag <b id="statMatchday">–</b></span>
         <span class="matchday-chip">🕒 Stand: <b id="statLastUpdate">–</b></span>
       </div>
+      <p class="update-hint">⏰ Diese Daten werden frühestens 48 h vor dem Spieltag aktualisiert.</p>
+      <button type="button" class="reset-button" id="resetFilters">↻ Alle Filter zurücksetzen</button>
 
       <section class="owner-stats" id="ownerStats">
         <h2 class="owner-stats-title">👥 Spieler pro User in den voraussichtlichen Aufstellungen</h2>
         <div id="ownerStatsList" class="owner-stats-list"></div>
         <div class="owner-stats-hint">Klick auf einen User filtert die Aufstellungen.</div>
       </section>
-
-      <div class="filter-section">
-        <div class="filter-label" id="filterLabel">
-          <span>🔍 Filter</span>
-          <span class="filter-toggle-icon">▼</span>
-        </div>
-        <div class="filter-content" id="filterContentWrapper">
-          <div class="filter-row">
-            <div class="filter-group">
-              <label for="searchInput">🔎 Suche (Spieler / Owner):</label>
-              <input type="text" id="searchInput" placeholder="Name eingeben...">
-            </div>
-            <div class="filter-group">
-              <label for="clubSelect">🏟️ Verein:</label>
-              <select id="clubSelect">
-                <option value="">Alle Vereine</option>
-              </select>
-            </div>
-            <div class="filter-group filter-group-checkbox">
-              <input type="checkbox" id="onlyOutInput">
-              <label for="onlyOutInput">Nur Ausfälle (Status ≠ Aktiv)</label>
-            </div>
-            <div class="filter-actions">
-              <button type="button" class="reset-button" id="resetFilters">Filter zurücksetzen</button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div id="filterResultInfo" class="filter-result-info"></div>
 

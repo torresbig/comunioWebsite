@@ -373,7 +373,7 @@ tr:hover,
 
 @media (min-width: 768px) {
     .page-user-overview .player-section {
-        align-items: stretch;
+        align-items: flex-start;
     }
 
     .page-user-overview .player-section .rivals-table-container {
@@ -384,8 +384,10 @@ tr:hover,
     .page-user-overview .player-section .details-card {
         flex: 0 1 clamp(340px, 34%, 420px);
         min-width: 340px;
-        max-height: 400px;
-        overflow-y: auto;
+        /* Komplett aufgeklappte Detailkarte: keine Hoehenbegrenzung und kein
+           eigener Scrollbereich – der komplette Inhalt ist direkt sichtbar. */
+        max-height: none;
+        overflow: visible;
         box-sizing: border-box;
     }
 

@@ -153,7 +153,7 @@ main.user-overview {
 }
 
 .page-user-overview table tr.selected {
-  background: #d0e7ff;
+  background: #8a2be2;
 }
 
 .table-card {
@@ -753,14 +753,14 @@ main.user-overview {
 }
 /* ===== Spieler-Details-Karte (Team-Tab, PC-Ansicht) ===== */
 .details-card-player {
-  position: sticky;
-  top: 12px;
+  /* Vollstaendig aufgeklappt: die Karte waechst mit ihrem Inhalt mit.
+     Kein Sticky, keine max-height und kein Overflow-Scrollbereich,
+     damit alles ohne Scrollen direkt sichtbar ist. */
+  position: static;
   align-self: flex-start;
-  max-height: calc(100vh - 24px);
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
   padding: 16px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--surface-hover) transparent;
 }
 
 .pd-empty {

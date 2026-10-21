@@ -28,34 +28,42 @@ const DATA_URLS = {
   notInLiga: `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO_Data}/main/data/NotInLigaDB.json`
 };
 
-// Für den Produktivbetrieb auf GitHub Pages die URLs so definieren:
 const WEBSITE_URLS = {
   playerUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/player.html?id=`,
   playerDbUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/playerDb.html`,
+  statistikUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/statistik.html`,
   kontostaendeUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/kontostaende.html`,
   useruebersichtUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/useruebersicht.html`,
   aufstellungUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/voraussichtlicheAufstellung.html`,
   transfersUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/transfers.html`,
-  transferMarktUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/tranfermarktComunio.html`,
+  transferMarktUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/transfermarktComunio.html`,
   indexUrl: `https://${GITHUB_USER}.github.io/${GITHUB_REPO_WEB}/index.html`
 };
 
-// Optional: Du kannst eine Umgebungs-Variable oder eine einfache Prüfung ergänzen,
-// um je nach Umgebung (lokal/htmlpreview vs. GitHub-Pages) die URLs automatisch zu wechseln.
+// Zentrale Menü-Konfiguration für alle Hamburger-Menüs (alle Seiten).
+// Änderungen hier wirken sich auf alle Seiten aus, in denen das
+// Hamburger-Menü geladen wird (js/hamburgerMenu.js).
+const HAMBURGER_MENU_CONFIG = {
+  items: [
+    { id: 'linkIndex',        label: '📰 News',                href: WEBSITE_URLS.indexUrl,              target: '',                activePage: 'index.html' },
+    { id: 'linkPlayerDb',     label: '📋 Spielerdatenbank',    href: WEBSITE_URLS.playerDbUrl,             target: '',                activePage: 'playerDb.html' },
+    { id: 'linkStatistik',    label: '📊 Statistik',            href: WEBSITE_URLS.statistikUrl,            target: '',                activePage: 'statistik.html' },
+    { id: 'linkAufstellung',  label: '⚽ voraussichtliche Aufstellungen',       href: WEBSITE_URLS.aufstellungUrl,          target: '',                activePage: 'voraussichtlicheAufstellung.html' },
+    { id: 'linkTransfermarktComunio', label: '📑 Transfermarkt (Comunio)', href: WEBSITE_URLS.transferMarktUrl, target: '', activePage: 'transfermarktComunio.html' },
+    { id: 'linkTransferuebersicht', label: '🔄 Transferübersicht', href: WEBSITE_URLS.transfersUrl,         target: '',                activePage: 'transfers.html' },
+    { id: 'linkUseruebersicht', label: '👤 Userübersicht',     href: WEBSITE_URLS.useruebersichtUrl,       target: '',                activePage: 'useruebersicht.html' },
+    { id: 'linkInstagram',    label: '📸 Instagram: ComunioFanApp', href: 'https://www.instagram.com/comuniofanapp/', target: '_blank' }
+  ],
 
-// Beispiel:
-const isHtmlPreview = window.location.href.includes('htmlpreview.github.io');
-
-const ACTIVE_WEBSITE_URLS = isHtmlPreview
-  ? {
-      playerUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/player.html?id=`,
-      playerDbUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/playerDb.html`,
-      kontostaendeUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/statistik.html?showStats=1`,
-      statistikUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/statistik.html`,
-      transfermarktUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/tranfermarktComunio.html`,
-      useruebersichtUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/useruebersicht.html`,
-      aufstellungUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/voraussichtlicheAufstellung.html`,
-      transfersUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/transfers.html`,
-      indexUrl: `https://htmlpreview.github.io/?https://github.com/${GITHUB_USER}/${GITHUB_REPO_WEB}/main/index.html`
-    }
-  : WEBSITE_URLS;
+  // versteckter Link („Tarn"-Link), der nach 5 Klicks aktiv wird.
+  // Ziel ist in beiden Umgebungen die Statistik-Seite mit showStats=true
+  // (nur dieser Parameter blendet dort die „User Übersicht"-Tabelle ein).
+  tarnItem: {
+    id: 'menuTarnItem',
+    label: 'erstellt von comunioFanApp',
+    href: `${WEBSITE_URLS.statistikUrl}?showStats=true`,
+    localPath: 'statistik.html?showStats=true',
+    clicksToActivate: 5,
+    timeoutMs: 3000
+  }
+};
