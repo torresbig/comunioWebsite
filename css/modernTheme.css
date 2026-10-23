@@ -386,6 +386,16 @@ tr:hover,
     background: var(--accent-soft) !important;
 }
 
+.page-user-overview .rivals-table a,
+.page-user-overview .rivals-table a:visited {
+    color: var(--text) !important;
+}
+
+.page-user-overview .rivals-table a:hover,
+.page-user-overview .rivals-table a:focus-visible {
+    color: var(--accent) !important;
+}
+
 @media (min-width: 768px) {
     .page-user-overview .player-section {
         align-items: flex-start;
@@ -404,16 +414,6 @@ tr:hover,
         max-height: none;
         overflow: visible;
         box-sizing: border-box;
-    }
-
-    .page-user-overview .rivals-table a,
-    .page-user-overview .rivals-table a:visited {
-        color: var(--text) !important;
-    }
-
-    .page-user-overview .rivals-table a:hover,
-    .page-user-overview .rivals-table a:focus-visible {
-        color: var(--accent) !important;
     }
 
     .page-user-overview .player-section #playerTable th:nth-child(5),
