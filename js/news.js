@@ -137,6 +137,7 @@ async function renderNews(newsList, loadMore = false) {
             'ELFDESTAGES',
             'USERPOINTS',
             'TRANSFER',
+            'TRANSFER_STORNO',
             'SPIELERSTATUS',
             'POSITIONSWECHSEL',
             'VEREINSWECHSEL',
@@ -146,6 +147,7 @@ async function renderNews(newsList, loadMore = false) {
             ELFDESTAGES: ['🏆', 'Elf des Tages'],
             USERPOINTS: ['📈', 'Userpoints'],
             TRANSFER: ['💸', 'Transfers'],
+            TRANSFER_STORNO: ['↩️', 'Stornierte Transfers'],
             SPIELERSTATUS: ['🚦', 'Spielerstatus'],
             POSITIONSWECHSEL: ['🔀', 'Positionswechsel'],
             VEREINSWECHSEL: ['🔄', 'Vereinswechsel'],
@@ -254,6 +256,24 @@ async function renderNews(newsList, loadMore = false) {
                                 text = `${linkPlayer(pid, obj.playerName)} von <b class="transfer-user">${sellerLink}</b> zu <b class="transfer-user">${buyerLink}</b> für <b>${obj.price.toLocaleString('de-DE')} €</b> <span class="market-value">(Wert: ${obj.playerValue.toLocaleString('de-DE')} €)</span>`;
                             } catch (e) {
                                 addDebug('[renderNews] TRANSFER Parse-Fehler: ' + e.message);
+                                text = news.text;
+                                errorCount++;
+                            }
+                        }
+                        else if (art === 'TRANSFER_STORNO') {
+                            try {
+                                const obj = JSON.parse(news.text);
+                                const pid = obj.playerId || news.playerId || null;
+                                const seller = obj.seller || 'Unbekannt';
+                                const buyerLink = obj.buyer === 'Computer'
+                                    ? `<span class="computer-name">${obj.buyer}</span>`
+                                    : `<a class="user-name" href="${getUseruebersichtUrl(obj.buyer)}">${obj.buyer}</a>`;
+                                const sellerLink = seller === 'Computer'
+                                    ? `<span class="computer-name">${seller}</span>`
+                                    : `<a class="user-name" href="${getUseruebersichtUrl(seller)}">${seller}</a>`;
+                                text = `↩️ Transfer von <b class="transfer-user">${sellerLink}</b> zu <b class="transfer-user">${buyerLink}</b> storniert: ${linkPlayer(pid, obj.playerName)} (${Number(obj.price).toLocaleString('de-DE')} €)`;
+                            } catch (e) {
+                                addDebug('[renderNews] TRANSFER_STORNO Parse-Fehler: ' + e.message);
                                 text = news.text;
                                 errorCount++;
                             }

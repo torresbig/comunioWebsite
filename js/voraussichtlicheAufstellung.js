@@ -559,6 +559,159 @@ function render() {
 
   updateSelectionInfo();
   updateOwnerStatsActive();
+  renderNonStarters(currentFilter.owner);
+}
+
+/**
+ * Ermittelt die Spieler-IDs, die für den gegebenen Owner in irgendeiner
+ * voraussichtlichen Startelf stehen.
+ * @param {string} ownerName Name des Owners
+ * @returns {Set<string>} Set mit comunioPlayerId der Startelf-Spieler
+ */
+function getStarterIdsForOwner(ownerName) {
+  const ids = new Set();
+  if (!ownerName) return ids;
+  enrichedClubs.forEach(club => {
+    club.players.forEach(player => {
+      if (player.owner && player.owner.name === ownerName) {
+        ids.add(player.comunioPlayerId);
+      }
+    });
+  });
+  return ids;
+}
+
+/**
+ * Reichert einen einzelnen Spieler an, der nicht in der Startelf steht.
+ * Datenquelle: Spielerdatenbank + Status-Helfer (keine Last-5-Daten verfügbar).
+ * @param {string} playerId comunioPlayerId
+ * @returns {Object}
+ */
+function enrichNonStarter(playerId) {
+  const dbEntry = playersMap.get(playerId);
+  const position = dbEntry?.position || 'Unbekannt';
+  const statusEntry = getPlayerStatusEntry(playerId, { unknown: !dbEntry });
+  const status = (statusEntry && statusEntry.status) ? statusEntry.status : 'AKTIV';
+  const statusTooltip = (statusEntry && statusEntry.notInLiga)
+    ? buildNotInLigaTooltip(statusEntry)
+    : buildInjuryStatusTooltip(statusEntry, status);
+  const clubId = String(dbEntry?.data?.verein || '0');
+  return {
+    playerId,
+    playerName: dbEntry?.name || `Spieler ${playerId}`,
+    clubId,
+    clubName: getClubName(clubId),
+    position,
+    positionSort: positionSortValue(position),
+    status,
+    statusClass: getStatusClass(status),
+    statusTooltip,
+    points: dbEntry?.data?.punkte || 0,
+    unknownPlayer: !dbEntry,
+    recentForm: []
+  };
+}
+
+/**
+ * Rendert eine kompakte Tabelle mit den Spielern des Owners,
+ * die aktuell nicht in der Startelf stehen
+ * (Vereinslogo, Name, Status, Position, Punkte).
+ * @param {string} ownerName Name des Owners oder leer (dann ausgeblendet)
+ */
+function renderNonStarters(ownerName) {
+  const section = document.getElementById('nonStarterSection');
+  const list = document.getElementById('nonStarterList');
+  const title = document.getElementById('nonStarterTitle');
+  const count = document.getElementById('nonStarterCount');
+  if (!section || !list || !title || !count) return;
+
+  if (!ownerName) {
+    section.style.display = 'none';
+    list.innerHTML = '';
+    const jumpLink = document.getElementById('nonStarterJumpLink');
+    if (jumpLink) jumpLink.classList.remove('visible');
+    return;
+  }
+
+  const starterIds = getStarterIdsForOwner(ownerName);
+  const allOwnerPlayers = ownerPlayersIndex.get(ownerName) || [];
+
+  const nonStarters = allOwnerPlayers
+    .filter(p => !starterIds.has(p.playerId))
+    .map(p => enrichNonStarter(p.playerId))
+    .sort((a, b) => {
+      const posDiff = a.positionSort - b.positionSort;
+      if (posDiff !== 0) return posDiff;
+      return (a.playerName || '').localeCompare(b.playerName || '', 'de');
+    });
+
+  if (!nonStarters.length) {
+    section.style.display = 'none';
+    list.innerHTML = '';
+    const jumpLink = document.getElementById('nonStarterJumpLink');
+    if (jumpLink) jumpLink.classList.remove('visible');
+    return;
+  }
+
+  title.textContent = 'Nicht in der Startelf';
+  count.textContent = `${nonStarters.length} Spieler`;
+  section.style.display = '';
+  list.innerHTML = '';
+
+  const jumpLink = document.getElementById('nonStarterJumpLink');
+  if (jumpLink) jumpLink.classList.add('visible');
+
+  const table = document.createElement('table');
+  table.className = 'non-starter-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th class="col-club">Verein</th>
+        <th class="col-name">Spieler</th>
+        <th class="col-status">Status</th>
+        <th class="col-pos">Pos.</th>
+        <th class="col-points">Punkte</th>
+      </tr>
+    </thead>
+    <tbody></tbody>`;
+  const tbody = table.querySelector('tbody');
+  nonStarters.forEach(player => tbody.appendChild(renderNonStarterRow(player)));
+  list.appendChild(table);
+}
+
+/**
+ * Eine Zeile der Nicht-in-der-Startelf-Tabelle.
+ * @param {Object} player angereicherter Nicht-Startelf-Spieler
+ * @returns {HTMLTableRowElement}
+ */
+function renderNonStarterRow(player) {
+  const row = document.createElement('tr');
+  row.setAttribute('data-player-id', player.playerId);
+
+  const hasLogo = player.clubId && player.clubId !== '0';
+  const clubLogoHtml = hasLogo
+    ? `<img src="logos/${getLogoFileName(player.clubId)}" class="club-logo" alt="${escapeHtml(player.clubName)}" title="${escapeHtml(player.clubName)}">`
+    : '<span class="club-logo-none">–</span>';
+  const clubNameHtml = hasLogo
+    ? ''
+    : `<span class="club-name">${escapeHtml(player.clubName)}</span>`;
+
+  const playerUrl = getPlayerUrl(player.playerId);
+  const playerLinkHtml = `<a href="${playerUrl}" title="${escapeHtml(player.playerName)} (ID: ${player.playerId})">${escapeHtml(player.playerName)}</a>`;
+
+  const positionLogo = `<img src="logos/${getLogoPositionFilename(player.position)}" class="pos-logo" alt="${escapeHtml(player.position)}" title="${escapeHtml(player.position)}">`;
+
+  row.innerHTML = `
+    <td class="col-club" data-label="Verein">
+      <span class="club-cell">${clubLogoHtml}${clubNameHtml}</span>
+    </td>
+    <td class="col-name" data-label="Spieler">${playerLinkHtml}</td>
+    <td class="col-status status-cell ${player.statusClass}" data-label="Status">
+      <span title="${escapeHtml(player.statusTooltip)}">${getStatusIndicator(player.status)}</span>
+    </td>
+    <td class="col-pos" data-label="Pos.">${positionLogo}</td>
+    <td class="col-points points-cell" data-label="Punkte">${player.points}</td>`;
+  return row;
 }
 
 /**
@@ -814,4 +967,3 @@ function bindFilterEvents() {
     });
   }
 }
-

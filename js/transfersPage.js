@@ -28,21 +28,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     const newsResp = await fetch(DATA_URLS.news);
     const newsJson = await newsResp.json();
 
-    // Alle Transfers extrahieren (flach als Array)
+    // Transfers extrahieren und stornierte Ursprungs-Transfers markieren.
     const transfers = [];
+    const stornoByTransferId = new Map();
+    newsJson.newsDB.forEach(day => {
+        (day.news || []).forEach(entry => {
+            if (entry.art === "TRANSFER_STORNO") {
+                try {
+                    const storno = JSON.parse(entry.text);
+                    if (storno.origTransferId) {
+                        stornoByTransferId.set(String(storno.origTransferId), entry.date);
+                    }
+                } catch (err) {
+                    console.error("Fehler beim Parsen eines Transfer-Stornos:", err);
+                }
+            }
+        });
+    });
     newsJson.newsDB.forEach(day => {
         (day.news || []).forEach(entry => {
             if (entry.art === "TRANSFER") {
                 try {
                     const tData = JSON.parse(entry.text);
                     transfers.push({
+                        id: String(entry.id),
                         date: entry.date,
                         playerId: String(entry.playerId),
                         playerName: tData.playerName,
                         seller: tData.seller,
                         buyer: tData.buyer,
                         price: tData.price,
-                        value: tData.playerValue
+                        value: tData.playerValue,
+                        stornoDate: stornoByTransferId.get(String(entry.id)) || null
                     });
                 } catch (err) {
                     // Fehler ignorieren
@@ -106,7 +123,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             let tooltip = "";
             const price = Number(t.price) || 0;
 
-            if (filterUser) {
+            if (filterUser && !t.stornoDate) {
                 if (t.buyer === filterUser) { // Kauf
                     diff = currentValue - price;
                     totalPurchases += price;
@@ -117,19 +134,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                     profitLoss += diff;
                     tooltip = `Verkaufspreis minus Marktwert bei Transfer: ${formatCurrency(diff)}`;
                 }
-            } else {
+            } else if (!filterUser && !t.stornoDate) {
                 diff = transferValue - price;
                 tooltip = `Marktwert bei Transfer minus Preis: ${formatCurrency(diff)}`;
             }
 
-            if (diff > 0) dealHtml = `<span style="color:#27ae60;font-weight:bold;" title="${tooltip}">&#9650;</span>`;
+            if (t.stornoDate) dealHtml = '<span aria-label="Transfer storniert">—</span>';
+            else if (diff > 0) dealHtml = `<span style="color:#27ae60;font-weight:bold;" title="${tooltip}">&#9650;</span>`;
             else if (diff < 0) dealHtml = `<span style="color:#e74c3c;font-weight:bold;" title="${tooltip}">&#9660;</span>`;
             else if (transferValue || filterUser) dealHtml = `<span style="color:#888;font-weight:bold;" title="Keine Änderung">&#9654;</span>`;
 
             const tr = document.createElement("tr");
+            if (t.stornoDate) tr.classList.add("transfer-cancelled");
             tr.innerHTML = `
                 <td data-label="Datum">${t.date}</td>
-                <td data-label="Spieler"><a class="player-link" href="player.html?id=${t.playerId}" target="_blank">${t.playerName}</a></td>
+                <td data-label="Spieler"><a class="player-link" href="player.html?id=${t.playerId}" target="_blank">${t.playerName}</a>${t.stornoDate ? ` <span class="transfer-storno-badge" title="Storniert am ${t.stornoDate}">Storno</span>` : ''}</td>
                 <td data-label="Verkäufer">${t.seller}</td>
                 <td data-label="Käufer">${t.buyer}</td>
                 <td data-label="Preis">${formatCurrency(price)}</td>
@@ -155,8 +174,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("balance").textContent = formatCurrency(totalSales - totalPurchases);
             document.getElementById("profitLoss").textContent = formatCurrency(profitLoss) + " " + (profitLoss >= 0 ? "📈" : "📉");
         } else {
-            const totalVolume = transfers.reduce((sum, t) => sum + (Number(t.price) || 0), 0);
-            const transferCount = filtered.length;
+            const activeTransfers = transfers.filter(t => !t.stornoDate);
+            const totalVolume = activeTransfers.reduce((sum, t) => sum + (Number(t.price) || 0), 0);
+            const transferCount = activeTransfers.length;
             labelTotalPurchases.textContent = "Gesamtvolumen:";
             labelTotalSales.textContent = "Anzahl Transfers:";
             labelBalance.textContent = "Aktueller Filter:";

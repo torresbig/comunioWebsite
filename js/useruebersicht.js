@@ -862,6 +862,21 @@ function renderTransfers(userId) {
 
     const entries = [];
     try {
+        const stornoByTransferId = new Map();
+        newsData.newsDB.forEach(day => {
+            (day.news || []).forEach(item => {
+                if (item.art !== 'TRANSFER_STORNO') return;
+                try {
+                    const storno = JSON.parse(item.text);
+                    if (storno.origTransferId) {
+                        stornoByTransferId.set(String(storno.origTransferId), day.date);
+                    }
+                } catch (error) {
+                    addDebug(`Fehler beim Parsen eines Transfer-Stornos: ${error.message}`);
+                }
+            });
+        });
+
         newsData.newsDB.forEach(day => {
             day.news.forEach(item => {
                 if (item.art === 'TRANSFER') {
@@ -878,7 +893,8 @@ function renderTransfers(userId) {
                             date: day.date,
                             type: isMyPurchase ? "Einkauf" : "Verkauf",
                             price: t.price,
-                            partner: isMyPurchase ? t.seller : t.buyer
+                            partner: isMyPurchase ? t.seller : t.buyer,
+                            stornoDate: stornoByTransferId.get(String(item.id)) || null
                         });
                     }
                 }
@@ -927,7 +943,7 @@ function fillTransferTable(selector, list) {
 
             // Create cell content
             const playerCell = e.playerId ?
-                `<a href="${getPlayerUrlWithParams(e.playerId)}" target="_self">${displayName}</a>` :
+                `<a href="${getPlayerUrlWithParams(e.playerId)}" target="_self">${displayName}</a>${e.stornoDate ? ` <span class="transfer-storno-badge" title="Storniert am ${e.stornoDate}">Storno</span>` : ''}` :
                 displayName;
 
             // Build row content

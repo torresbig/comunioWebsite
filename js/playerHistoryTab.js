@@ -81,6 +81,21 @@ document.addEventListener("DOMContentLoaded", () => {
     function getPlayerTransfers(newsData, id) {
         const transfers = [];
         const newsDays = Array.isArray(newsData?.newsDB) ? newsData.newsDB : [];
+        const stornoByTransferId = new Map();
+
+        newsDays.forEach(day => {
+            (day.news || []).forEach(entry => {
+                if (entry.art !== "TRANSFER_STORNO") return;
+                try {
+                    const storno = JSON.parse(entry.text);
+                    if (storno.origTransferId) {
+                        stornoByTransferId.set(String(storno.origTransferId), entry.date || day.date || "");
+                    }
+                } catch (err) {
+                    console.error("Fehler beim Parsen eines Transfer-Stornos:", err);
+                }
+            });
+        });
 
         newsDays.forEach(day => {
             if (!Array.isArray(day.news)) return;
@@ -89,11 +104,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     const transfer = JSON.parse(entry.text);
                     transfers.push({
+                        id: String(entry.id),
                         date: entry.date || "",
                         seller: transfer.seller,
                         buyer: transfer.buyer,
                         price: transfer.price,
-                        value: transfer.playerValue
+                        value: transfer.playerValue,
+                        stornoDate: stornoByTransferId.get(String(entry.id)) || null
                     });
                 } catch (err) {
                     console.error("Fehler beim Parsen eines Transfers:", err);
@@ -138,6 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         transfersList.forEach(transfer => {
             const row = document.createElement("tr");
+            if (transfer.stornoDate) row.classList.add("transfer-cancelled");
             [
                 transfer.date,
                 transfer.seller,
@@ -149,6 +167,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 cell.textContent = value ?? "";
                 row.appendChild(cell);
             });
+            if (transfer.stornoDate) {
+                const dateCell = row.cells[0];
+                const badge = document.createElement("span");
+                badge.className = "transfer-storno-badge";
+                badge.title = `Storniert am ${transfer.stornoDate}`;
+                badge.textContent = "Storno";
+                dateCell.append(" ", badge);
+            }
             tbody.appendChild(row);
         });
 

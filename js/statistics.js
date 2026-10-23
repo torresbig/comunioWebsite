@@ -35,11 +35,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         newsObj.newsDB.forEach(day => {
                             if (day.news && Array.isArray(day.news)) {
                                 day.news.forEach(n => {
-                                    if (n.art === 'TRANSFER') {
+                                    if (n.art === 'TRANSFER' || n.art === 'TRANSFER_STORNO') {
                                         try {
                                             const transfer = JSON.parse(n.text);
                                             transfer.date = n.date;
                                             transfer.id = n.id;
+                                            transfer.art = n.art;
+                                            transfer.playerId = n.playerId;
                                             transfers.push(transfer);
                                         } catch (e) {
                                             addDebug('Fehler beim Parsen von Transfer: ' + n.text);
@@ -114,6 +116,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         addDebug('[DEBUG] Users geladen: ' + users.length);
         addDebug('[DEBUG] PointsHistory geladen: ' + pointsHistory.length);
 
+        const stornoTransferIds = new Set(
+            transfers
+                .filter(t => t.art === 'TRANSFER_STORNO' && t.origTransferId)
+                .map(t => String(t.origTransferId))
+        );
+        const transferAnalysis = transfers.filter(t =>
+            t.art === 'TRANSFER' && !stornoTransferIds.has(String(t.id))
+        );
+
         const START_GUTHABEN = 20000000;
 
         // Stats-Objekt initialisieren
@@ -144,9 +155,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         const userNameToId = {};
+        const firstNameToIds = {};
         Object.values(userStats).forEach(user => {
             if (user.name) userNameToId[user.name.toLowerCase()] = user.id;
             if (user.loginName) userNameToId[user.loginName.toLowerCase()] = user.id;
+            if (user.firstName) {
+                const firstName = user.firstName.toLowerCase();
+                firstNameToIds[firstName] = firstNameToIds[firstName] || [];
+                firstNameToIds[firstName].push(user.id);
+            }
+        });
+        Object.entries(firstNameToIds).forEach(([firstName, ids]) => {
+            if (ids.length === 1 && !userNameToId[firstName]) {
+                userNameToId[firstName] = ids[0];
+            }
         });
 
         const transferNameToId = {};
@@ -170,19 +192,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             return rawId;
         }
 
-        // Transfers verarbeiten (Computer-Transfers zählen mit!)
+        // Transfers und Stornos verarbeiten; ein Storno bucht den ursprünglichen Handel zurück.
         transfers.forEach(t => {
             const normalizedBuyerId = resolveUserId(t.buyerId, t.buyer);
+            const isStorno = t.art === 'TRANSFER_STORNO';
             const normalizedSellerId = resolveUserId(t.sellerId, t.seller);
+            const direction = isStorno ? -1 : 1;
 
             if (normalizedBuyerId && normalizedBuyerId !== "1" && normalizedBuyerId !== "0" && userStats[normalizedBuyerId]) {
-                userStats[normalizedBuyerId].transfers++;
-                userStats[normalizedBuyerId].ausgegeben += Number(t.price) || 0;
+                userStats[normalizedBuyerId].transfers += direction;
+                userStats[normalizedBuyerId].ausgegeben += direction * (Number(t.price) || 0);
             }
 
             if (normalizedSellerId && normalizedSellerId !== "1" && normalizedSellerId !== "0" && userStats[normalizedSellerId]) {
-                userStats[normalizedSellerId].transfers++;
-                userStats[normalizedSellerId].eingenommen += Number(t.price) || 0;
+                userStats[normalizedSellerId].transfers += direction;
+                userStats[normalizedSellerId].eingenommen += direction * (Number(t.price) || 0);
             }
         });
 
@@ -213,8 +237,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     <td class="text-center">${user.transfers}</td>
                                     <td class="text-center">${user.punkte}</td>
                                     <td class="currency positive">+${formatCurrency(user.punkteEinnahmen)}</td>
-                                    <td class="currency negative">-${formatCurrency(user.ausgegeben)}</td>
-                                    <td class="currency positive">+${formatCurrency(user.eingenommen)}</td>
+                                    <td class="currency ${user.ausgegeben >= 0 ? 'negative' : 'positive'}">${user.ausgegeben >= 0 ? '-' : '+'}${formatCurrency(Math.abs(user.ausgegeben))}</td>
+                                    <td class="currency ${user.eingenommen >= 0 ? 'positive' : 'negative'}">${user.eingenommen >= 0 ? '+' : '-'}${formatCurrency(Math.abs(user.eingenommen))}</td>
                                     <td class="currency ${user.gesamtbewegung >= 0 ? 'positive' : 'negative'} total">
                                         ${user.gesamtbewegung >= 0 ? '+' : ''}${formatCurrency(user.gesamtbewegung)}
                                     </td>
@@ -244,7 +268,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                    (name && name.toLowerCase() === 'computer');
         }
 
-        transfers.forEach(t => {
+        transferAnalysis.forEach(t => {
             const playerId = t.playerId;
             const buyerId = resolveUserId(t.buyerId, t.buyer);
             const sellerId = resolveUserId(t.sellerId, t.seller);
@@ -324,7 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         stats.worstTransfer = [...transferResults].sort((a, b) => a.profit - b.profit).slice(0, 10);
 
         // Teuerste Käufe/Verkäufe
-        const sortedBuys = [...transfers]
+        const sortedBuys = [...transferAnalysis]
             .filter(t => t.buyerId && t.buyerId !== "1" && t.buyerId !== "0")
             .sort((a, b) => (b.price || 0) - (a.price || 0))
             .slice(0, 10)
@@ -337,7 +361,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }));
         stats.expensiveBuy = sortedBuys;
 
-        const sortedSells = [...transfers]
+        const sortedSells = [...transferAnalysis]
             .filter(t => t.sellerId && t.sellerId !== "1" && t.sellerId !== "0")
             .sort((a, b) => (b.price || 0) - (a.price || 0))
             .slice(0, 10)
