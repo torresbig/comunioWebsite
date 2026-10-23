@@ -1,7 +1,8 @@
 
-let newsData, playersData, p2uData, usersData, clubsData, lineupsData;
+let newsData, playersData, p2uData, usersData, clubsData, lineupsData, possibleLineupsData;
 const clubsMap = new Map();
 const ownersMap = new Map();
+let recommendationRenderToken = 0;
 // URL-Parameter (werden nach dem Laden der Daten gesetzt)
 let urlParams = { username: null, withMenue: true };
 
@@ -37,13 +38,14 @@ function processUrlParams(params) {
 // Lade alle benötigten Daten
 async function loadData() {
     try {
-        [clubsData, playersData, usersData, p2uData, newsData, lineupsData] = await Promise.all([
+        [clubsData, playersData, usersData, p2uData, newsData, lineupsData, possibleLineupsData] = await Promise.all([
             fetchJSON(DATA_URLS.clubs),
             fetchJSON(DATA_URLS.players),
             fetchJSON(DATA_URLS.users),
             fetchJSON(DATA_URLS.playerToUser),
             fetchJSON(DATA_URLS.news),
             fetchJSON(DATA_URLS.lineups),
+            loadPossibleLineups(),
             // NotInLigaDB: Spieler, die nicht mehr in der Spielerdatenbank stehen,
             // aber weiterhin Usern zugeordnet sind (Status: NICHT_IN_LIGA)
             loadNotInLigaMap(),
@@ -83,6 +85,15 @@ async function loadData() {
     } catch (error) {
         console.error("Fehler beim Laden:", error); // <-- alles ausgeben, nicht nur message!
         addDebug("Fehler beim Laden: " + (error && error.message ? error.message : JSON.stringify(error)));
+    }
+}
+
+async function loadPossibleLineups() {
+    try {
+        return await fetchJSON(DATA_URLS.possibleLineups);
+    } catch (error) {
+        addDebug('Voraussichtliche Aufstellungen für Empfehlungen nicht verfügbar: ' + (error?.message || error));
+        return null;
     }
 }
 
@@ -370,6 +381,7 @@ function loadPlayersForUser(userId) {
 
     renderTransfers(userId);
     renderLineups(userId);
+    renderRecommendations(userId);
     addDebug("=== loadPlayersForUser END ===");
 }
 
@@ -464,6 +476,447 @@ async function renderLineups(userId) {
         container.querySelectorAll('.lineup-detail-row.open').forEach(item => item.classList.remove('open'));
         if (!wasOpen) detail.classList.add('open');
     }));
+}
+
+const UNAVAILABLE_RECOMMENDATION_STATUSES = new Set([
+    'VERLETZT', 'REHA', 'AUFBAUTRAINING', 'NICHT_IN_LIGA', 'NICHT_IM_KADER',
+    'ROTE_KARTE', 'GELBROTE_KARTE', 'FUENFTE_GELBE_KARTE', 'GESPERRT'
+]);
+
+function getRecommendationLineupForm(entry) {
+    const values = [];
+    (Array.isArray(entry?.last5MatchStatus) ? entry.last5MatchStatus : []).forEach(item => {
+        if (!item || typeof item !== 'object') return;
+        Object.entries(item).forEach(([index, status]) => {
+            values.push({ index: Number(index), status: String(status || '').toUpperCase() });
+        });
+    });
+    return values
+        .filter(item => Number.isFinite(item.index))
+        .sort((a, b) => a.index - b.index)
+        .slice(0, 5);
+}
+
+function getRecommendationStarterLikelihood(entry) {
+    const form = getRecommendationLineupForm(entry);
+    if (form.length < 3) return null;
+    let weightedStarts = 0;
+    let totalWeight = 0;
+    form.forEach((item, index) => {
+        const weight = form.length - index;
+        const contribution = item.status === 'START' ? 1
+            : item.status === 'SUBIN' ? 0.35
+                : item.status === 'BANK' ? 0.05 : 0;
+        weightedStarts += weight * contribution;
+        totalWeight += weight;
+    });
+    return totalWeight ? weightedStarts / totalWeight : null;
+}
+
+function getRecommendationMetrics(playerId, pointsDb) {
+    const entries = getPointsEntriesForPlayer(pointsDb, playerId)
+        .slice()
+        .sort((a, b) => (Number(b.key) || 0) - (Number(a.key) || 0));
+    const played = entries.filter(entry => {
+        const status = String(entry.status || '').toUpperCase();
+        const minutes = getLineupEinsatzzeit(entry);
+        return (status && status !== 'NONE') || minutes > 0 || toLineupNumber(entry.active) === 1;
+    });
+    const recent = played.slice(0, 5);
+    const average = list => {
+        const values = list.map(entry => toLineupNumber(entry.points)).filter(value => value !== null);
+        return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    };
+    const recentAverage = average(recent);
+    const seasonAverage = average(played);
+    const minuteValues = recent.map(getLineupEinsatzzeit).filter(value => value !== null);
+    const averageMinutes = minuteValues.length
+        ? minuteValues.reduce((sum, value) => sum + value, 0) / minuteValues.length
+        : null;
+    const starts = recent.filter(entry => ['FULL', 'SUBOUT'].includes(String(entry.status || '').toUpperCase())).length;
+    const startRate = recent.length ? starts / recent.length : 0;
+    const score = recentAverage === null || seasonAverage === null ? null
+        : (recentAverage * 0.55) + (seasonAverage * 0.3)
+            + (startRate * 10 * 0.1)
+            + ((averageMinutes === null ? 0 : averageMinutes / 90 * 10) * 0.05);
+    return { appearances: played.length, recentCount: recent.length, recentAverage, seasonAverage, averageMinutes, startRate, score };
+}
+
+function getRecommendationLineupContext(userId) {
+    const savedLineups = Object.entries(lineupsData || {})
+        .map(([matchday, users]) => ({ matchday, lineup: users?.[String(userId)] }))
+        .filter(entry => entry.lineup)
+        .sort((a, b) => Number(b.matchday) - Number(a.matchday));
+    if (!savedLineups.length) return { current: null, previous: null };
+
+    const targetMatchday = possibleLineupsData?.matchday;
+    const current = savedLineups.find(entry => String(entry.matchday) === String(targetMatchday)) || savedLineups[0];
+    const previous = savedLineups.find(entry => Number(entry.matchday) < Number(current.matchday)) || null;
+    return { current, previous };
+}
+
+function formatRecommendationPoints(value) {
+    return value === null || value === undefined ? '—' : `Ø ${value.toFixed(1).replace('.', ',')} Pkt.`;
+}
+
+function getRecommendationBalance(userId) {
+    const userEntry = usersData?.find(entry => String(entry.user?.id) === String(userId));
+    if (!userEntry) return null;
+
+    const userEntries = usersData.filter(entry => entry.user?.id !== undefined && !['0', '1'].includes(String(entry.user.id)));
+    const userIds = new Set(userEntries.map(entry => String(entry.user.id)));
+    const userNames = new Map();
+    const firstNames = new Map();
+    userEntries.forEach(entry => {
+        const user = entry.user || {};
+        [user.name, user.loginName].filter(Boolean).forEach(name => userNames.set(String(name).toLowerCase(), String(user.id)));
+        if (user.firstName) {
+            const key = String(user.firstName).toLowerCase();
+            const ids = firstNames.get(key) || [];
+            ids.push(String(user.id));
+            firstNames.set(key, ids);
+        }
+    });
+    firstNames.forEach((ids, name) => {
+        if (ids.length === 1 && !userNames.has(name)) userNames.set(name, ids[0]);
+    });
+
+    const transferEvents = [];
+    (newsData?.newsDB || []).forEach(day => {
+        (day.news || []).forEach(news => {
+            if (news.art !== 'TRANSFER' && news.art !== 'TRANSFER_STORNO') return;
+            try {
+                transferEvents.push({ ...JSON.parse(news.text), art: news.art });
+            } catch (error) {
+                addDebug('Transfer konnte für die Kontostandsprüfung nicht gelesen werden: ' + (error?.message || error));
+            }
+        });
+    });
+
+    const transferIdsByName = new Map();
+    transferEvents.forEach(transfer => {
+        [[transfer.buyer, transfer.buyerId], [transfer.seller, transfer.sellerId]].forEach(([name, id]) => {
+            if (name && id !== undefined && userIds.has(String(id))) {
+                transferIdsByName.set(String(name).toLowerCase(), String(id));
+            }
+        });
+    });
+    const resolveUserId = (rawId, name) => {
+        if (rawId !== undefined && userIds.has(String(rawId))) return String(rawId);
+        const normalizedName = String(name || '').toLowerCase();
+        return userNames.get(normalizedName) || transferIdsByName.get(normalizedName) || null;
+    };
+
+    let netTransfers = 0;
+    transferEvents.forEach(transfer => {
+        const direction = transfer.art === 'TRANSFER_STORNO' ? -1 : 1;
+        const price = Number(transfer.price) || 0;
+        if (resolveUserId(transfer.buyerId, transfer.buyer) === String(userId)) netTransfers -= direction * price;
+        if (resolveUserId(transfer.sellerId, transfer.seller) === String(userId)) netTransfers += direction * price;
+    });
+
+    const pointsIncome = (Number(userEntry.punkte) || 0) * 10000;
+    return 20000000 + netTransfers + pointsIncome;
+}
+
+async function renderRecommendations(userId) {
+    const statusElement = document.getElementById('recommendationStatus');
+    const container = document.getElementById('recommendationList');
+    if (!statusElement || !container) return;
+
+    const renderToken = ++recommendationRenderToken;
+    const roster = getPlayersForUser(userId);
+    statusElement.textContent = 'Empfehlungen werden erstellt ...';
+    container.innerHTML = '<div class="recommendation-empty">Empfehlungen und Leistungsdaten werden geladen ...</div>';
+
+    let pointsDb = {};
+    try {
+        pointsDb = await getPointsDb();
+    } catch (error) {
+        addDebug('Leistungsdaten für Empfehlungen konnten nicht geladen werden: ' + (error?.message || error));
+    }
+    if (renderToken !== recommendationRenderToken) return;
+
+    const { current: savedLineup, previous: previousLineup } = getRecommendationLineupContext(userId);
+    const savedPlayers = Array.isArray(savedLineup?.lineup?.players) ? savedLineup.lineup.players : [];
+    const starters = savedPlayers.filter(player => !player.substitute);
+    const substitutes = savedPlayers.filter(player => player.substitute);
+    const starterIds = new Set(starters.map(player => String(player.id)));
+    const targetMatchday = possibleLineupsData?.matchday;
+    const hasCurrentMatchdayLineup = targetMatchday
+        ? Boolean(lineupsData?.[String(targetMatchday)]?.[String(userId)])
+        : Boolean(savedLineup);
+    const currentStarterIds = hasCurrentMatchdayLineup ? starterIds : new Set();
+    const recommendationById = new Map();
+    roster.forEach(player => {
+        const statusEntry = getPlayerStatusEntry(player.id, { unknown: player.unknown === true });
+        const playerStatus = String(statusEntry?.status || 'AKTIV').toUpperCase();
+        if (!UNAVAILABLE_RECOMMENDATION_STATUSES.has(playerStatus)) return;
+        const isNotInLiga = playerStatus === 'NICHT_IN_LIGA';
+        recommendationById.set(`status-${player.id}`, {
+            player,
+            priority: isNotInLiga ? 82 : 100,
+            tone: isNotInLiga ? 'warning' : 'urgent',
+            title: isNotInLiga ? 'Nicht mehr in der Liga' : `${getStatusDisplayName(playerStatus)} – Einsatz fraglich`,
+            description: statusEntry?.reason
+                ? `${statusEntry.reason}${statusEntry.sinceString ? ` · seit ${statusEntry.sinceString}` : ''}`
+                : 'Aktuell nicht verfügbar – Ersatz prüfen.',
+            icon: isNotInLiga ? '↗' : '!',
+            evidence: ['Kaderstatus prüfen']
+        });
+    });
+
+    const rosterById = new Map(roster.map(player => [String(player.id), player]));
+    const metricsByPlayerId = new Map();
+    const getPlayerMetrics = playerId => {
+        const id = String(playerId);
+        if (!metricsByPlayerId.has(id)) metricsByPlayerId.set(id, getRecommendationMetrics(id, pointsDb));
+        return metricsByPlayerId.get(id);
+    };
+    const possibleFormationMap = possibleLineupsData?.possibleFormationMap || {};
+    const expectedCandidates = [];
+    Object.values(possibleFormationMap).forEach(players => {
+        if (!Array.isArray(players)) return;
+        players.forEach(entry => {
+            const playerId = String(entry?.comunioPlayerId ?? '');
+            const player = rosterById.get(playerId);
+            if (!player || !playerId) return;
+            const playerStatus = String(getPlayerStatusEntry(player.id, { unknown: player.unknown === true })?.status || 'AKTIV').toUpperCase();
+            if (UNAVAILABLE_RECOMMENDATION_STATUSES.has(playerStatus)) return;
+            const likelihood = getRecommendationStarterLikelihood(entry);
+            if (likelihood === null || likelihood < 0.68) return;
+            const noteValue = toLineupNumber(String(entry.playerNote ?? '').replace(',', '.'));
+            const metrics = getPlayerMetrics(playerId);
+            const rankingScore = likelihood * 100
+                + (metrics.score === null ? 0 : metrics.score * 2)
+                + (noteValue === null ? 0 : (5 - noteValue) * 1.5);
+            expectedCandidates.push({ player, likelihood, form: getRecommendationLineupForm(entry), noteValue, metrics, rankingScore });
+        });
+    });
+    expectedCandidates.sort((a, b) => b.rankingScore - a.rankingScore);
+    const suggestedStarters = expectedCandidates.filter(candidate => !currentStarterIds.has(String(candidate.player.id)));
+    const confirmedStarters = expectedCandidates.filter(candidate => currentStarterIds.has(String(candidate.player.id)));
+    suggestedStarters.slice(0, 4).forEach(candidate => {
+        const starts = candidate.form.filter(item => item.status === 'START').length;
+        const playerId = String(candidate.player.id);
+        const evidence = [`${starts}/${candidate.form.length} Prognosen`];
+        if (candidate.metrics.recentAverage !== null) evidence.push(`${formatRecommendationPoints(candidate.metrics.recentAverage)} zuletzt`);
+        const isOnBench = hasCurrentMatchdayLineup
+            && substitutes.some(player => String(player.id) === playerId);
+        recommendationById.set(`starter-${playerId}`, {
+            player: candidate.player,
+            priority: 65 + Math.round(candidate.likelihood * 15),
+            tone: isOnBench ? 'warning' : 'suggestion',
+            category: 'lineup-check',
+            title: 'Aufstellung prüfen',
+            description: '',
+            evidence,
+            icon: '↑'
+        });
+    });
+
+    confirmedStarters.forEach(candidate => {
+        const playerId = String(candidate.player.id);
+        const starts = candidate.form.filter(item => item.status === 'START').length;
+        recommendationById.set(`confirmed-${playerId}`, {
+            player: candidate.player,
+            priority: 10 + Math.round(candidate.likelihood * 10),
+            tone: 'positive',
+            title: 'Gute Wahl in der Startelf',
+            description: '',
+            evidence: [`${starts}/${candidate.form.length} Prognosen`],
+            icon: '✓'
+        });
+    });
+
+    if (!hasCurrentMatchdayLineup) {
+        recommendationById.set('missing-lineup', {
+            priority: 110,
+            tone: 'urgent',
+            title: 'Keine aktuelle Aufstellung gespeichert',
+            description: targetMatchday
+            ? `Für Spieltag ${targetMatchday} fehlt noch eine gespeicherte Aufstellung.`
+            : 'Es ist noch keine Aufstellung gespeichert.',
+            evidence: ['11 Starter eintragen'],
+            icon: '!'
+        });
+    } else if (savedLineup) {
+        const startersCount = starters.length;
+        if (startersCount !== 11) {
+            recommendationById.set('lineup-count', {
+                priority: 110,
+                tone: 'urgent',
+                title: startersCount < 11 ? 'Startelf unvollständig' : 'Startelf prüfen',
+                description: startersCount < 11
+                    ? `Für Spieltag ${savedLineup.matchday} sind ${startersCount} von 11 Startelf-Plätzen besetzt. Aufstellung ergänzen, damit keine Punkte durch leere Plätze verloren gehen.`
+                    : `Für Spieltag ${savedLineup.matchday} sind ${startersCount} statt 11 Spielern als Starter markiert. Aufstellung prüfen.`,
+                evidence: [`Spieltag ${savedLineup.matchday}`, `${startersCount}/11 Plätze`],
+                icon: '!'
+            });
+        }
+    }
+
+    if (savedLineup && previousLineup) {
+        const previousPlayers = Array.isArray(previousLineup.lineup.players) ? previousLineup.lineup.players : [];
+        const previousStarters = new Set(previousPlayers.filter(player => !player.substitute).map(player => String(player.id)));
+        const previousSubstitutes = new Set(previousPlayers.filter(player => player.substitute).map(player => String(player.id)));
+        const added = starters.filter(player => !previousStarters.has(String(player.id)));
+        const removed = previousPlayers.filter(player => !player.substitute && !starterIds.has(String(player.id)));
+        const addedToBench = substitutes.filter(player => !previousSubstitutes.has(String(player.id)));
+        const removedFromBench = previousPlayers.filter(player => player.substitute && !substitutes.some(current => String(current.id) === String(player.id)));
+        if (added.length || removed.length || addedToBench.length || removedFromBench.length) {
+            recommendationById.set('lineup-changes', {
+                priority: 30,
+                tone: 'info',
+                title: 'Aufstellung geändert',
+                description: `Spieltag ${savedLineup.matchday} im Vergleich zu ${previousLineup.matchday}`,
+                evidence: [
+                    ...(added.length ? [`Neu in der Startelf: ${added.map(player => player.name || findPlayerById(player.id)?.name || 'Unbekannt').join(', ')}`] : []),
+                    ...(removed.length ? [`Nicht mehr in der Startelf: ${removed.map(player => player.name || findPlayerById(player.id)?.name || 'Unbekannt').join(', ')}`] : []),
+                    ...(addedToBench.length ? [`Neu auf der Bank: ${addedToBench.map(player => player.name || findPlayerById(player.id)?.name || 'Unbekannt').join(', ')}`] : []),
+                    ...(removedFromBench.length ? [`Nicht mehr auf der Bank: ${removedFromBench.map(player => player.name || findPlayerById(player.id)?.name || 'Unbekannt').join(', ')}`] : [])
+                ],
+                icon: '↻'
+            });
+        }
+    }
+
+    if (savedLineup && Array.isArray(savedLineup.lineup.players)) {
+        const metricsById = new Map();
+        savedPlayers.forEach(player => {
+            const id = String(player.id);
+            if (!metricsById.has(id)) metricsById.set(id, getPlayerMetrics(id));
+        });
+        const benchOpportunities = [];
+        substitutes.forEach(benchPlayer => {
+            const benchId = String(benchPlayer.id);
+            const player = rosterById.get(benchId);
+            const benchMetrics = metricsById.get(benchId);
+            if (!player || !benchMetrics || benchMetrics.appearances < 2 || benchMetrics.score === null) return;
+            const benchStatus = String(getPlayerStatusEntry(player.id, { unknown: player.unknown === true })?.status || 'AKTIV').toUpperCase();
+            if (UNAVAILABLE_RECOMMENDATION_STATUSES.has(benchStatus)) return;
+            const position = normalizeLineupPosition(player.data?.position || benchPlayer.position);
+            if (!position || position === 'UNBEKANNT') return;
+            const comparisons = starters
+                .filter(starter => {
+                    const starterPlayer = rosterById.get(String(starter.id));
+                    if (!starterPlayer) return false;
+                    const starterStatus = String(getPlayerStatusEntry(starterPlayer.id, { unknown: starterPlayer.unknown === true })?.status || 'AKTIV').toUpperCase();
+                    if (UNAVAILABLE_RECOMMENDATION_STATUSES.has(starterStatus)) return false;
+                    const starterPosition = normalizeLineupPosition(starterPlayer.data?.position || starter.position);
+                    return starterPosition && starterPosition !== 'UNBEKANNT' && starterPosition === position;
+                })
+                .map(starter => ({
+                    starter,
+                    metrics: metricsById.get(String(starter.id))
+                }))
+                .filter(item => item.metrics?.appearances >= 2 && item.metrics.score !== null)
+                .map(item => ({ ...item, difference: benchMetrics.score - item.metrics.score }))
+                .sort((a, b) => b.difference - a.difference);
+            const bestComparison = comparisons[0];
+            if (bestComparison && bestComparison.difference >= 2) {
+                benchOpportunities.push({ player, benchMetrics, ...bestComparison });
+            }
+        });
+        benchOpportunities.sort((a, b) => b.difference - a.difference);
+        benchOpportunities.slice(0, 3).forEach(item => {
+            const starterPlayer = rosterById.get(String(item.starter.id)) || findPlayerById(item.starter.id);
+            recommendationById.set(`bench-${item.player.id}`, {
+                player: item.player,
+                priority: 68 + Math.min(20, Math.round(item.difference * 3)),
+                tone: 'warning',
+                category: 'lineup-check',
+                title: 'Bank prüfen',
+                description: `Bessere Form als ${starterPlayer?.name || item.starter.name}`,
+                evidence: [`Score ${item.benchMetrics.score.toFixed(1)} : ${item.metrics.score.toFixed(1)}`, `Spieltag ${savedLineup.matchday}`],
+                icon: '↗'
+            });
+        });
+    }
+
+    const balance = getRecommendationBalance(userId);
+    if (balance !== null && balance < 0) {
+        recommendationById.set('negative-balance', {
+            priority: 105,
+            tone: 'urgent',
+            title: 'Kontostand im Minus',
+            description: 'Das berechnete Konto ist aktuell negativ. Vor dem nächsten Spieltag Verkäufe oder andere Einnahmen einplanen.',
+            evidence: ['Finanzielle Prüfung erforderlich'],
+            icon: '€'
+        });
+    }
+
+    const uniqueRecommendations = new Map();
+    [...recommendationById.values()]
+        .sort((a, b) => b.priority - a.priority)
+        .forEach(item => {
+            const key = item.player ? `player-${item.player.id}` : item.title;
+            if (!uniqueRecommendations.has(key)) uniqueRecommendations.set(key, item);
+        });
+    const recommendations = [...uniqueRecommendations.values()]
+        .sort((a, b) => b.priority - a.priority || (a.player?.name || a.title).localeCompare(b.player?.name || b.title, 'de'));
+    const matchday = possibleLineupsData?.matchday;
+    const actionItems = recommendations.filter(item => item.tone !== 'positive' && item.tone !== 'info');
+    const lineupCheckItems = actionItems.filter(item => item.category === 'lineup-check');
+    const otherActionItems = actionItems.filter(item => item.category !== 'lineup-check');
+    const changes = recommendations.filter(item => item.tone === 'info');
+    const confirmations = recommendations.filter(item => item.tone === 'positive');
+    const groups = [
+        { title: 'Bitte prüfen', items: actionItems, tone: 'action' },
+        { title: 'Aufstellungsänderungen', items: changes, tone: 'changes' },
+        { title: 'Gute Wahl', items: confirmations, tone: 'positive' }
+    ].filter(group => group.items.length);
+    const summaryParts = [];
+    if (actionItems.length) summaryParts.push(`${actionItems.length} Hinweise`);
+    if (changes.length) summaryParts.push(`${changes.length} Änderung${changes.length === 1 ? '' : 'en'}`);
+    if (confirmations.length) summaryParts.push(`${confirmations.length} gute Wahl${confirmations.length === 1 ? '' : 'en'}`);
+    statusElement.textContent = `${summaryParts.join(' · ') || 'Alles im Blick'}${matchday ? ` · Spieltag ${matchday}` : ''}${savedLineup ? ` · Stand: Spieltag ${savedLineup.matchday}` : ''}`;
+
+    if (!recommendations.length) {
+        container.innerHTML = '<div class="recommendation-empty">Aktuell wurden keine konkreten Auffälligkeiten gefunden. Wenn noch keine Punkte- oder Aufstellungsdaten vorliegen, erscheinen Formvergleiche erst nach verfügbaren Spieltagen.</div>';
+        return;
+    }
+
+    const renderRecommendationItem = (item, inLineupCheckGroup = false) => {
+        const player = item.player;
+        const clubId = player?.data?.verein;
+        const position = normalizeLineupPosition(player?.data?.position);
+        const clubLogo = clubId
+            ? `<img class="recommendation-club-logo" src="${DATA_URLS.logos}${getLogoFileName(clubId)}" alt="" title="${escapeHtml(clubsMap.get(clubId) || clubsMap.get(String(clubId)) || 'Verein unbekannt')}">`
+            : '';
+        const positionLogo = position
+            ? `<img class="recommendation-position-logo" src="logos/${getLogoPositionFilename(position)}" alt="${escapeHtml(position)}" title="${escapeHtml(position)}">`
+            : '';
+        const evidence = (item.evidence || []).map(value => `<span class="recommendation-evidence">${escapeHtml(value)}</span>`).join('');
+        return `<article class="recommendation-item recommendation-${item.tone}">
+            ${inLineupCheckGroup ? '' : `<span class="recommendation-icon" aria-hidden="true">${escapeHtml(item.icon || '•')}</span>`}
+            <div class="recommendation-item-main">
+                <div class="recommendation-item-heading">
+                    ${inLineupCheckGroup ? clubLogo : ''}
+                    ${player ? `<a href="${getPlayerUrlWithParams(player.id)}">${escapeHtml(player.name)}</a>` : ''}
+                    ${inLineupCheckGroup ? positionLogo : ''}
+                    ${!inLineupCheckGroup && item.tone !== 'positive' ? `<span class="recommendation-priority">${escapeHtml(item.title)}</span>` : ''}
+                    ${!inLineupCheckGroup && player ? `${clubLogo}${positionLogo}` : ''}
+                </div>
+                <div class="recommendation-item-detail">
+                    ${item.description ? `<span>${escapeHtml(item.description)}</span>` : ''}
+                    ${evidence ? `<span class="recommendation-evidence-list">${evidence}</span>` : ''}
+                </div>
+            </div>
+        </article>`;
+    };
+    container.innerHTML = groups.map(group => `
+        <details class="recommendation-group recommendation-group-${group.tone}"${group.tone === 'action' ? ' open' : ''}>
+            <summary>${escapeHtml(group.title)} <span>${group.items.length}</span></summary>
+            <div class="recommendation-group-items">
+                ${group.tone === 'action' ? otherActionItems.map(item => renderRecommendationItem(item)).join('') : ''}
+                ${group.tone === 'action' && lineupCheckItems.length
+                    ? `<section class="recommendation-lineup-check"><h3>Aufstellung prüfen <span>${lineupCheckItems.length}</span></h3><div>${lineupCheckItems.map(item => renderRecommendationItem(item, true)).join('')}</div></section>`
+                    : ''}
+                ${group.tone !== 'action' ? group.items.map(item => renderRecommendationItem(item)).join('') : ''}
+            </div>
+        </details>
+    `).join('');
 }
 
 function initOverviewTabs() {
