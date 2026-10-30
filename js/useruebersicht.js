@@ -400,11 +400,20 @@ function getLineupPositionLogo(position) {
     return getLogoPositionFilename(positionNames[position] || position);
 }
 
+function getSavedLineupMatchdayLabel(matchday) {
+    if (String(matchday) === 'current') {
+        const currentMatchday = possibleLineupsData?.matchday;
+        return currentMatchday ? `Spieltag ${currentMatchday}` : 'heute';
+    }
+    return `Spieltag ${matchday}`;
+}
+
 async function renderLineups(userId) {
     const status = document.getElementById('lineupStatus');
     const container = document.getElementById('lineupList');
     if (!status || !container) return;
     const matchdays = Object.entries(lineupsData || {})
+        .filter(([matchday]) => /^\d+$/.test(matchday))
         .map(([matchday, users]) => [matchday, users?.[String(userId)]])
         .filter(([, lineup]) => lineup)
         .sort((a, b) => Number(b[0]) - Number(a[0]));
@@ -467,7 +476,7 @@ async function renderLineups(userId) {
         if (summary.goals) summaryParts.push(summary.goals === 1 ? '1 Tor' : `${summary.goals} Tore`);
         if (summary.assists) summaryParts.push(summary.assists === 1 ? '1 Vorlage' : `${summary.assists} Vorlagen`);
         if (summary.withoutDataCount) summaryParts.push(`${summary.withoutDataCount}× ohne Daten`);
-        return `<section class="lineup-card"><div class="lineup-card-header"><div class="lineup-card-title"><h2>Spieltag ${escapeHtml(matchday)}</h2><div class="lineup-summary">${escapeHtml(summaryParts.join(' · '))}</div></div><span class="lineup-tactic">${escapeHtml(lineup.tactic || '—')}</span></div><div class="lineup-table-wrap"><table><thead><tr><th>Spieler</th><th>Pos.</th><th>Status</th><th>Pkt.</th><th class="lineup-note-col">Note</th><th>Spielzeit</th></tr></thead><tbody>${starters.map((player, index) => renderPlayer(player, index, 'starter')).join('')}${substitutes.length ? `<tr class="lineup-substitute-divider"><th colspan="6">Ersatzbank</th></tr>${substitutes.map((player, index) => renderPlayer(player, index, 'substitute')).join('')}` : ''}</tbody></table></div></section>`;
+        return `<section class="lineup-card"><div class="lineup-card-header"><div class="lineup-card-title"><h2>${escapeHtml(getSavedLineupMatchdayLabel(matchday))}</h2><div class="lineup-summary">${escapeHtml(summaryParts.join(' · '))}</div></div><span class="lineup-tactic">${escapeHtml(lineup.tactic || '—')}</span></div><div class="lineup-table-wrap"><table><thead><tr><th>Spieler</th><th>Pos.</th><th>Status</th><th>Pkt.</th><th class="lineup-note-col">Note</th><th>Spielzeit</th></tr></thead><tbody>${starters.map((player, index) => renderPlayer(player, index, 'starter')).join('')}${substitutes.length ? `<tr class="lineup-substitute-divider"><th colspan="6">Ersatzbank</th></tr>${substitutes.map((player, index) => renderPlayer(player, index, 'substitute')).join('')}` : ''}</tbody></table></div></section>`;
     });
     container.innerHTML = cards.join('');
     container.querySelectorAll('.lineup-player-row').forEach(row => row.addEventListener('click', () => {
@@ -546,12 +555,17 @@ function getRecommendationLineupContext(userId) {
     const savedLineups = Object.entries(lineupsData || {})
         .map(([matchday, users]) => ({ matchday, lineup: users?.[String(userId)] }))
         .filter(entry => entry.lineup)
-        .sort((a, b) => Number(b.matchday) - Number(a.matchday));
+        .sort((a, b) => a.matchday === 'current' ? -1 : (b.matchday === 'current' ? 1 : Number(b.matchday) - Number(a.matchday)));
     if (!savedLineups.length) return { current: null, previous: null };
 
     const targetMatchday = possibleLineupsData?.matchday;
-    const current = savedLineups.find(entry => String(entry.matchday) === String(targetMatchday)) || savedLineups[0];
-    const previous = savedLineups.find(entry => Number(entry.matchday) < Number(current.matchday)) || null;
+    const current = savedLineups.find(entry => entry.matchday === 'current')
+        || savedLineups.find(entry => String(entry.matchday) === String(targetMatchday))
+        || savedLineups[0];
+    const currentMatchday = Number(current.matchday === 'current' ? targetMatchday : current.matchday);
+    const previous = savedLineups.find(entry => entry !== current
+        && Number.isFinite(Number(entry.matchday))
+        && (!Number.isFinite(currentMatchday) || Number(entry.matchday) < currentMatchday)) || null;
     return { current, previous };
 }
 
@@ -638,14 +652,15 @@ async function renderRecommendations(userId) {
     if (renderToken !== recommendationRenderToken) return;
 
     const { current: savedLineup, previous: previousLineup } = getRecommendationLineupContext(userId);
+    const savedMatchdayLabel = savedLineup ? getSavedLineupMatchdayLabel(savedLineup.matchday) : '';
     const savedPlayers = Array.isArray(savedLineup?.lineup?.players) ? savedLineup.lineup.players : [];
     const starters = savedPlayers.filter(player => !player.substitute);
     const substitutes = savedPlayers.filter(player => player.substitute);
     const starterIds = new Set(starters.map(player => String(player.id)));
     const targetMatchday = possibleLineupsData?.matchday;
     const hasCurrentMatchdayLineup = targetMatchday
-        ? Boolean(lineupsData?.[String(targetMatchday)]?.[String(userId)])
-        : Boolean(savedLineup);
+        ? Boolean(lineupsData?.current?.[String(userId)] || lineupsData?.[String(targetMatchday)]?.[String(userId)])
+        : Boolean(lineupsData?.current?.[String(userId)] || savedLineup);
     const currentStarterIds = hasCurrentMatchdayLineup ? starterIds : new Set();
     const recommendationById = new Map();
     roster.forEach(player => {
@@ -675,15 +690,16 @@ async function renderRecommendations(userId) {
     };
     const possibleFormationMap = possibleLineupsData?.possibleFormationMap || {};
     const expectedCandidates = [];
-    Object.values(possibleFormationMap).forEach(players => {
+    Object.entries(possibleFormationMap).forEach(([clubId, players]) => {
         if (!Array.isArray(players)) return;
         players.forEach(entry => {
             const playerId = String(entry?.comunioPlayerId ?? '');
-            const player = rosterById.get(playerId);
-            if (!player || !playerId) return;
-            const playerStatus = String(getPlayerStatusEntry(player.id, { unknown: player.unknown === true })?.status || 'AKTIV').toUpperCase();
-            if (UNAVAILABLE_RECOMMENDATION_STATUSES.has(playerStatus)) return;
+            if (!playerId) return;
             const likelihood = getRecommendationStarterLikelihood(entry);
+            const player = rosterById.get(playerId);
+            if (!player) return;
+            const rosterPlayerStatus = String(getPlayerStatusEntry(player.id, { unknown: player.unknown === true })?.status || 'AKTIV').toUpperCase();
+            if (UNAVAILABLE_RECOMMENDATION_STATUSES.has(rosterPlayerStatus)) return;
             if (likelihood === null || likelihood < 0.68) return;
             const noteValue = toLineupNumber(String(entry.playerNote ?? '').replace(',', '.'));
             const metrics = getPlayerMetrics(playerId);
@@ -696,6 +712,57 @@ async function renderRecommendations(userId) {
     expectedCandidates.sort((a, b) => b.rankingScore - a.rankingScore);
     const suggestedStarters = expectedCandidates.filter(candidate => !currentStarterIds.has(String(candidate.player.id)));
     const confirmedStarters = expectedCandidates.filter(candidate => currentStarterIds.has(String(candidate.player.id)));
+    if (hasCurrentMatchdayLineup) {
+        starters.forEach(starter => {
+            const playerId = String(starter.id);
+            const player = rosterById.get(playerId) || findPlayerById(playerId) || starter;
+            const playerStatusEntry = getPlayerStatusEntry(playerId, { unknown: player.unknown === true });
+            const playerStatus = String(playerStatusEntry?.status || 'AKTIV').toUpperCase();
+            const isUnavailable = UNAVAILABLE_RECOMMENDATION_STATUSES.has(playerStatus);
+            const position = normalizeLineupPosition(player.data?.position || starter.position);
+            const clubId = String(player.data?.verein ?? starter.clubId ?? '');
+            const possibleClubPlayers = possibleFormationMap[clubId];
+            const hasPossibleLineupForClub = Array.isArray(possibleClubPlayers) && possibleClubPlayers.length > 0;
+            const isInPossibleLineup = hasPossibleLineupForClub
+                && possibleClubPlayers.some(entry => String(entry?.comunioPlayerId ?? '') === playerId);
+            const isMissingFromPossibleLineup = hasPossibleLineupForClub && !isInPossibleLineup;
+            if (!isUnavailable && !isMissingFromPossibleLineup) return;
+
+            const rosterAlternatives = roster.filter(candidate => {
+                const candidateId = String(candidate.id);
+                if (starterIds.has(candidateId)) return false;
+                if (normalizeLineupPosition(candidate.data?.position) !== position) return false;
+                const candidateStatus = String(getPlayerStatusEntry(candidate.id, { unknown: candidate.unknown === true })?.status || 'AKTIV').toUpperCase();
+                if (UNAVAILABLE_RECOMMENDATION_STATUSES.has(candidateStatus)) return false;
+                const candidateClubId = String(candidate.data?.verein ?? '');
+                const possibleCandidates = possibleFormationMap[candidateClubId];
+                return Array.isArray(possibleCandidates)
+                    && possibleCandidates.some(entry => String(entry?.comunioPlayerId ?? '') === candidateId);
+            });
+            const details = [];
+            if (isUnavailable) {
+                details.push(playerStatusEntry?.reason || `${getStatusDisplayName(playerStatus)} – Einsatz fraglich.`);
+            }
+            if (isMissingFromPossibleLineup) {
+                details.push('Der Spieler steht nicht in der möglichen Aufstellung seines Vereins.');
+            }
+            if (rosterAlternatives.length) {
+                details.push(`Mögliche Alternative aus deinem Kader: ${rosterAlternatives.map(candidate => candidate.name).join(', ')}.`);
+            } else {
+                details.push(`Keine passende Alternative aus deinem Kader in der möglichen Aufstellung (${position || 'Position unbekannt'}).`);
+            }
+            recommendationById.set(`predicted-not-starter-${playerId}`, {
+                player,
+                priority: isUnavailable ? 102 : 78,
+                tone: 'warning',
+                category: 'lineup-check',
+                title: 'Aufstellung prüfen',
+                description: details.join(' '),
+                evidence: [isMissingFromPossibleLineup ? 'Nicht in möglicher Aufstellung' : 'Status prüfen', 'In deiner Startelf'],
+                icon: '!'
+            });
+        });
+    }
     suggestedStarters.slice(0, 4).forEach(candidate => {
         const starts = candidate.form.filter(item => item.status === 'START').length;
         const playerId = String(candidate.player.id);
@@ -748,9 +815,9 @@ async function renderRecommendations(userId) {
                 tone: 'urgent',
                 title: startersCount < 11 ? 'Startelf unvollständig' : 'Startelf prüfen',
                 description: startersCount < 11
-                    ? `Für Spieltag ${savedLineup.matchday} sind ${startersCount} von 11 Startelf-Plätzen besetzt. Aufstellung ergänzen, damit keine Punkte durch leere Plätze verloren gehen.`
-                    : `Für Spieltag ${savedLineup.matchday} sind ${startersCount} statt 11 Spielern als Starter markiert. Aufstellung prüfen.`,
-                evidence: [`Spieltag ${savedLineup.matchday}`, `${startersCount}/11 Plätze`],
+                    ? `Für ${savedMatchdayLabel} sind ${startersCount} von 11 Startelf-Plätzen besetzt. Aufstellung ergänzen, damit keine Punkte durch leere Plätze verloren gehen.`
+                    : `Für ${savedMatchdayLabel} sind ${startersCount} statt 11 Spielern als Starter markiert. Aufstellung prüfen.`,
+                evidence: [savedMatchdayLabel, `${startersCount}/11 Plätze`],
                 icon: '!'
             });
         }
@@ -769,7 +836,7 @@ async function renderRecommendations(userId) {
                 priority: 30,
                 tone: 'info',
                 title: 'Aufstellung geändert',
-                description: `Spieltag ${savedLineup.matchday} im Vergleich zu ${previousLineup.matchday}`,
+                description: `${savedMatchdayLabel} im Vergleich zu ${getSavedLineupMatchdayLabel(previousLineup.matchday)}`,
                 evidence: [
                     ...(added.length ? [`Neu in der Startelf: ${added.map(player => player.name || findPlayerById(player.id)?.name || 'Unbekannt').join(', ')}`] : []),
                     ...(removed.length ? [`Nicht mehr in der Startelf: ${removed.map(player => player.name || findPlayerById(player.id)?.name || 'Unbekannt').join(', ')}`] : []),
@@ -828,7 +895,7 @@ async function renderRecommendations(userId) {
                 category: 'lineup-check',
                 title: 'Bank prüfen',
                 description: `Bessere Form als ${starterPlayer?.name || item.starter.name}`,
-                evidence: [`Score ${item.benchMetrics.score.toFixed(1)} : ${item.metrics.score.toFixed(1)}`, `Spieltag ${savedLineup.matchday}`],
+                evidence: [`Score ${item.benchMetrics.score.toFixed(1)} : ${item.metrics.score.toFixed(1)}`, savedMatchdayLabel],
                 icon: '↗'
             });
         });
@@ -870,7 +937,10 @@ async function renderRecommendations(userId) {
     if (actionItems.length) summaryParts.push(`${actionItems.length} Hinweise`);
     if (changes.length) summaryParts.push(`${changes.length} Änderung${changes.length === 1 ? '' : 'en'}`);
     if (confirmations.length) summaryParts.push(`${confirmations.length} gute Wahl${confirmations.length === 1 ? '' : 'en'}`);
-    statusElement.textContent = `${summaryParts.join(' · ') || 'Alles im Blick'}${matchday ? ` · Spieltag ${matchday}` : ''}${savedLineup ? ` · Stand: Spieltag ${savedLineup.matchday}` : ''}`;
+    const savedLineupStand = savedLineup
+        ? (savedLineup.matchday === 'current' ? ' · Stand: heute' : ` · Stand: Spieltag ${savedLineup.matchday}`)
+        : '';
+    statusElement.textContent = `${summaryParts.join(' · ') || 'Alles im Blick'}${matchday ? ` · Spieltag ${matchday}` : ''}${savedLineupStand}`;
 
     if (!recommendations.length) {
         container.innerHTML = '<div class="recommendation-empty">Aktuell wurden keine konkreten Auffälligkeiten gefunden. Wenn noch keine Punkte- oder Aufstellungsdaten vorliegen, erscheinen Formvergleiche erst nach verfügbaren Spieltagen.</div>';
