@@ -2,7 +2,7 @@
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    
+
   "version": "0.2.0",
   "configurations": [
     {
@@ -20,8 +20,56 @@
     {
       "type": "chrome",
       "request": "launch",
+      "name": "Debug Comunio Website (mit Finanzen)",
+      "url": "file://${workspaceFolder}/index.html?access=torresbig",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "trace": true,
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*"
+      }
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
       "name": "Debug statistik",
       "url": "file://${workspaceFolder}/statistik.html",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "trace": true,
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*"
+      }
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug statistik (mit Finanzen)",
+      "url": "file://${workspaceFolder}/statistik.html?access=torresbig",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "trace": true,
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*"
+      }
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug useruebersicht",
+      "url": "file://${workspaceFolder}/useruebersicht.html",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "trace": true,
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*"
+      }
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug useruebersicht (mit Finanzen)",
+      "url": "file://${workspaceFolder}/useruebersicht.html?access=torresbig",
       "webRoot": "${workspaceFolder}",
       "sourceMaps": true,
       "trace": true,
