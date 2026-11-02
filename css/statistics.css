@@ -222,10 +222,10 @@
       text-align: center;
   }
 
-  /* Klasse für Finanzdaten: nur anzeigen wenn ?access=torresbig gesetzt ist */
-  .finance-hidden {
+  /* Klasse für conditional anzuzeigende Inhalte (URL-Parameter showStats) */
+  .conditional-content {
       display: none;
   }
-  .finance-hidden.show {
+  .conditional-content.show {
       display: block;
   }

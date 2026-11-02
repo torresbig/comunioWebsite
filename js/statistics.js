@@ -1,16 +1,12 @@
-// Zugriffsschutz: Finanzdaten sind nur sichtbar, wenn ?access=torresbig gesetzt ist.
-// Einmalig cachen, damit sich dynamische URL-Änderungen nicht auswirken.
-const ACCESS_KEY = 'torresbig';
-const FINANCE_ACCESS = (function () {
-    try {
-        return new URLSearchParams(window.location.search).get('access') === ACCESS_KEY;
-    } catch (e) { return false; }
-})();
-
 document.addEventListener('DOMContentLoaded', async () => {
+    // URL-Parameter auslesen
+    const urlParams = new URLSearchParams(window.location.search);
+    const showStatsParam = urlParams.get('showStats');
+    const showStats = showStatsParam === '1' || showStatsParam === 'true';
+
     // Conditional-Elemente ein-/ausblenden
-    document.querySelectorAll('.finance-hidden').forEach(el => {
-        el.classList.toggle('show', FINANCE_ACCESS);
+    document.querySelectorAll('.conditional-content').forEach(el => {
+        el.classList.toggle('show', showStats);
     });
 
     // Hilfsfunktionen
