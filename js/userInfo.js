@@ -1,8 +1,44 @@
 // Helpers and renderer for the user info card
 
+// Zugriffsschutz: Finanzdaten (Guthaben, Verkaufswert, Kaufwert, Punkte-Geld)
+// sind nur sichtbar, wenn der URL-Parameter ?access=torresbig gesetzt ist.
+// Bei jedem anderen Wert oder keinem Parameter werden diese Daten ausgeblendet.
+const ACCESS_KEY = 'torresbig';
+function hasFinanceAccess() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('access') === ACCESS_KEY;
+    } catch (e) {
+        return false;
+    }
+}
+// Einmalig cachen, damit sich dynamische URL-Änderungen nicht auswirken.
+const FINANCE_ACCESS = hasFinanceAccess();
+
 function formatCurrencyEUR(value) {
   if (value === null || value === undefined || isNaN(Number(value))) return '—';
   return '€' + Number(value).toLocaleString('de-DE');
+}
+
+// Form-Trend: Letzte Punkte vs. Durchschnitt der letzten 3 Runden.
+// Gibt {dir: 'up'|'down'|'flat', diff, avg} oder null zurück.
+function computeFormTrend(punkteHistorie, lastPoints) {
+    if (!punkteHistorie || typeof punkteHistorie !== 'object') return null;
+    const keys = Object.keys(punkteHistorie)
+        .map(k => Number(k))
+        .filter(n => !isNaN(n))
+        .sort((a, b) => a - b);
+    if (keys.length === 0) return null;
+    const last3 = keys.slice(-3).map(k => Number(punkteHistorie[k]) || 0);
+    if (last3.length === 0) return null;
+    const avg = last3.reduce((s, v) => s + v, 0) / last3.length;
+    const lp = Number(lastPoints);
+    if (isNaN(lp)) return null;
+    const diff = lp - avg;
+    let dir = 'flat';
+    if (diff > 0.5) dir = 'up';
+    else if (diff < -0.5) dir = 'down';
+    return { dir, diff: Math.round(diff * 10) / 10, avg: Math.round(avg * 10) / 10, last: lp };
 }
 
 function buildPointsSparkline(punkteHistorie) {
@@ -108,15 +144,29 @@ function renderUserInfo(userId) {
   const punkte = entry.punkte ?? '—';
   const rank = entry.rank ?? '—';
   const mitgliedSeit = entry.mitgliedSeit ?? '—';
-  const guthaben = 0;//entry.guthaben ?? null;
+  const guthaben = entry.guthaben ?? null;
   const teamValue = entry.teamValue ?? null;
+  const sellValue = entry.sellValue ?? null;
+  const buyValue = entry.buyValue ?? null;
+  const punkteGeld = entry.punkteGeld ?? null;
   const lastPoints = entry.lastPoints ?? '—';
   const tactic = entry.tactic || entry.formation?.tactic || '—';
 
   const spark = buildPointsSparkline(entry.punkteHistorie);
   const avatarStyle = avatarGradient(u.id || u.loginName || name);
-  
+  const formTrend = computeFormTrend(entry.punkteHistorie, lastPoints);
+
   const isMobile = window.innerWidth <= 700;
+  const showFinance = FINANCE_ACCESS;
+
+  // Form-Trend Badge
+  let formBadge = '';
+  if (formTrend) {
+    const arrow = formTrend.dir === 'up' ? '▲' : (formTrend.dir === 'down' ? '▼' : '•');
+    const cls = formTrend.dir === 'up' ? 'form-trend-up' : (formTrend.dir === 'down' ? 'form-trend-down' : 'form-trend-flat');
+    const sign = formTrend.diff > 0 ? '+' : '';
+    formBadge = `<div class="user-badge ${cls}">${arrow} Form: ${sign}${formTrend.diff} vs. Schn. ${formTrend.avg}</div>`;
+  }
 
   container.innerHTML = `
     <div class="user-info-card">
@@ -134,37 +184,38 @@ function renderUserInfo(userId) {
       </div>
 
       <div class="user-stats-group">
-        <div class="user-stats-inner">
-          <div class="user-stats-col">
-            <div class="user-info-section-label">Finanzen</div>
-            <div class="user-stats-row">
-              <div>
-                <div class="user-info-label">Guthaben</div>
-                <div class="user-info-value">${formatCurrencyEUR(guthaben)}</div>
-              </div>
-              <div>
-                <div class="user-info-label">Teamwert</div>
-                <div class="user-info-value">${formatCurrencyEUR(teamValue)}</div>
-              </div>
-            </div>
+        <div class="user-stats-tiles">
+          ${teamValue !== null ? `
+          <div class="user-tile">
+            <div class="user-tile-label">Teamwert</div>
+            <div class="user-tile-value">${formatCurrencyEUR(teamValue)}</div>
+          </div>` : ''}
+          ${showFinance && sellValue !== null ? `
+          <div class="user-tile">
+            <div class="user-tile-label">Verkaufswert</div>
+            <div class="user-tile-value">${formatCurrencyEUR(sellValue)}</div>
+          </div>` : ''}
+          ${showFinance && buyValue !== null ? `
+          <div class="user-tile">
+            <div class="user-tile-label">Kaufwert</div>
+            <div class="user-tile-value">${formatCurrencyEUR(buyValue)}</div>
+          </div>` : ''}
+          ${showFinance && guthaben !== null ? `
+          <div class="user-tile">
+            <div class="user-tile-label">Guthaben</div>
+            <div class="user-tile-value">${formatCurrencyEUR(guthaben)}</div>
+          </div>` : ''}
+          ${punkteGeld !== null ? `
+          <div class="user-tile">
+            <div class="user-tile-label">Punkte-Geld</div>
+            <div class="user-tile-value">${formatCurrencyEUR(punkteGeld)}</div>
+          </div>` : ''}
+          <div class="user-tile user-tile-points">
+            <div class="user-tile-label">Punkte</div>
+            <div class="user-tile-value">${escapeHtml(punkte)}</div>
+            ${lastPoints !== '—' ? `<div class="user-tile-sub">letzte: ${escapeHtml(lastPoints)}</div>` : ''}
           </div>
-          <div class="section-separator" aria-hidden="true"></div>
-          <div class="user-stats-col">
-            <div class="user-info-section-label">Punkte</div>
-            <div class="user-stats-points">
-              <div class="points-item">
-                <div class="user-info-label">Punkte</div>
-                <div class="user-stats-big">${escapeHtml(punkte)}</div>
-              </div>
-              <div class="points-item">
-                <div class="user-info-label">Letzte Punkte</div>
-                <div class="user-stats-big">${escapeHtml(lastPoints)}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        ${!isMobile ? `<div class="user-sparkline-section">
+        </div>        ${!isMobile ? `<div class="user-sparkline-section">
           <div class="user-info-section-label">Punkte Verlauf</div>
           <div class="user-sparkline-container">${spark}<div class="user-sparkline-tooltip"></div></div>
         </div>` : ''}
