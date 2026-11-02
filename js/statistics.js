@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // URL-Parameter auslesen
     const urlParams = new URLSearchParams(window.location.search);
-    const showStatsParam = urlParams.get('showStats');
-    const showStats = showStatsParam === '1' || showStatsParam === 'true';
+    const ACCESS_KEY = 'torresbig';
+    const hasFinanceAccess = urlParams.get('access') === ACCESS_KEY;
 
-    // Conditional-Elemente ein-/ausblenden
+    // Conditional-Elemente ein-/ausblenden (Finanzdaten nur mit ?access=torresbig)
     document.querySelectorAll('.finance-hidden').forEach(el => {
-        el.classList.toggle('show', showStats);
+        el.classList.toggle('show', hasFinanceAccess);
     });
 
     // Hilfsfunktionen
@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const statsGrid = document.querySelector('.stats-grid');
         if (statsGrid) {
             function renderStatsCard(title, icon, entries, valueFormatter, detailFormatter, isConditional) {
-                if (isConditional && !showStats) {
+                if (isConditional && !hasFinanceAccess) {
                     return '';
                 }
 

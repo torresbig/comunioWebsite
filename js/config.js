@@ -56,13 +56,13 @@ const HAMBURGER_MENU_CONFIG = {
   ],
 
   // versteckter Link („Tarn"-Link), der nach 5 Klicks aktiv wird.
-  // Ziel ist in beiden Umgebungen die Statistik-Seite mit showStats=true
-  // (nur dieser Parameter blendet dort die „User Übersicht"-Tabelle ein).
+  // Ziel ist in beiden Umgebungen die Statistik-Seite mit dem Zugriffsschutz-
+  // Parameter ?access=torresbig (nur dieser blendet die Finanzdaten ein).
   tarnItem: {
     id: 'menuTarnItem',
     label: 'erstellt von comunioFanApp',
-    href: `${WEBSITE_URLS.statistikUrl}?showStats=true`,
-    localPath: 'statistik.html?showStats=true',
+    href: `${WEBSITE_URLS.statistikUrl}?access=torresbig`,
+    localPath: 'statistik.html?access=torresbig`,
     clicksToActivate: 5,
     timeoutMs: 3000
   }

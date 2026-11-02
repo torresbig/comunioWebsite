@@ -12,15 +12,23 @@ function hasAccessOnCurrentPage() {
 function appendAccessParam(url) {
   if (!url) return url;
   if (!hasAccessOnCurrentPage()) return url;
-  try {
-    const u = new URL(url, window.location.origin);
-    if (u.searchParams.get('access') !== ACCESS_KEY) {
-      u.searchParams.set('access', ACCESS_KEY);
-    }
-    return u.toString();
-  } catch (e) {
-    return url.indexOf('?') >= 0 ? url + '&access=' + ACCESS_KEY : url + '?access=' + ACCESS_KEY;
+
+  // Verhindere doppeltes Anhängen
+  if (url.indexOf('access=' + ACCESS_KEY) !== -1) return url;
+
+  // Trenner bestimmen (? oder &)
+  const separator = url.indexOf('?') !== -1 ? '&' : '?';
+
+  // Behandle Anker (#) korrekt: Parameter muss VOR den Hash
+  const hashIndex = url.indexOf('#');
+  if (hashIndex !== -1) {
+    const base = url.substring(0, hashIndex);
+    const hash = url.substring(hashIndex);
+    const sep = base.indexOf('?') !== -1 ? '&' : '?';
+    return base + sep + 'access=' + ACCESS_KEY + hash;
   }
+
+  return url + separator + 'access=' + ACCESS_KEY;
 }
 document.addEventListener('DOMContentLoaded', function () {
   const hamburgerButton = document.getElementById('hamburgerButton');
