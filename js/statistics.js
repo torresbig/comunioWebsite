@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const showStats = showStatsParam === '1' || showStatsParam === 'true';
 
     // Conditional-Elemente ein-/ausblenden
-    document.querySelectorAll('.conditional-content').forEach(el => {
+    document.querySelectorAll('.finance-hidden').forEach(el => {
         el.classList.toggle('show', showStats);
     });
 

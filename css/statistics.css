@@ -223,9 +223,9 @@
   }
 
   /* Klasse für conditional anzuzeigende Inhalte (URL-Parameter showStats) */
-  .conditional-content {
+  .finance-hidden {
       display: none;
   }
-  .conditional-content.show {
+  .finance-hidden.show {
       display: block;
   }

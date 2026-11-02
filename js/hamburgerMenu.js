@@ -1,3 +1,27 @@
+// Helfer: fügt den ?access=torresbig-Parameter an interne Links an,
+// DAMIT der Zugriff auf versteckte Finanzdaten beim Navigieren erhalten bleibt.
+// WICHTIG: nur anhängen, wenn die AKTUELLE Seite bereits mit dem Parameter
+// geöffnet wurde. Ein bloßer Klick auf ein Menü-Link setzt den Parameter
+// niemals von selbst – er ist kein Standard.
+const ACCESS_KEY = 'torresbig';
+function hasAccessOnCurrentPage() {
+  try {
+    return new URLSearchParams(window.location.search).get('access') === ACCESS_KEY;
+  } catch (e) { return false; }
+}
+function appendAccessParam(url) {
+  if (!url) return url;
+  if (!hasAccessOnCurrentPage()) return url;
+  try {
+    const u = new URL(url, window.location.origin);
+    if (u.searchParams.get('access') !== ACCESS_KEY) {
+      u.searchParams.set('access', ACCESS_KEY);
+    }
+    return u.toString();
+  } catch (e) {
+    return url.indexOf('?') >= 0 ? url + '&access=' + ACCESS_KEY : url + '?access=' + ACCESS_KEY;
+  }
+}
 document.addEventListener('DOMContentLoaded', function () {
   const hamburgerButton = document.getElementById('hamburgerButton');
   const hamburgerDropdown = document.getElementById('hamburgerDropdown');
@@ -27,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (item.activePage) {
       // Interne Seite: zur Laufzeit lokal oder GitHub-Pages-URL auflösen
       href = getLokalOderGitURL(item.href, item.activePage);
+    href = appendAccessParam(href);
     }
     var targetAttr = item.target ? ' target="' + item.target + '"' : '';
     var idAttr = item.id ? ' id="' + item.id + '"' : '';
@@ -60,6 +85,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var tarnTimeout = null;
   if (menuTarnItem) {
     var tarnHref = getLokalOderGitURL(tarnItemConfig.href, tarnItemConfig.localPath);
+    tarnHref = appendAccessParam(tarnHref);
     var tarnClicks = tarnItemConfig.clicksToActivate || 5;
     var tarnTimeoutMs = tarnItemConfig.timeoutMs || 3000;
 
