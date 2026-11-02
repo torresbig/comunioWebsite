@@ -1,19 +1,7 @@
 // Helpers and renderer for the user info card
 
-// Zugriffsschutz: Finanzdaten (Guthaben, Verkaufswert, Kaufwert, Punkte-Geld)
-// sind nur sichtbar, wenn der URL-Parameter ?access=torresbig gesetzt ist.
-// Bei jedem anderen Wert oder keinem Parameter werden diese Daten ausgeblendet.
-const ACCESS_KEY = 'torresbig';
-function hasFinanceAccess() {
-    try {
-        const params = new URLSearchParams(window.location.search);
-        return params.get('access') === ACCESS_KEY;
-    } catch (e) {
-        return false;
-    }
-}
 // Einmalig cachen, damit sich dynamische URL-Änderungen nicht auswirken.
-const FINANCE_ACCESS = hasFinanceAccess();
+const FINANCE_ACCESS = typeof window.hasFinanceAccess === 'function' ? window.hasFinanceAccess() : false;
 
 function formatCurrencyEUR(value) {
   if (value === null || value === undefined || isNaN(Number(value))) return '—';

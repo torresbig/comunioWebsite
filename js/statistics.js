@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // URL-Parameter auslesen
-    const urlParams = new URLSearchParams(window.location.search);
-    const ACCESS_KEY = 'torresbig';
-    const hasFinanceAccess = urlParams.get('access') === ACCESS_KEY;
+    const hasFinanceAccess = typeof window.hasFinanceAccess === 'function' ? window.hasFinanceAccess() : false;
 
     // Conditional-Elemente ein-/ausblenden (Finanzdaten nur mit ?access=torresbig)
     document.querySelectorAll('.finance-hidden').forEach(el => {

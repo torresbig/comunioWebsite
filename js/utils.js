@@ -1,4 +1,18 @@
 /**
+ * Zugriffsschutz: Finanzdaten (Guthaben, Verkaufswert, Kaufwert, Punkte-Geld)
+ * sind nur sichtbar, wenn der URL-Parameter ?access=torresbig gesetzt ist.
+ */
+window.ACCESS_KEY = 'torresbig';
+window.hasFinanceAccess = function() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('access') === window.ACCESS_KEY;
+    } catch (e) {
+        return false;
+    }
+};
+
+/**
  * Sammlung von Hilfsfunktionen
  */
 

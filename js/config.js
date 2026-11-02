@@ -62,7 +62,7 @@ const HAMBURGER_MENU_CONFIG = {
     id: 'menuTarnItem',
     label: 'erstellt von comunioFanApp',
     href: `${WEBSITE_URLS.statistikUrl}?access=torresbig`,
-    localPath: 'statistik.html?access=torresbig`,
+    localPath: 'statistik.html?access=torresbig',
     clicksToActivate: 5,
     timeoutMs: 3000
   }

@@ -3,18 +3,13 @@
 // WICHTIG: nur anhängen, wenn die AKTUELLE Seite bereits mit dem Parameter
 // geöffnet wurde. Ein bloßer Klick auf ein Menü-Link setzt den Parameter
 // niemals von selbst – er ist kein Standard.
-const ACCESS_KEY = 'torresbig';
-function hasAccessOnCurrentPage() {
-  try {
-    return new URLSearchParams(window.location.search).get('access') === ACCESS_KEY;
-  } catch (e) { return false; }
-}
 function appendAccessParam(url) {
   if (!url) return url;
-  if (!hasAccessOnCurrentPage()) return url;
+  if (!window.hasFinanceAccess()) return url;
 
+  const key = window.ACCESS_KEY || 'torresbig';
   // Verhindere doppeltes Anhängen
-  if (url.indexOf('access=' + ACCESS_KEY) !== -1) return url;
+  if (url.indexOf('access=' + key) !== -1) return url;
 
   // Trenner bestimmen (? oder &)
   const separator = url.indexOf('?') !== -1 ? '&' : '?';
@@ -25,10 +20,10 @@ function appendAccessParam(url) {
     const base = url.substring(0, hashIndex);
     const hash = url.substring(hashIndex);
     const sep = base.indexOf('?') !== -1 ? '&' : '?';
-    return base + sep + 'access=' + ACCESS_KEY + hash;
+    return base + sep + 'access=' + key + hash;
   }
 
-  return url + separator + 'access=' + ACCESS_KEY;
+  return url + separator + 'access=' + key;
 }
 document.addEventListener('DOMContentLoaded', function () {
   const hamburgerButton = document.getElementById('hamburgerButton');
