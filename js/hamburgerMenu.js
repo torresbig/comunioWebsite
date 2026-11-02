@@ -1,3 +1,19 @@
+// Helfer: fügt den ?access=torresbig-Parameter an interne Links an,
+// damit der Zugriff auf versteckte Finanzdaten beim Navigieren erhalten bleibt.
+function appendAccessParam(url) {
+  if (!url) return url;
+  try {
+    const u = new URL(url, window.location.origin);
+    if (u.searchParams.get('access') !== 'torresbig') {
+      u.searchParams.set('access', 'torresbig');
+    }
+    return u.toString();
+  } catch (e) {
+    // Keine volle URL (z. B. '#'): einfach als Query-String anhängen
+    return url.indexOf('?') >= 0 ? url + '&access=torresbig' : url + '?access=torresbig';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   const hamburgerButton = document.getElementById('hamburgerButton');
   const hamburgerDropdown = document.getElementById('hamburgerDropdown');
@@ -27,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (item.activePage) {
       // Interne Seite: zur Laufzeit lokal oder GitHub-Pages-URL auflösen
       href = getLokalOderGitURL(item.href, item.activePage);
+    href = appendAccessParam(href);
     }
     var targetAttr = item.target ? ' target="' + item.target + '"' : '';
     var idAttr = item.id ? ' id="' + item.id + '"' : '';
@@ -60,6 +77,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var tarnTimeout = null;
   if (menuTarnItem) {
     var tarnHref = getLokalOderGitURL(tarnItemConfig.href, tarnItemConfig.localPath);
+    tarnHref = appendAccessParam(tarnHref);
     var tarnClicks = tarnItemConfig.clicksToActivate || 5;
     var tarnTimeoutMs = tarnItemConfig.timeoutMs || 3000;
 
